@@ -13,6 +13,8 @@ class UnitController extends Controller
     public function index()
     {
         //
+        $units = Unit::latest()->paginate(10);
+        return view('units.index', compact('units'));
     }
 
     /**
@@ -21,6 +23,7 @@ class UnitController extends Controller
     public function create()
     {
         //
+        return view('units.create');
     }
 
     /**
@@ -29,7 +32,14 @@ class UnitController extends Controller
     public function store(Request $request)
     {
         //
-    }
+        $data = $request->validate([
+            'name' => 'required|string|max:80',
+            'symbol' => 'required|string|max:10',
+            'type' => 'required|string|max:50',
+            ]);
+            Unit::create($data);
+            return redirect()->route('units.index')->with('success', 'Unidad creada exitosamente!');
+            }
 
     /**
      * Display the specified resource.
@@ -37,6 +47,7 @@ class UnitController extends Controller
     public function show(Unit $unit)
     {
         //
+        return view('units.show', compact('unit'));
     }
 
     /**
@@ -45,6 +56,7 @@ class UnitController extends Controller
     public function edit(Unit $unit)
     {
         //
+        return view ('units.edit', compact ('unit'));
     }
 
     /**
@@ -53,6 +65,13 @@ class UnitController extends Controller
     public function update(Request $request, Unit $unit)
     {
         //
+        $data = $request->validate([
+            'name' => 'required|string|max:80',
+            'symbol' => 'required|string|max:10',
+            'type' => 'required|string|max:50',
+        ]);
+        $unit->update($data);
+        return redirect()->route('units.index')->with ('success', 'unidad actualizada exitosamente!');
     }
 
     /**
@@ -61,5 +80,7 @@ class UnitController extends Controller
     public function destroy(Unit $unit)
     {
         //
+        $unit->delete();
+        return redirect()->route('units.index')->with('success', 'Unidad eliminada exitosamente!');
     }
 }
