@@ -1,22 +1,14 @@
-@php($unit = $unit ?? null)
+<div class="mf">
+    <div class="mf__grid">
+        <x-mus.field name="name" label="Nombre" :value="$item?->name" :required="true"
+                     max="80" hint="Por ejemplo: Kilogramo, Caja, Metro" />
 
-<div class="mb-4">
-    <label class="block mb-1 font-medium">Nombre</label>
-    <input type="text" name="name" value="{{ old('name', $unit->name ?? '') }}"
-           class="w-full border rounded px-3 py-2">
-    @error('name') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
-</div>
+        <x-mus.field name="symbol" label="Símbolo" :value="$item?->symbol" :required="true"
+                     max="10" hint="Abreviatura corta: kg, caj, m" />
 
-<div class="mb-4">
-    <label class="block mb-1 font-medium">Símbolo</label>
-    <input type="text" name="symbol" value="{{ old('symbol', $unit->symbol ?? '') }}"
-           class="w-full border rounded px-3 py-2">
-    @error('symbol') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
-</div>
-
-<div class="mb-4">
-    <label class="block mb-1 font-medium">Tipo (opcional)</label>
-    <input type="text" name="type" value="{{ old('type', $unit->type ?? '') }}"
-           class="w-full border rounded px-3 py-2">
-    @error('type') <p class="text-red-600 text-sm mt-1">{{ $message }}</p> @enderror
+        <x-mus.select name="type" label="Tipo de medida" :required="true" :wide="true"
+                      :value="$item?->type" empty="Selecciona un tipo"
+                      :options="collect($tipos ?? \App\Http\Controllers\UnitController::TIPOS)
+                                    ->mapWithKeys(fn ($t) => [$t => $t])->all()" />
+    </div>
 </div>

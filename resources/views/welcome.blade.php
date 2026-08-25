@@ -1,223 +1,1696 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="es">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>MEGA UNI STORE</title>
 
-        @fonts
+        <!-- Fonts -->
+        <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swaphttps://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Favicons -->
+  <link rel="icon" type="image/png" href="{{ asset('general/assets/img/cefaempresa.png') }}">
+  <link rel="shortcut icon" type="image/png" href="{{ asset('general/assets/img/cefaempresa.png') }}">
+  <link rel="apple-touch-icon" href="{{ asset('general/assets/img/cefaempresa.png') }}">
 
-        <!-- Styles / Scripts -->
-        @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-            @vite(['resources/css/app.css', 'resources/js/app.js'])
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Jost:300,300i,400,400i,500,500i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="https://sicefa.com.co/general/assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="https://sicefa.com.co/general/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Add direct CDNs for missing icons (Bootstrap Icons, FontAwesome, BoxIcons, RemixIcons) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  
+  <link href="https://sicefa.com.co/general/assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="https://sicefa.com.co/general/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+  <!-- Template Main CSS File -->
+  <link href="https://sicefa.com.co/general/assets/css/style.css" rel="stylesheet">
+  
+  <link href="https://sicefa.com.co/css/pantCarg.css" rel="stylesheet">
+
+  <style>
+    /* Mega Uni Store Green Theme Overrides */
+    :root {
+      --sena-green: #2E6EA8;
+      --sena-green-hover: #215480;
+      --sena-green-rgb: 46, 110, 168;
+    }
+    
+    a {
+      color: var(--sena-green);
+    }
+    a:hover {
+      color: var(--sena-green-hover);
+    }
+    
+    .btn-get-started, .cta-btn, .portfolio-info .details-link {
+      background-color: var(--sena-green) !important;
+    }
+    .btn-get-started:hover, .cta-btn:hover {
+      background-color: var(--sena-green-hover) !important;
+    }
+    
+    .section-title h2::after {
+      background: var(--sena-white) !important;
+    }
+    
+    #header.header-scrolled, #header {
+      background: rgba(10, 17, 25, 0.95) !important;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 3px solid #2E6EA8;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Ensure other primary elements get the green color */
+    .services .icon-box:hover .icon i,
+    #portfolio-flters li:hover, #portfolio-flters li.filter-active {
+      color: var(--sena-green) !important;
+    }
+    
+    .portfolio .portfolio-item .portfolio-info {
+        background: rgba(var(--sena-green-rgb), 0.9) !important;
+    }
+    
+    .why-us .accordion-list a:hover {
+        color: var(--sena-green) !important;
+    }
+    
+    /* Back to top button if it exists */
+    .back-to-top {
+        background: var(--sena-green) !important;
+    }
+    .back-to-top:hover {
+        background: var(--sena-green-hover) !important;
+    }
+
+    /* Provide green overrides for main sections that have orange backgrounds */
+    #hero {
+        background: rgba(var(--sena-green-rgb), 0.9) !important;
+    }
+    
+    /* Dark Navy Mega Uni Store Footer Styling */
+    #footer {
+        background: #0A1119 !important;
+        color: #ffffff !important;
+        font-size: 14px;
+    }
+    #footer .footer-top {
+        background: #0E1723 !important;
+        border-top: 4px solid #2E6EA8;
+        padding: 50px 0 30px 0;
+    }
+    #footer .footer-top h4 {
+        color: #7FB2DE !important;
+        font-size: 17px;
+        font-weight: 700;
+        margin-bottom: 20px;
+        position: relative;
+        padding-bottom: 10px;
+    }
+    #footer .footer-top h4::after {
+        content: '';
+        position: absolute;
+        display: block;
+        width: 35px;
+        height: 3px;
+        background: #2E6EA8;
+        bottom: 0;
+        left: 0;
+    }
+    #footer .footer-top p {
+        color: rgba(255, 255, 255, 0.82) !important;
+        line-height: 1.6;
+    }
+    #footer .footer-top ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    #footer .footer-top ul li {
+        padding: 7px 0;
+        display: flex;
+        align-items: center;
+    }
+    #footer .footer-top ul li i {
+        color: #7FB2DE;
+        margin-right: 8px;
+        font-size: 12px;
+    }
+    #footer .footer-top ul a {
+        color: rgba(255, 255, 255, 0.85) !important;
+        transition: all 0.25s ease;
+        text-decoration: none;
+    }
+    #footer .footer-top ul a:hover {
+        color: #7FB2DE !important;
+        padding-left: 6px;
+    }
+    .footer-social-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+        font-size: 15px;
+        transition: all 0.3s ease;
+    }
+    .footer-social-btn:hover {
+        background: #2E6EA8 !important;
+        color: #ffffff !important;
+        transform: translateY(-4px);
+    }
+    #footer .footer-bottom {
+        background: #070D14 !important;
+        padding: 20px 0;
+        color: rgba(255, 255, 255, 0.7) !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .contact .info .email:hover i, .contact .info .address:hover i, .contact .info .phone:hover i {
+        background: var(--sena-green) !important;
+        color: #fff !important;
+    }
+
+    button[type="submit"] {
+        background: var(--sena-green) !important;
+    }
+    /* Header & Navigation Dark Navy Theme (Matching Footer) */
+    .navbar a, .navbar a:focus {
+      color: rgba(255, 255, 255, 0.9) !important;
+      font-weight: 600;
+    }
+    .navbar a:hover, .navbar .active, .navbar .active:focus, .navbar li:hover > a {
+      color: #7FB2DE !important;
+    }
+    .navbar .dropdown ul {
+      background: #0E1723 !important;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .navbar .dropdown ul a {
+      color: rgba(255, 255, 255, 0.85) !important;
+    }
+    .navbar .dropdown ul a:hover, .navbar .dropdown ul .active:hover, .navbar .dropdown ul li:hover > a {
+      background: rgba(46, 110, 168, 0.25) !important;
+      color: #7FB2DE !important;
+    }
+
+    /* Process Modules & Video Banner Styling */
+    #hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0E1723 0%, #142033 100%) !important;
+    }
+    .hero-video-bg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      min-width: 100%;
+      min-height: 100%;
+      width: auto;
+      height: auto;
+      z-index: 1;
+      transform: translate(-50%, -50%);
+      object-fit: cover;
+      filter: brightness(0.85) contrast(1.05);
+    }
+    .hero-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      background: linear-gradient(135deg, rgba(4, 12, 24, 0.72) 0%, rgba(10, 30, 60, 0.55) 100%);
+    }
+    .hero-content {
+      position: relative;
+      z-index: 3;
+    }
+    .logo-header-img {
+      max-height: 42px;
+      width: auto;
+      background: #ffffff;
+      padding: 3px;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+    .hero-video-showcase {
+      background: rgba(0, 32, 20, 0.4) !important;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 2px solid rgba(255, 255, 255, 0.25) !important;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
+      transition: all 0.3s ease;
+    }
+    .hero-video-showcase:hover {
+      transform: translateY(-5px);
+      border-color: rgba(122, 170, 214, 0.6) !important;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5) !important;
+    }
+    .hero-social-btn {
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+      transition: all 0.25s ease;
+    }
+    .hero-social-btn:hover {
+      background: #2E6EA8;
+      color: #ffffff;
+      transform: translateY(-3px);
+    }
+    .process-category-block {
+      background: #ffffff;
+      transition: all 0.3s ease;
+    }
+    .hover-lift {
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+    }
+    .hover-green:hover { color: #2E6EA8 !important; }
+    .hover-blue:hover { color: #142033 !important; }
+    .hover-warning:hover { color: #e65100 !important; }
+
+    /* Contact / PQRS Section Corporate Styling */
+    .contact .info, .contact .php-email-form {
+        border-top: 4px solid #2E6EA8 !important;
+        border-bottom: 4px solid #0E1723 !important;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        background: #ffffff;
+        padding: 30px;
+    }
+    .contact .info div i {
+        font-size: 18px;
+        color: #ffffff !important;
+        background: #2E6EA8 !important;
+        float: left;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+        margin-right: 15px;
+        box-shadow: 0 4px 10px rgba(46, 110, 168, 0.3);
+    }
+    .contact .info div:hover i {
+        background: #0E1723 !important;
+        color: #7FB2DE !important;
+        transform: scale(1.1);
+        box-shadow: 0 6px 15px rgba(0, 35, 54, 0.4);
+    }
+    .contact .info h4 {
+        color: #0E1723 !important;
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+    .contact .info p {
+        color: #555555 !important;
+        font-size: 14px;
+    }
+    .contact .info a {
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .contact .php-email-form button[type="submit"] {
+        background: #2E6EA8 !important;
+        border: 0;
+        padding: 12px 34px;
+        color: #fff;
+        transition: 0.4s;
+        border-radius: 50px;
+        font-weight: 700;
+    }
+    .contact .php-email-form button[type="submit"]:hover {
+        background: #0E1723 !important;
+        color: #7FB2DE !important;
+    }
+
+    /* Virtual Assistant (Mega Uni Store Bot) Styles */
+    .sena-bot-trigger {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0E1723 0%, #142033 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 30px rgba(0, 35, 55, 0.45);
+      cursor: pointer;
+      z-index: 99999;
+      transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border: 3px solid #2E6EA8;
+      padding: 3px;
+    }
+    .sena-bot-trigger:hover {
+      transform: scale(1.1) rotate(4deg);
+      box-shadow: 0 14px 35px rgba(46, 110, 168, 0.55);
+    }
+    .sena-bot-chat-icon-badge {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 22px;
+      height: 22px;
+      background: #2E6EA8;
+      color: #ffffff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .sena-bot-badge {
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      width: 16px;
+      height: 16px;
+      background: #7FB2DE;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0% { box-shadow: 0 0 0 0 rgba(122, 170, 214, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(122, 170, 214, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(122, 170, 214, 0); }
+    }
+    .sena-bot-chat {
+      position: fixed;
+      bottom: 100px;
+      right: 25px;
+      width: 380px;
+      max-width: calc(100vw - 40px);
+      height: 540px;
+      max-height: calc(100vh - 120px);
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+      z-index: 99998;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(20px) scale(0.95);
+      border: 1px solid rgba(0, 50, 77, 0.15);
+    }
+    .sena-bot-chat.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+    }
+    .sena-bot-header {
+      background: linear-gradient(135deg, #0E1723 0%, #142033 100%);
+      color: #ffffff;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 3px solid #2E6EA8;
+    }
+    .sena-bot-body {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      background: #f8f9fa;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .bot-msg, .user-msg {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .bot-msg {
+      background: #ffffff;
+      color: #1a252f;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border-left: 3px solid #2E6EA8;
+    }
+    .user-msg {
+      background: #2E6EA8;
+      color: #ffffff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 2px 8px rgba(46, 110, 168, 0.25);
+    }
+    .sena-bot-chip {
+      background: #ffffff;
+      border: 1px solid #2E6EA8;
+      color: #142033;
+      padding: 5px 11px;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-block;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+    .sena-bot-chip:hover {
+      background: #2E6EA8;
+      color: #ffffff;
+    }
+    .sena-bot-footer {
+      padding: 12px 16px;
+      background: #ffffff;
+      border-top: 1px solid #e9ecef;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sena-bot-input {
+      flex: 1;
+      border: 1px solid #ced4da;
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .sena-bot-input:focus {
+      border-color: #2E6EA8;
+    }
+
+    /* Overrides azul Mega Uni Store */
+    .text-success{color:#2E6EA8 !important}
+    .btn-success{background-color:#2E6EA8 !important;border-color:#2E6EA8 !important}
+    .btn-success:hover{background-color:#215480 !important;border-color:#215480 !important}
+    .bg-success{background-color:#2E6EA8 !important}
+    .btn-outline-success{color:#2E6EA8 !important;border-color:#2E6EA8 !important}
+    .badge.bg-success{background-color:#2E6EA8 !important}
+  
+    /* Header oculto en el hero, aparece al salir */
+    #header{transform:translateY(-100%);transition:transform .35s ease, background .3s ease}
+    #header.reveal{transform:translateY(0)}
+</style>
+</head>
+<body class="antialiased">
+
+    
+        
+    <!-- ======= Header ======= -->
+<link rel="stylesheet" href="https://sicefa.com.co/css/navbar.css">
+<header id="header" class="fixed-top shadow-sm">
+  <div class="container d-flex align-items-center">
+
+    <h1 class="logo me-auto"><a href="/" class="d-flex align-items-center text-white text-decoration-none"><img src="{{ asset('general/assets/img/cefaempresa.png') }}" alt="Logo Mega Uni Store" class="logo-header-img me-2"><span>MEGA UNI STORE</span></a></h1>
+    <!-- Uncomment below if you prefer to use an image logo -->
+    <!-- <a href="index.html" class="logo me-auto"><img src="assets/img/logo.png" alt="" class="img-fluid"></a>-->
+    <nav id="navbar-top" class="navbar" style="margin-right: 20px">
+      <div class="navbar-nav">
+          <div class="dropdown d-lg-none">
+              <a class="nav-link scrollto" data-toggle="dropdown" href="#">
+                  Menu
+              </a>
+              <div class="dropdown-menu">
+                  <a class="nav-link scrollto active" href="#hero">Inicio</a>
+                  <a class="nav-link scrollto" href="#modules">Módulos</a>
+                  <a class="nav-link scrollto" href="#why-us">Soluciones</a>
+                  <a class="nav-link scrollto" href="#about">Nosotros</a>
+                  <a class="nav-link scrollto" href="#contact">Contacto</a>
+              </div>
+          </div>
+          <div class="dropdown d-lg-none">
+              @auth
+                  <a href="{{ url('/') }}"><i class="fas fa-user-circle me-1"></i> {{ Auth::user()->full_name }} ({{ Auth::user()->primary_role }})</a>
+              @else
+                  <a href="{{ route('login') }}">Iniciar sesión</a>
+              @endauth
+          </div>
+          <div class="dropdown lang d-lg-none">
+              <a class="nav-link scrollto" data-toggle="dropdown" href="#">
+                   <i class="fas fa-globe"></i>
+              </a>
+              <div class="dropdown-menu">
+                  <a href="https://sicefa.com.co/lang/es" class="dropdown-item scrollto">Español</a>
+                  <a href="https://sicefa.com.co/lang/en" class="dropdown-item scrollto">English</a>
+              </div>
+          </div>
+      </div>
+  </nav>
+    <nav id="navbar" class="navbar">
+      <ul>
+        <li><a class="nav-link scrollto active" href="#hero">Inicio</a></li>
+        <li><a class="nav-link scrollto" href="#modules">Módulos</a></li>
+        <li><a class="nav-link scrollto" href="#why-us">Soluciones</a></li>
+        <li><a class="nav-link scrollto" href="#about">Nosotros</a></li>
+        <li><a class="nav-link scrollto" href="#contact">Contacto</a></li>
+        @guest
+          <li class="dropdown">
+              <a href="{{ route('login') }}"><i class="fas fa-right-to-bracket me-1 text-success"></i> Log in</a>
+          </li>
         @else
-            <style>
-                /*! tailwindcss v4.0.7 | MIT License | https://tailwindcss.com */ @layer properties{@supports (((-webkit-hyphens:none)) and (not (margin-trim:inline))) or ((-moz-orient:inline) and (not (color:rgb(from red r g b)))){*,:before,:after,::backdrop{--tw-translate-x:0;--tw-translate-y:0;--tw-translate-z:0;--tw-rotate-x:initial;--tw-rotate-y:initial;--tw-rotate-z:initial;--tw-skew-x:initial;--tw-skew-y:initial;--tw-space-x-reverse:0;--tw-border-style:solid;--tw-leading:initial;--tw-font-weight:initial;--tw-tracking:initial;--tw-shadow:0 0 #0000;--tw-shadow-color:initial;--tw-shadow-alpha:100%;--tw-inset-shadow:0 0 #0000;--tw-inset-shadow-color:initial;--tw-inset-shadow-alpha:100%;--tw-ring-color:initial;--tw-ring-shadow:0 0 #0000;--tw-inset-ring-color:initial;--tw-inset-ring-shadow:0 0 #0000;--tw-ring-inset:initial;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-offset-shadow:0 0 #0000;--tw-blur:initial;--tw-brightness:initial;--tw-contrast:initial;--tw-grayscale:initial;--tw-hue-rotate:initial;--tw-invert:initial;--tw-opacity:initial;--tw-saturate:initial;--tw-sepia:initial;--tw-drop-shadow:initial;--tw-drop-shadow-color:initial;--tw-drop-shadow-alpha:100%;--tw-drop-shadow-size:initial;--tw-duration:initial;--tw-ease:initial;--tw-content:""}}}@layer theme{:root,:host{--font-sans:"Instrument Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--font-serif:ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;--font-mono:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;--color-red-50:oklch(97.1% .013 17.38);--color-red-100:oklch(93.6% .032 17.717);--color-red-200:oklch(88.5% .062 18.334);--color-red-300:oklch(80.8% .114 19.571);--color-red-400:oklch(70.4% .191 22.216);--color-red-500:oklch(63.7% .237 25.331);--color-red-600:oklch(57.7% .245 27.325);--color-red-700:oklch(50.5% .213 27.518);--color-red-800:oklch(44.4% .177 26.899);--color-red-900:oklch(39.6% .141 25.723);--color-red-950:oklch(25.8% .092 26.042);--color-orange-50:oklch(98% .016 73.684);--color-orange-100:oklch(95.4% .038 75.164);--color-orange-200:oklch(90.1% .076 70.697);--color-orange-300:oklch(83.7% .128 66.29);--color-orange-400:oklch(75% .183 55.934);--color-orange-500:oklch(70.5% .213 47.604);--color-orange-600:oklch(64.6% .222 41.116);--color-orange-700:oklch(55.3% .195 38.402);--color-orange-800:oklch(47% .157 37.304);--color-orange-900:oklch(40.8% .123 38.172);--color-orange-950:oklch(26.6% .079 36.259);--color-amber-50:oklch(98.7% .022 95.277);--color-amber-100:oklch(96.2% .059 95.617);--color-amber-200:oklch(92.4% .12 95.746);--color-amber-300:oklch(87.9% .169 91.605);--color-amber-400:oklch(82.8% .189 84.429);--color-amber-500:oklch(76.9% .188 70.08);--color-amber-600:oklch(66.6% .179 58.318);--color-amber-700:oklch(55.5% .163 48.998);--color-amber-800:oklch(47.3% .137 46.201);--color-amber-900:oklch(41.4% .112 45.904);--color-amber-950:oklch(27.9% .077 45.635);--color-yellow-50:oklch(98.7% .026 102.212);--color-yellow-100:oklch(97.3% .071 103.193);--color-yellow-200:oklch(94.5% .129 101.54);--color-yellow-300:oklch(90.5% .182 98.111);--color-yellow-400:oklch(85.2% .199 91.936);--color-yellow-500:oklch(79.5% .184 86.047);--color-yellow-600:oklch(68.1% .162 75.834);--color-yellow-700:oklch(55.4% .135 66.442);--color-yellow-800:oklch(47.6% .114 61.907);--color-yellow-900:oklch(42.1% .095 57.708);--color-yellow-950:oklch(28.6% .066 53.813);--color-lime-50:oklch(98.6% .031 120.757);--color-lime-100:oklch(96.7% .067 122.328);--color-lime-200:oklch(93.8% .127 124.321);--color-lime-300:oklch(89.7% .196 126.665);--color-lime-400:oklch(84.1% .238 128.85);--color-lime-500:oklch(76.8% .233 130.85);--color-lime-600:oklch(64.8% .2 131.684);--color-lime-700:oklch(53.2% .157 131.589);--color-lime-800:oklch(45.3% .124 130.933);--color-lime-900:oklch(40.5% .101 131.063);--color-lime-950:oklch(27.4% .072 132.109);--color-green-50:oklch(98.2% .018 155.826);--color-green-100:oklch(96.2% .044 156.743);--color-green-200:oklch(92.5% .084 155.995);--color-green-300:oklch(87.1% .15 154.449);--color-green-400:oklch(79.2% .209 151.711);--color-green-500:oklch(72.3% .219 149.579);--color-green-600:oklch(62.7% .194 149.214);--color-green-700:oklch(52.7% .154 150.069);--color-green-800:oklch(44.8% .119 151.328);--color-green-900:oklch(39.3% .095 152.535);--color-green-950:oklch(26.6% .065 152.934);--color-emerald-50:oklch(97.9% .021 166.113);--color-emerald-100:oklch(95% .052 163.051);--color-emerald-200:oklch(90.5% .093 164.15);--color-emerald-300:oklch(84.5% .143 164.978);--color-emerald-400:oklch(76.5% .177 163.223);--color-emerald-500:oklch(69.6% .17 162.48);--color-emerald-600:oklch(59.6% .145 163.225);--color-emerald-700:oklch(50.8% .118 165.612);--color-emerald-800:oklch(43.2% .095 166.913);--color-emerald-900:oklch(37.8% .077 168.94);--color-emerald-950:oklch(26.2% .051 172.552);--color-teal-50:oklch(98.4% .014 180.72);--color-teal-100:oklch(95.3% .051 180.801);--color-teal-200:oklch(91% .096 180.426);--color-teal-300:oklch(85.5% .138 181.071);--color-teal-400:oklch(77.7% .152 181.912);--color-teal-500:oklch(70.4% .14 182.503);--color-teal-600:oklch(60% .118 184.704);--color-teal-700:oklch(51.1% .096 186.391);--color-teal-800:oklch(43.7% .078 188.216);--color-teal-900:oklch(38.6% .063 188.416);--color-teal-950:oklch(27.7% .046 192.524);--color-cyan-50:oklch(98.4% .019 200.873);--color-cyan-100:oklch(95.6% .045 203.388);--color-cyan-200:oklch(91.7% .08 205.041);--color-cyan-300:oklch(86.5% .127 207.078);--color-cyan-400:oklch(78.9% .154 211.53);--color-cyan-500:oklch(71.5% .143 215.221);--color-cyan-600:oklch(60.9% .126 221.723);--color-cyan-700:oklch(52% .105 223.128);--color-cyan-800:oklch(45% .085 224.283);--color-cyan-900:oklch(39.8% .07 227.392);--color-cyan-950:oklch(30.2% .056 229.695);--color-sky-50:oklch(97.7% .013 236.62);--color-sky-100:oklch(95.1% .026 236.824);--color-sky-200:oklch(90.1% .058 230.902);--color-sky-300:oklch(82.8% .111 230.318);--color-sky-400:oklch(74.6% .16 232.661);--color-sky-500:oklch(68.5% .169 237.323);--color-sky-600:oklch(58.8% .158 241.966);--color-sky-700:oklch(50% .134 242.749);--color-sky-800:oklch(44.3% .11 240.79);--color-sky-900:oklch(39.1% .09 240.876);--color-sky-950:oklch(29.3% .066 243.157);--color-blue-50:oklch(97% .014 254.604);--color-blue-100:oklch(93.2% .032 255.585);--color-blue-200:oklch(88.2% .059 254.128);--color-blue-300:oklch(80.9% .105 251.813);--color-blue-400:oklch(70.7% .165 254.624);--color-blue-500:oklch(62.3% .214 259.815);--color-blue-600:oklch(54.6% .245 262.881);--color-blue-700:oklch(48.8% .243 264.376);--color-blue-800:oklch(42.4% .199 265.638);--color-blue-900:oklch(37.9% .146 265.522);--color-blue-950:oklch(28.2% .091 267.935);--color-indigo-50:oklch(96.2% .018 272.314);--color-indigo-100:oklch(93% .034 272.788);--color-indigo-200:oklch(87% .065 274.039);--color-indigo-300:oklch(78.5% .115 274.713);--color-indigo-400:oklch(67.3% .182 276.935);--color-indigo-500:oklch(58.5% .233 277.117);--color-indigo-600:oklch(51.1% .262 276.966);--color-indigo-700:oklch(45.7% .24 277.023);--color-indigo-800:oklch(39.8% .195 277.366);--color-indigo-900:oklch(35.9% .144 278.697);--color-indigo-950:oklch(25.7% .09 281.288);--color-violet-50:oklch(96.9% .016 293.756);--color-violet-100:oklch(94.3% .029 294.588);--color-violet-200:oklch(89.4% .057 293.283);--color-violet-300:oklch(81.1% .111 293.571);--color-violet-400:oklch(70.2% .183 293.541);--color-violet-500:oklch(60.6% .25 292.717);--color-violet-600:oklch(54.1% .281 293.009);--color-violet-700:oklch(49.1% .27 292.581);--color-violet-800:oklch(43.2% .232 292.759);--color-violet-900:oklch(38% .189 293.745);--color-violet-950:oklch(28.3% .141 291.089);--color-purple-50:oklch(97.7% .014 308.299);--color-purple-100:oklch(94.6% .033 307.174);--color-purple-200:oklch(90.2% .063 306.703);--color-purple-300:oklch(82.7% .119 306.383);--color-purple-400:oklch(71.4% .203 305.504);--color-purple-500:oklch(62.7% .265 303.9);--color-purple-600:oklch(55.8% .288 302.321);--color-purple-700:oklch(49.6% .265 301.924);--color-purple-800:oklch(43.8% .218 303.724);--color-purple-900:oklch(38.1% .176 304.987);--color-purple-950:oklch(29.1% .149 302.717);--color-fuchsia-50:oklch(97.7% .017 320.058);--color-fuchsia-100:oklch(95.2% .037 318.852);--color-fuchsia-200:oklch(90.3% .076 319.62);--color-fuchsia-300:oklch(83.3% .145 321.434);--color-fuchsia-400:oklch(74% .238 322.16);--color-fuchsia-500:oklch(66.7% .295 322.15);--color-fuchsia-600:oklch(59.1% .293 322.896);--color-fuchsia-700:oklch(51.8% .253 323.949);--color-fuchsia-800:oklch(45.2% .211 324.591);--color-fuchsia-900:oklch(40.1% .17 325.612);--color-fuchsia-950:oklch(29.3% .136 325.661);--color-pink-50:oklch(97.1% .014 343.198);--color-pink-100:oklch(94.8% .028 342.258);--color-pink-200:oklch(89.9% .061 343.231);--color-pink-300:oklch(82.3% .12 346.018);--color-pink-400:oklch(71.8% .202 349.761);--color-pink-500:oklch(65.6% .241 354.308);--color-pink-600:oklch(59.2% .249 .584);--color-pink-700:oklch(52.5% .223 3.958);--color-pink-800:oklch(45.9% .187 3.815);--color-pink-900:oklch(40.8% .153 2.432);--color-pink-950:oklch(28.4% .109 3.907);--color-rose-50:oklch(96.9% .015 12.422);--color-rose-100:oklch(94.1% .03 12.58);--color-rose-200:oklch(89.2% .058 10.001);--color-rose-300:oklch(81% .117 11.638);--color-rose-400:oklch(71.2% .194 13.428);--color-rose-500:oklch(64.5% .246 16.439);--color-rose-600:oklch(58.6% .253 17.585);--color-rose-700:oklch(51.4% .222 16.935);--color-rose-800:oklch(45.5% .188 13.697);--color-rose-900:oklch(41% .159 10.272);--color-rose-950:oklch(27.1% .105 12.094);--color-slate-50:oklch(98.4% .003 247.858);--color-slate-100:oklch(96.8% .007 247.896);--color-slate-200:oklch(92.9% .013 255.508);--color-slate-300:oklch(86.9% .022 252.894);--color-slate-400:oklch(70.4% .04 256.788);--color-slate-500:oklch(55.4% .046 257.417);--color-slate-600:oklch(44.6% .043 257.281);--color-slate-700:oklch(37.2% .044 257.287);--color-slate-800:oklch(27.9% .041 260.031);--color-slate-900:oklch(20.8% .042 265.755);--color-slate-950:oklch(12.9% .042 264.695);--color-gray-50:oklch(98.5% .002 247.839);--color-gray-100:oklch(96.7% .003 264.542);--color-gray-200:oklch(92.8% .006 264.531);--color-gray-300:oklch(87.2% .01 258.338);--color-gray-400:oklch(70.7% .022 261.325);--color-gray-500:oklch(55.1% .027 264.364);--color-gray-600:oklch(44.6% .03 256.802);--color-gray-700:oklch(37.3% .034 259.733);--color-gray-800:oklch(27.8% .033 256.848);--color-gray-900:oklch(21% .034 264.665);--color-gray-950:oklch(13% .028 261.692);--color-zinc-50:oklch(98.5% 0 0);--color-zinc-100:oklch(96.7% .001 286.375);--color-zinc-200:oklch(92% .004 286.32);--color-zinc-300:oklch(87.1% .006 286.286);--color-zinc-400:oklch(70.5% .015 286.067);--color-zinc-500:oklch(55.2% .016 285.938);--color-zinc-600:oklch(44.2% .017 285.786);--color-zinc-700:oklch(37% .013 285.805);--color-zinc-800:oklch(27.4% .006 286.033);--color-zinc-900:oklch(21% .006 285.885);--color-zinc-950:oklch(14.1% .005 285.823);--color-neutral-50:oklch(98.5% 0 0);--color-neutral-100:oklch(97% 0 0);--color-neutral-200:oklch(92.2% 0 0);--color-neutral-300:oklch(87% 0 0);--color-neutral-400:oklch(70.8% 0 0);--color-neutral-500:oklch(55.6% 0 0);--color-neutral-600:oklch(43.9% 0 0);--color-neutral-700:oklch(37.1% 0 0);--color-neutral-800:oklch(26.9% 0 0);--color-neutral-900:oklch(20.5% 0 0);--color-neutral-950:oklch(14.5% 0 0);--color-stone-50:oklch(98.5% .001 106.423);--color-stone-100:oklch(97% .001 106.424);--color-stone-200:oklch(92.3% .003 48.717);--color-stone-300:oklch(86.9% .005 56.366);--color-stone-400:oklch(70.9% .01 56.259);--color-stone-500:oklch(55.3% .013 58.071);--color-stone-600:oklch(44.4% .011 73.639);--color-stone-700:oklch(37.4% .01 67.558);--color-stone-800:oklch(26.8% .007 34.298);--color-stone-900:oklch(21.6% .006 56.043);--color-stone-950:oklch(14.7% .004 49.25);--color-black:#000;--color-white:#fff;--spacing:.25rem;--breakpoint-sm:40rem;--breakpoint-md:48rem;--breakpoint-lg:64rem;--breakpoint-xl:80rem;--breakpoint-2xl:96rem;--container-3xs:16rem;--container-2xs:18rem;--container-xs:20rem;--container-sm:24rem;--container-md:28rem;--container-lg:32rem;--container-xl:36rem;--container-2xl:42rem;--container-3xl:48rem;--container-4xl:56rem;--container-5xl:64rem;--container-6xl:72rem;--container-7xl:80rem;--text-xs:.75rem;--text-xs--line-height:calc(1 / .75);--text-sm:.875rem;--text-sm--line-height:calc(1.25 / .875);--text-base:1rem;--text-base--line-height: 1.5 ;--text-lg:1.125rem;--text-lg--line-height:calc(1.75 / 1.125);--text-xl:1.25rem;--text-xl--line-height:calc(1.75 / 1.25);--text-2xl:1.5rem;--text-2xl--line-height:calc(2 / 1.5);--text-3xl:1.875rem;--text-3xl--line-height: 1.2 ;--text-4xl:2.25rem;--text-4xl--line-height:calc(2.5 / 2.25);--text-5xl:3rem;--text-5xl--line-height:1;--text-6xl:3.75rem;--text-6xl--line-height:1;--text-7xl:4.5rem;--text-7xl--line-height:1;--text-8xl:6rem;--text-8xl--line-height:1;--text-9xl:8rem;--text-9xl--line-height:1;--font-weight-thin:100;--font-weight-extralight:200;--font-weight-light:300;--font-weight-normal:400;--font-weight-medium:500;--font-weight-semibold:600;--font-weight-bold:700;--font-weight-extrabold:800;--font-weight-black:900;--tracking-tighter:-.05em;--tracking-tight:-.025em;--tracking-normal:0em;--tracking-wide:.025em;--tracking-wider:.05em;--tracking-widest:.1em;--leading-tight:1.25;--leading-snug:1.375;--leading-normal:1.5;--leading-relaxed:1.625;--leading-loose:2;--radius-xs:.125rem;--radius-sm:.25rem;--radius-md:.375rem;--radius-lg:.5rem;--radius-xl:.75rem;--radius-2xl:1rem;--radius-3xl:1.5rem;--radius-4xl:2rem;--shadow-2xs:0 1px #0000000d;--shadow-xs:0 1px 2px 0 #0000000d;--shadow-sm:0 1px 3px 0 #0000001a, 0 1px 2px -1px #0000001a;--shadow-md:0 4px 6px -1px #0000001a, 0 2px 4px -2px #0000001a;--shadow-lg:0 10px 15px -3px #0000001a, 0 4px 6px -4px #0000001a;--shadow-xl:0 20px 25px -5px #0000001a, 0 8px 10px -6px #0000001a;--shadow-2xl:0 25px 50px -12px #00000040;--inset-shadow-2xs:inset 0 1px #0000000d;--inset-shadow-xs:inset 0 1px 1px #0000000d;--inset-shadow-sm:inset 0 2px 4px #0000000d;--drop-shadow-xs:0 1px 1px #0000000d;--drop-shadow-sm:0 1px 2px #00000026;--drop-shadow-md:0 3px 3px #0000001f;--drop-shadow-lg:0 4px 4px #00000026;--drop-shadow-xl:0 9px 7px #0000001a;--drop-shadow-2xl:0 25px 25px #00000026;--ease-in:cubic-bezier(.4, 0, 1, 1);--ease-out:cubic-bezier(0, 0, .2, 1);--ease-in-out:cubic-bezier(.4, 0, .2, 1);--animate-spin:spin 1s linear infinite;--animate-ping:ping 1s cubic-bezier(0, 0, .2, 1) infinite;--animate-pulse:pulse 2s cubic-bezier(.4, 0, .6, 1) infinite;--animate-bounce:bounce 1s infinite;--blur-xs:4px;--blur-sm:8px;--blur-md:12px;--blur-lg:16px;--blur-xl:24px;--blur-2xl:40px;--blur-3xl:64px;--perspective-dramatic:100px;--perspective-near:300px;--perspective-normal:500px;--perspective-midrange:800px;--perspective-distant:1200px;--aspect-video:16 / 9;--default-transition-duration:.15s;--default-transition-timing-function:cubic-bezier(.4, 0, .2, 1);--default-font-family:var(--font-sans);--default-mono-font-family:var(--font-mono)}}@layer base{*,:after,:before,::backdrop{box-sizing:border-box;border:0 solid;margin:0;padding:0}::file-selector-button{box-sizing:border-box;border:0 solid;margin:0;padding:0}html,:host{-webkit-text-size-adjust:100%;tab-size:4;line-height:1.5;font-family:var(--default-font-family,ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");font-feature-settings:var(--default-font-feature-settings,normal);font-variation-settings:var(--default-font-variation-settings,normal);-webkit-tap-highlight-color:transparent}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;-webkit-text-decoration:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:var(--default-mono-font-family,ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);font-feature-settings:var(--default-mono-font-feature-settings,normal);font-variation-settings:var(--default-mono-font-variation-settings,normal);font-size:1em}small{font-size:80%}sub,sup{vertical-align:baseline;font-size:75%;line-height:0;position:relative}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}:-moz-focusring{outline:auto}progress{vertical-align:baseline}summary{display:list-item}ol,ul,menu{list-style:none}img,svg,video,canvas,audio,iframe,embed,object{vertical-align:middle;display:block}img,video{max-width:100%;height:auto}button,input,select,optgroup,textarea{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}::file-selector-button{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}:where(select:is([multiple],[size])) optgroup{font-weight:bolder}:where(select:is([multiple],[size])) optgroup option{padding-inline-start:20px}::file-selector-button{margin-inline-end:4px}::placeholder{opacity:1}@supports (not ((-webkit-appearance:-apple-pay-button))) or (contain-intrinsic-size:1px){::placeholder{color:currentColor}@supports (color:color-mix(in lab,red,red)){::placeholder{color:color-mix(in oklab,currentcolor 50%,transparent)}}}textarea{resize:vertical}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-date-and-time-value{min-height:1lh;text-align:inherit}::-webkit-datetime-edit{display:inline-flex}::-webkit-datetime-edit-fields-wrapper{padding:0}::-webkit-datetime-edit{padding-block:0}::-webkit-datetime-edit-year-field{padding-block:0}::-webkit-datetime-edit-month-field{padding-block:0}::-webkit-datetime-edit-day-field{padding-block:0}::-webkit-datetime-edit-hour-field{padding-block:0}::-webkit-datetime-edit-minute-field{padding-block:0}::-webkit-datetime-edit-second-field{padding-block:0}::-webkit-datetime-edit-millisecond-field{padding-block:0}::-webkit-datetime-edit-meridiem-field{padding-block:0}::-webkit-calendar-picker-indicator{line-height:1}:-moz-ui-invalid{box-shadow:none}button,input:where([type=button],[type=reset],[type=submit]){appearance:button}::file-selector-button{appearance:button}::-webkit-inner-spin-button{height:auto}::-webkit-outer-spin-button{height:auto}[hidden]:where(:not([hidden=until-found])){display:none!important}}@layer components;@layer utilities{.absolute{position:absolute}.fixed{position:fixed}.relative{position:relative}.static{position:static}.inset-0{inset:calc(var(--spacing) * 0)}.start{inset-inline-start:var(--spacing)}.top-0{top:calc(var(--spacing) * 0)}.right-0{right:calc(var(--spacing) * 0)}.container{width:100%}@media(min-width:40rem){.container{max-width:40rem}}@media(min-width:48rem){.container{max-width:48rem}}@media(min-width:64rem){.container{max-width:64rem}}@media(min-width:80rem){.container{max-width:80rem}}@media(min-width:96rem){.container{max-width:96rem}}.mx-auto{margin-inline:auto}.-mt-\[6\.6rem\]{margin-top:-6.6rem}.-mt-px{margin-top:-1px}.mt-2{margin-top:calc(var(--spacing) * 2)}.mt-4{margin-top:calc(var(--spacing) * 4)}.mt-6{margin-top:calc(var(--spacing) * 6)}.mt-8{margin-top:calc(var(--spacing) * 8)}.mr-2{margin-right:calc(var(--spacing) * 2)}.-mb-px{margin-bottom:-1px}.mb-1{margin-bottom:calc(var(--spacing) * 1)}.mb-2{margin-bottom:calc(var(--spacing) * 2)}.mb-4{margin-bottom:calc(var(--spacing) * 4)}.mb-6{margin-bottom:calc(var(--spacing) * 6)}.-ml-8{margin-left:calc(var(--spacing) * -8)}.-ml-px{margin-left:-1px}.ml-1{margin-left:calc(var(--spacing) * 1)}.ml-2{margin-left:calc(var(--spacing) * 2)}.ml-4{margin-left:calc(var(--spacing) * 4)}.ml-12{margin-left:calc(var(--spacing) * 12)}.contents{display:contents}.flex{display:flex}.grid{display:grid}.hidden{display:none}.inline-block{display:inline-block}.inline-flex{display:inline-flex}.table{display:table}.aspect-\[335\/364\]{aspect-ratio:335/364}.h-1{height:calc(var(--spacing) * 1)}.h-1\.5{height:calc(var(--spacing) * 1.5)}.h-2{height:calc(var(--spacing) * 2)}.h-2\.5{height:calc(var(--spacing) * 2.5)}.h-3{height:calc(var(--spacing) * 3)}.h-3\.5{height:calc(var(--spacing) * 3.5)}.h-5{height:calc(var(--spacing) * 5)}.h-8{height:calc(var(--spacing) * 8)}.h-14{height:calc(var(--spacing) * 14)}.h-14\.5{height:calc(var(--spacing) * 14.5)}.h-16{height:calc(var(--spacing) * 16)}.min-h-screen{min-height:100vh}.w-1{width:calc(var(--spacing) * 1)}.w-1\.5{width:calc(var(--spacing) * 1.5)}.w-2{width:calc(var(--spacing) * 2)}.w-2\.5{width:calc(var(--spacing) * 2.5)}.w-3{width:calc(var(--spacing) * 3)}.w-3\.5{width:calc(var(--spacing) * 3.5)}.w-5{width:calc(var(--spacing) * 5)}.w-8{width:calc(var(--spacing) * 8)}.w-\[438px\]{width:438px}.w-auto{width:auto}.w-full{width:100%}.max-w-6xl{max-width:var(--container-6xl)}.max-w-\[335px\]{max-width:335px}.max-w-none{max-width:none}.max-w-xl{max-width:var(--container-xl)}.flex-1{flex:1}.shrink-0{flex-shrink:0}.translate-y-0{--tw-translate-y:calc(var(--spacing) * 0);translate:var(--tw-translate-x) var(--tw-translate-y)}.transform{transform:var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,)}.cursor-default{cursor:default}.cursor-not-allowed{cursor:not-allowed}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.flex-col{flex-direction:column}.flex-col-reverse{flex-direction:column-reverse}.items-center{align-items:center}.justify-between{justify-content:space-between}.justify-center{justify-content:center}.justify-end{justify-content:flex-end}.justify-items-center{justify-items:center}.gap-2{gap:calc(var(--spacing) * 2)}.gap-3{gap:calc(var(--spacing) * 3)}.gap-4{gap:calc(var(--spacing) * 4)}:where(.space-x-1>:not(:last-child)){--tw-space-x-reverse:0;margin-inline-start:calc(calc(var(--spacing) * 1) * var(--tw-space-x-reverse));margin-inline-end:calc(calc(var(--spacing) * 1) * calc(1 - var(--tw-space-x-reverse)))}.overflow-hidden{overflow:hidden}.rounded-full{border-radius:3.40282e38px}.rounded-md{border-radius:var(--radius-md)}.rounded-sm{border-radius:var(--radius-sm)}.rounded-t-lg{border-top-left-radius:var(--radius-lg);border-top-right-radius:var(--radius-lg)}.rounded-l-md{border-top-left-radius:var(--radius-md);border-bottom-left-radius:var(--radius-md)}.rounded-r-md{border-top-right-radius:var(--radius-md);border-bottom-right-radius:var(--radius-md)}.rounded-br-lg{border-bottom-right-radius:var(--radius-lg)}.rounded-bl-lg{border-bottom-left-radius:var(--radius-lg)}.border{border-style:var(--tw-border-style);border-width:1px}.border-t{border-top-style:var(--tw-border-style);border-top-width:1px}.border-r{border-right-style:var(--tw-border-style);border-right-width:1px}.border-\[\#19140035\]{border-color:#19140035}.border-\[\#e3e3e0\]{border-color:#e3e3e0}.border-black{border-color:var(--color-black)}.border-gray-200{border-color:var(--color-gray-200)}.border-gray-300{border-color:var(--color-gray-300)}.border-gray-400{border-color:var(--color-gray-400)}.border-transparent{border-color:#0000}.bg-\[\#1b1b18\]{background-color:#1b1b18}.bg-\[\#FDFDFC\]{background-color:#fdfdfc}.bg-\[\#dbdbd7\]{background-color:#dbdbd7}.bg-\[\#fff2f2\]{background-color:#fff2f2}.bg-gray-100{background-color:var(--color-gray-100)}.bg-gray-200{background-color:var(--color-gray-200)}.bg-white{background-color:var(--color-white)}.p-6{padding:calc(var(--spacing) * 6)}.px-2{padding-inline:calc(var(--spacing) * 2)}.px-4{padding-inline:calc(var(--spacing) * 4)}.px-5{padding-inline:calc(var(--spacing) * 5)}.px-6{padding-inline:calc(var(--spacing) * 6)}.py-1{padding-block:calc(var(--spacing) * 1)}.py-1\.5{padding-block:calc(var(--spacing) * 1.5)}.py-2{padding-block:calc(var(--spacing) * 2)}.py-4{padding-block:calc(var(--spacing) * 4)}.pt-8{padding-top:calc(var(--spacing) * 8)}.pb-6{padding-bottom:calc(var(--spacing) * 6)}.pb-12{padding-bottom:calc(var(--spacing) * 12)}.text-center{text-align:center}.text-lg{font-size:var(--text-lg);line-height:var(--tw-leading,var(--text-lg--line-height))}.text-sm{font-size:var(--text-sm);line-height:var(--tw-leading,var(--text-sm--line-height))}.text-\[13px\]{font-size:13px}.leading-5{--tw-leading:calc(var(--spacing) * 5);line-height:calc(var(--spacing) * 5)}.leading-7{--tw-leading:calc(var(--spacing) * 7);line-height:calc(var(--spacing) * 7)}.leading-\[20px\]{--tw-leading:20px;line-height:20px}.leading-normal{--tw-leading:var(--leading-normal);line-height:var(--leading-normal)}.font-medium{--tw-font-weight:var(--font-weight-medium);font-weight:var(--font-weight-medium)}.font-semibold{--tw-font-weight:var(--font-weight-semibold);font-weight:var(--font-weight-semibold)}.tracking-wider{--tw-tracking:var(--tracking-wider);letter-spacing:var(--tracking-wider)}.text-\[\#1B1B18\],.text-\[\#1b1b18\]{color:#1b1b18}.text-\[\#706f6c\]{color:#706f6c}.text-\[\#F3BEC7\]{color:#f3bec7}.text-\[\#F8B803\]{color:#f8b803}.text-\[\#F53003\],.text-\[\#f53003\]{color:#f53003}.text-gray-200{color:var(--color-gray-200)}.text-gray-300{color:var(--color-gray-300)}.text-gray-400{color:var(--color-gray-400)}.text-gray-500{color:var(--color-gray-500)}.text-gray-600{color:var(--color-gray-600)}.text-gray-700{color:var(--color-gray-700)}.text-gray-800{color:var(--color-gray-800)}.text-gray-900{color:var(--color-gray-900)}.text-white{color:var(--color-white)}.uppercase{text-transform:uppercase}.underline{text-decoration-line:underline}.underline-offset-4{text-underline-offset:4px}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.opacity-100{opacity:1}.mix-blend-color{mix-blend-mode:color}.mix-blend-darken{mix-blend-mode:darken}.mix-blend-hard-light{mix-blend-mode:hard-light}.mix-blend-multiply{mix-blend-mode:multiply}.shadow{--tw-shadow:0 1px 3px 0 var(--tw-shadow-color,#0000001a), 0 1px 2px -1px var(--tw-shadow-color,#0000001a);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.shadow-\[0px_0px_1px_0px_rgba\(0\,0\,0\,0\.03\)\,0px_1px_2px_0px_rgba\(0\,0\,0\,0\.06\)\]{--tw-shadow:0px 0px 1px 0px var(--tw-shadow-color,#00000008), 0px 1px 2px 0px var(--tw-shadow-color,#0000000f);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.shadow-\[inset_0px_0px_0px_1px_rgba\(26\,26\,0\,0\.16\)\]{--tw-shadow:inset 0px 0px 0px 1px var(--tw-shadow-color,#1a1a0029);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 3px 0 var(--tw-shadow-color,#0000001a), 0 1px 2px -1px var(--tw-shadow-color,#0000001a);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.ring-gray-300{--tw-ring-color:var(--color-gray-300)}.filter{filter:var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,)}.transition{transition-property:color,background-color,border-color,outline-color,text-decoration-color,fill,stroke,--tw-gradient-from,--tw-gradient-via,--tw-gradient-to,opacity,box-shadow,transform,translate,scale,rotate,filter,-webkit-backdrop-filter,backdrop-filter,display,content-visibility,overlay,pointer-events;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}.transition-all{transition-property:all;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}.transition-opacity{transition-property:opacity;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}.delay-200{transition-delay:.2s}.delay-300{transition-delay:.3s}.delay-400{transition-delay:.4s}.duration-150{--tw-duration:.15s;transition-duration:.15s}.duration-750{--tw-duration:.75s;transition-duration:.75s}.ease-in-out{--tw-ease:var(--ease-in-out);transition-timing-function:var(--ease-in-out)}.\[--stroke-color\:\#1B1B18\]{--stroke-color:#1b1b18}.not-has-\[nav\]\:hidden:not(:has(:is(nav))){display:none}.before\:absolute:before{content:var(--tw-content);position:absolute}.before\:top-0:before{content:var(--tw-content);top:calc(var(--spacing) * 0)}.before\:top-1\/2:before{content:var(--tw-content);top:50%}.before\:bottom-0:before{content:var(--tw-content);bottom:calc(var(--spacing) * 0)}.before\:bottom-1\/2:before{content:var(--tw-content);bottom:50%}.before\:left-\[0\.4rem\]:before{content:var(--tw-content);left:.4rem}.before\:border-l:before{content:var(--tw-content);border-left-style:var(--tw-border-style);border-left-width:1px}.before\:border-\[\#e3e3e0\]:before{content:var(--tw-content);border-color:#e3e3e0}@media(hover:hover){.hover\:border-\[\#1915014a\]:hover{border-color:#1915014a}.hover\:border-\[\#19140035\]:hover{border-color:#19140035}.hover\:border-black:hover{border-color:var(--color-black)}.hover\:bg-black:hover{background-color:var(--color-black)}.hover\:bg-gray-100:hover{background-color:var(--color-gray-100)}.hover\:text-gray-400:hover{color:var(--color-gray-400)}.hover\:text-gray-700:hover{color:var(--color-gray-700)}}.focus\:border-blue-300:focus{border-color:var(--color-blue-300)}.focus\:ring:focus{--tw-ring-shadow:var(--tw-ring-inset,) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color,currentcolor);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.focus\:outline-none:focus{--tw-outline-style:none;outline-style:none}.active\:bg-gray-100:active{background-color:var(--color-gray-100)}.active\:text-gray-500:active{color:var(--color-gray-500)}.active\:text-gray-700:active{color:var(--color-gray-700)}.active\:text-gray-800:active{color:var(--color-gray-800)}@media(min-width:40rem){.sm\:flex{display:flex}.sm\:hidden{display:none}.sm\:flex-1{flex:1}.sm\:items-center{align-items:center}.sm\:justify-between{justify-content:space-between}.sm\:justify-start{justify-content:flex-start}.sm\:gap-2{gap:calc(var(--spacing) * 2)}.sm\:px-6{padding-inline:calc(var(--spacing) * 6)}.sm\:pt-0{padding-top:calc(var(--spacing) * 0)}}@media(min-width:64rem){.lg\:mt-10{margin-top:calc(var(--spacing) * 10)}.lg\:mb-0{margin-bottom:calc(var(--spacing) * 0)}.lg\:mb-6{margin-bottom:calc(var(--spacing) * 6)}.lg\:-ml-px{margin-left:-1px}.lg\:ml-0{margin-left:calc(var(--spacing) * 0)}.lg\:block{display:block}.lg\:aspect-auto{aspect-ratio:auto}.lg\:w-\[438px\]{width:438px}.lg\:max-w-4xl{max-width:var(--container-4xl)}.lg\:grow{flex-grow:1}.lg\:flex-row{flex-direction:row}.lg\:justify-center{justify-content:center}.lg\:rounded-t-none{border-top-left-radius:0;border-top-right-radius:0}.lg\:rounded-tl-lg{border-top-left-radius:var(--radius-lg)}.lg\:rounded-r-lg{border-top-right-radius:var(--radius-lg);border-bottom-right-radius:var(--radius-lg)}.lg\:rounded-br-none{border-bottom-right-radius:0}.lg\:p-8{padding:calc(var(--spacing) * 8)}.lg\:p-20{padding:calc(var(--spacing) * 20)}.lg\:px-8{padding-inline:calc(var(--spacing) * 8)}.lg\:pb-10{padding-bottom:calc(var(--spacing) * 10)}}.rtl\:flex-row-reverse:where(:dir(rtl),[dir=rtl],[dir=rtl] *){flex-direction:row-reverse}@media(prefers-color-scheme:dark){.dark\:border-\[\#3E3E3A\]{border-color:#3e3e3a}.dark\:border-\[\#eeeeec\]{border-color:#eeeeec}.dark\:border-gray-600{border-color:var(--color-gray-600)}.dark\:bg-\[\#0a0a0a\]{background-color:#0a0a0a}.dark\:bg-\[\#1D0002\]{background-color:#1d0002}.dark\:bg-\[\#3E3E3A\]{background-color:#3e3e3a}.dark\:bg-\[\#161615\]{background-color:#161615}.dark\:bg-\[\#eeeeec\]{background-color:#eeeeec}.dark\:bg-gray-700{background-color:var(--color-gray-700)}.dark\:bg-gray-800{background-color:var(--color-gray-800)}.dark\:bg-gray-900{background-color:var(--color-gray-900)}.dark\:text-\[\#1C1C1A\]{color:#1c1c1a}.dark\:text-\[\#4B0600\]{color:#4b0600}.dark\:text-\[\#391800\]{color:#391800}.dark\:text-\[\#733000\]{color:#733000}.dark\:text-\[\#A1A09A\]{color:#a1a09a}.dark\:text-\[\#EDEDEC\]{color:#ededec}.dark\:text-\[\#F61500\]{color:#f61500}.dark\:text-\[\#FF4433\]{color:#f43}.dark\:text-black{color:var(--color-black)}.dark\:text-gray-200{color:var(--color-gray-200)}.dark\:text-gray-300{color:var(--color-gray-300)}.dark\:text-gray-400{color:var(--color-gray-400)}.dark\:text-gray-600{color:var(--color-gray-600)}.dark\:mix-blend-hard-light{mix-blend-mode:hard-light}.dark\:mix-blend-normal{mix-blend-mode:normal}.dark\:shadow-\[inset_0px_0px_0px_1px_\#fffaed2d\]{--tw-shadow:inset 0px 0px 0px 1px var(--tw-shadow-color,#fffaed2d);box-shadow:var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)}.dark\:\[--stroke-color\:\#FF750F\]{--stroke-color:#ff750f}.dark\:before\:border-\[\#3E3E3A\]:before{content:var(--tw-content);border-color:#3e3e3a}@media(hover:hover){.dark\:hover\:border-\[\#3E3E3A\]:hover{border-color:#3e3e3a}.dark\:hover\:border-\[\#62605b\]:hover{border-color:#62605b}.dark\:hover\:border-white:hover{border-color:var(--color-white)}.dark\:hover\:bg-gray-900:hover{background-color:var(--color-gray-900)}.dark\:hover\:bg-white:hover{background-color:var(--color-white)}.dark\:hover\:text-gray-200:hover{color:var(--color-gray-200)}.dark\:hover\:text-gray-300:hover{color:var(--color-gray-300)}}.dark\:focus\:border-blue-700:focus{border-color:var(--color-blue-700)}.dark\:focus\:border-blue-800:focus{border-color:var(--color-blue-800)}.dark\:active\:bg-gray-700:active{background-color:var(--color-gray-700)}.dark\:active\:text-gray-300:active{color:var(--color-gray-300)}}@starting-style{.starting\:opacity-0{opacity:0}}@media(prefers-reduced-motion:no-preference){@starting-style{.motion-safe\:starting\:-translate-x-\[26px\]{--tw-translate-x: -26px ;translate:var(--tw-translate-x) var(--tw-translate-y)}}@starting-style{.motion-safe\:starting\:-translate-x-\[51px\]{--tw-translate-x: -51px ;translate:var(--tw-translate-x) var(--tw-translate-y)}}@starting-style{.motion-safe\:starting\:-translate-x-\[78px\]{--tw-translate-x: -78px ;translate:var(--tw-translate-x) var(--tw-translate-y)}}@starting-style{.motion-safe\:starting\:-translate-x-\[102px\]{--tw-translate-x: -102px ;translate:var(--tw-translate-x) var(--tw-translate-y)}}@starting-style{.motion-safe\:starting\:translate-y-6{--tw-translate-y:calc(var(--spacing) * 6);translate:var(--tw-translate-x) var(--tw-translate-y)}}}}@property --tw-translate-x{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-y{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-z{syntax:"*";inherits:false;initial-value:0}@property --tw-rotate-x{syntax:"*";inherits:false}@property --tw-rotate-y{syntax:"*";inherits:false}@property --tw-rotate-z{syntax:"*";inherits:false}@property --tw-skew-x{syntax:"*";inherits:false}@property --tw-skew-y{syntax:"*";inherits:false}@property --tw-space-x-reverse{syntax:"*";inherits:false;initial-value:0}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-leading{syntax:"*";inherits:false}@property --tw-font-weight{syntax:"*";inherits:false}@property --tw-tracking{syntax:"*";inherits:false}@property --tw-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-shadow-color{syntax:"*";inherits:false}@property --tw-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-inset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-shadow-color{syntax:"*";inherits:false}@property --tw-inset-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-ring-color{syntax:"*";inherits:false}@property --tw-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-ring-color{syntax:"*";inherits:false}@property --tw-inset-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-ring-inset{syntax:"*";inherits:false}@property --tw-ring-offset-width{syntax:"<length>";inherits:false;initial-value:0}@property --tw-ring-offset-color{syntax:"*";inherits:false;initial-value:#fff}@property --tw-ring-offset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-blur{syntax:"*";inherits:false}@property --tw-brightness{syntax:"*";inherits:false}@property --tw-contrast{syntax:"*";inherits:false}@property --tw-grayscale{syntax:"*";inherits:false}@property --tw-hue-rotate{syntax:"*";inherits:false}@property --tw-invert{syntax:"*";inherits:false}@property --tw-opacity{syntax:"*";inherits:false}@property --tw-saturate{syntax:"*";inherits:false}@property --tw-sepia{syntax:"*";inherits:false}@property --tw-drop-shadow{syntax:"*";inherits:false}@property --tw-drop-shadow-color{syntax:"*";inherits:false}@property --tw-drop-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-drop-shadow-size{syntax:"*";inherits:false}@property --tw-duration{syntax:"*";inherits:false}@property --tw-ease{syntax:"*";inherits:false}@property --tw-content{syntax:"*";inherits:false;initial-value:""}@keyframes spin{to{transform:rotate(360deg)}}@keyframes ping{75%,to{opacity:0;transform:scale(2)}}@keyframes pulse{50%{opacity:.5}}@keyframes bounce{0%,to{animation-timing-function:cubic-bezier(.8,0,1,1);transform:translateY(-25%)}50%{animation-timing-function:cubic-bezier(0,0,.2,1);transform:none}}
-            </style>
-        @endif
-    </head>
-    <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col">
-        <header class="w-full lg:max-w-4xl max-w-[335px] text-sm mb-6 not-has-[nav]:hidden">
-            @if (Route::has('login'))
-                <nav class="flex items-center justify-end gap-4">
-                    @auth
-                        <a
-                            href="{{ url('/dashboard') }}"
-                            class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal"
-                        >
-                            Dashboard
-                        </a>
-                    @else
-                        <a
-                            href="{{ route('login') }}"
-                            class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] text-[#1b1b18] border border-transparent hover:border-[#19140035] dark:hover:border-[#3E3E3A] rounded-sm text-sm leading-normal"
-                        >
-                            Log in
-                        </a>
+          <li class="dropdown">
+              <a href="#" class="d-flex align-items-center gap-1">
+                  <span class="badge bg-success text-white me-1" style="font-size: 11px;">{{ Auth::user()->primary_role }}</span>
+                  <span>{{ Str::limit(Auth::user()->full_name, 15) }}</span>
+                  <i class="bi bi-chevron-down"></i>
+              </a>
+              <ul>
+                  <li><a href="{{ url('/') }}"><i class="fas fa-compass me-1 text-success"></i> Módulo Dirección</a></li>
+                  <li><a href="{{ url('/dashboard') }}"><i class="fas fa-chart-pie me-1 text-primary"></i> Dashboard</a></li>
+                  <li><a href="{{ route('logout') }}" class="text-danger" onclick="event.preventDefault();document.getElementById('welcome-logout-form').submit();"><i class="fas fa-sign-out-alt me-1"></i> Cerrar Sesión</a><form id="welcome-logout-form" action="{{ route('logout') }}" method="POST" style="display:none">@csrf</form></li>
+              </ul>
+          </li>
+        @endguest
+          
+              <!-- languaje Dropdown Menu-->
+        <li class="dropdown">
+          <a class="nav-link scrollto" data-toggle="dropdown" href="#">
+             <i class="fas fa-globe"></i>
+          </a>
+          <ul>
+            <li><a href="https://sicefa.com.co/lang/es" class="dropdown-item scrollto">Español</a></li>
+            <li><a href="https://sicefa.com.co/lang/en" class="dropdown-item scrollto">English</a></li>
+          </ul>
+        </li>
 
-                        @if (Route::has('register'))
-                            <a
-                                href="{{ route('register') }}"
-                                class="inline-block px-5 py-1.5 dark:text-[#EDEDEC] border-[#19140035] hover:border-[#1915014a] border text-[#1b1b18] dark:border-[#3E3E3A] dark:hover:border-[#62605b] rounded-sm text-sm leading-normal">
-                                Register
-                            </a>
-                        @endif
-                    @endauth
-                </nav>
-            @endif
-        </header>
-        <div class="flex items-center justify-center w-full transition-opacity opacity-100 duration-750 lg:grow starting:opacity-0">
-            <main class="flex max-w-[335px] w-full flex-col-reverse lg:max-w-4xl lg:flex-row">
-                <div class="text-[13px] leading-[20px] flex-1 p-6 pb-6 lg:p-20 lg:pb-10 bg-white dark:bg-[#161615] dark:text-[#EDEDEC] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d] rounded-bl-lg rounded-br-lg lg:rounded-tl-lg lg:rounded-br-none">
-                    <h1 class="mb-1 font-medium">Let's get started</h1>
-                    <p class="mb-2 text-[#706f6c] dark:text-[#A1A09A]">With so many options available to you,<br /> we suggest you start with the following:</p>
-                    <ul class="flex flex-col mb-4 lg:mb-6">
-                        <li class="flex items-center gap-4 py-2 relative before:border-l before:border-[#e3e3e0] dark:before:border-[#3E3E3A] before:top-1/2 before:bottom-0 before:left-[0.4rem] before:absolute">
-                            <span class="relative py-1 bg-white dark:bg-[#161615]">
-                                <span class="flex items-center justify-center rounded-full bg-[#FDFDFC] dark:bg-[#161615] shadow-[0px_0px_1px_0px_rgba(0,0,0,0.03),0px_1px_2px_0px_rgba(0,0,0,0.06)] w-3.5 h-3.5 border dark:border-[#3E3E3A] border-[#e3e3e0]">
-                                    <span class="rounded-full bg-[#dbdbd7] dark:bg-[#3E3E3A] w-1.5 h-1.5"></span>
-                                </span>
-                            </span>
-                            <span>
-                                Read the
-                                <a href="https://laravel.com/docs" target="_blank" class="inline-flex items-center space-x-1 font-medium underline underline-offset-4 text-[#f53003] dark:text-[#FF4433] ml-1">
-                                    <span>Documentation</span>
-                                    <svg
-                                        width="10"
-                                        height="11"
-                                        viewBox="0 0 10 11"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="w-2.5 h-2.5"
-                                    >
-                                        <path
-                                            d="M7.70833 6.95834V2.79167H3.54167M2.5 8L7.5 3.00001"
-                                            stroke="currentColor"
-                                            stroke-linecap="square"
-                                        />
-                                    </svg>
-                                </a>
-                            </span>
-                        </li>
-                        <li class="flex items-center gap-4 py-2 relative before:border-l before:border-[#e3e3e0] dark:before:border-[#3E3E3A] before:bottom-1/2 before:top-0 before:left-[0.4rem] before:absolute">
-                            <span class="relative py-1 bg-white dark:bg-[#161615]">
-                                <span class="flex items-center justify-center rounded-full bg-[#FDFDFC] dark:bg-[#161615] shadow-[0px_0px_1px_0px_rgba(0,0,0,0.03),0px_1px_2px_0px_rgba(0,0,0,0.06)] w-3.5 h-3.5 border dark:border-[#3E3E3A] border-[#e3e3e0]">
-                                    <span class="rounded-full bg-[#dbdbd7] dark:bg-[#3E3E3A] w-1.5 h-1.5"></span>
-                                </span>
-                            </span>
-                            <span>
-                                Watch video tutorials at
-                                <a href="https://laracasts.com" target="_blank" class="inline-flex items-center space-x-1 font-medium underline underline-offset-4 text-[#f53003] dark:text-[#FF4433] ml-1">
-                                    <span>Laracasts</span>
-                                    <svg
-                                        width="10"
-                                        height="11"
-                                        viewBox="0 0 10 11"
-                                        fill="none"
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        class="w-2.5 h-2.5"
-                                    >
-                                        <path
-                                            d="M7.70833 6.95834V2.79167H3.54167M2.5 8L7.5 3.00001"
-                                            stroke="currentColor"
-                                            stroke-linecap="square"
-                                        />
-                                    </svg>
-                                </a>
-                            </span>
-                        </li>
-                    </ul>
-                    <ul class="flex gap-3 text-sm leading-normal">
-                        <li>
-                            <a href="https://cloud.laravel.com" target="_blank" class="inline-block dark:bg-[#eeeeec] dark:border-[#eeeeec] dark:text-[#1C1C1A] dark:hover:bg-white dark:hover:border-white hover:bg-black hover:border-black px-5 py-1.5 bg-[#1b1b18] rounded-sm border border-black text-white text-sm leading-normal">
-                                Deploy now
-                            </a>
-                        </li>
-                    </ul>
+      </ul>
 
-                    <p class="mt-6 lg:mt-10 text-[#706f6c] dark:text-[#A1A09A]">
-                        v{{ app()->version() }}
-                        <a href="https://github.com/laravel/framework/blob/13.x/CHANGELOG.md" target="_blank" class="inline-flex items-center space-x-1 font-medium underline underline-offset-4 text-[#f53003] dark:text-[#FF4433] ml-1">
-                            <span>View changelog</span>
-                            <svg
-                                width="10"
-                                height="11"
-                                viewBox="0 0 10 11"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="w-2.5 h-2.5"
-                            >
-                                <path
-                                    d="M7.70833 6.95834V2.79167H3.54167M2.5 8L7.5 3.00001"
-                                    stroke="currentColor"
-                                    stroke-linecap="square"
-                                />
-                            </svg>
-                        </a>
-                    </p>
-                </div>
-                <div class="bg-[#fff2f2] dark:bg-[#1D0002] relative lg:-ml-px -mb-px lg:mb-0 rounded-t-lg lg:rounded-t-none lg:rounded-r-lg aspect-[335/364] lg:aspect-auto w-full lg:w-[438px] shrink-0 overflow-hidden">
-                    {{-- Laravel Logo --}}
-                    <svg class="w-full text-[#F53003] dark:text-[#F61500] transition-all translate-y-0 opacity-100 max-w-none duration-750 starting:opacity-0 motion-safe:starting:translate-y-6" viewBox="0 0 438 104" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M17.2036 -3H0V102.197H49.5189V86.7187H17.2036V-3Z" fill="currentColor" />
-                        <path d="M110.256 41.6337C108.061 38.1275 104.945 35.3731 100.905 33.3681C96.8667 31.3647 92.8016 30.3618 88.7131 30.3618C83.4247 30.3618 78.5885 31.3389 74.201 33.2923C69.8111 35.2456 66.0474 37.928 62.9059 41.3333C59.7643 44.7401 57.3198 48.6726 55.5754 53.1293C53.8287 57.589 52.9572 62.274 52.9572 67.1813C52.9572 72.1925 53.8287 76.8995 55.5754 81.3069C57.3191 85.7173 59.7636 89.6241 62.9059 93.0293C66.0474 96.4361 69.8119 99.1155 74.201 101.069C78.5885 103.022 83.4247 103.999 88.7131 103.999C92.8016 103.999 96.8667 102.997 100.905 100.994C104.945 98.9911 108.061 96.2359 110.256 92.7282V102.195H126.563V32.1642H110.256V41.6337ZM108.76 75.7472C107.762 78.4531 106.366 80.8078 104.572 82.8112C102.776 84.8161 100.606 86.4183 98.0637 87.6206C95.5202 88.823 92.7004 89.4238 89.6103 89.4238C86.5178 89.4238 83.7252 88.823 81.2324 87.6206C78.7388 86.4183 76.5949 84.8161 74.7998 82.8112C73.004 80.8078 71.6319 78.4531 70.6856 75.7472C69.7356 73.0421 69.2644 70.1868 69.2644 67.1821C69.2644 64.1758 69.7356 61.3205 70.6856 58.6154C71.6319 55.9102 73.004 53.5571 74.7998 51.5522C76.5949 49.5495 78.738 47.9451 81.2324 46.7427C83.7252 45.5404 86.5178 44.9396 89.6103 44.9396C92.7012 44.9396 95.5202 45.5404 98.0637 46.7427C100.606 47.9451 102.776 49.5487 104.572 51.5522C106.367 53.5571 107.762 55.9102 108.76 58.6154C109.756 61.3205 110.256 64.1758 110.256 67.1821C110.256 70.1868 109.756 73.0421 108.76 75.7472Z" fill="currentColor" />
-                        <path d="M242.805 41.6337C240.611 38.1275 237.494 35.3731 233.455 33.3681C229.416 31.3647 225.351 30.3618 221.262 30.3618C215.974 30.3618 211.138 31.3389 206.75 33.2923C202.36 35.2456 198.597 37.928 195.455 41.3333C192.314 44.7401 189.869 48.6726 188.125 53.1293C186.378 57.589 185.507 62.274 185.507 67.1813C185.507 72.1925 186.378 76.8995 188.125 81.3069C189.868 85.7173 192.313 89.6241 195.455 93.0293C198.597 96.4361 202.361 99.1155 206.75 101.069C211.138 103.022 215.974 103.999 221.262 103.999C225.351 103.999 229.416 102.997 233.455 100.994C237.494 98.9911 240.611 96.2359 242.805 92.7282V102.195H259.112V32.1642H242.805V41.6337ZM241.31 75.7472C240.312 78.4531 238.916 80.8078 237.122 82.8112C235.326 84.8161 233.156 86.4183 230.614 87.6206C228.07 88.823 225.251 89.4238 222.16 89.4238C219.068 89.4238 216.275 88.823 213.782 87.6206C211.289 86.4183 209.145 84.8161 207.35 82.8112C205.554 80.8078 204.182 78.4531 203.236 75.7472C202.286 73.0421 201.814 70.1868 201.814 67.1821C201.814 64.1758 202.286 61.3205 203.236 58.6154C204.182 55.9102 205.554 53.5571 207.35 51.5522C209.145 49.5495 211.288 47.9451 213.782 46.7427C216.275 45.5404 219.068 44.9396 222.16 44.9396C225.251 44.9396 228.07 45.5404 230.614 46.7427C233.156 47.9451 235.326 49.5487 237.122 51.5522C238.917 53.5571 240.312 55.9102 241.31 58.6154C242.306 61.3205 242.806 64.1758 242.806 67.1821C242.805 70.1868 242.305 73.0421 241.31 75.7472Z" fill="currentColor" />
-                        <path d="M438 -3H421.694V102.197H438V-3Z" fill="currentColor" />
-                        <path d="M139.43 102.197H155.735V48.2834H183.712V32.1665H139.43V102.197Z" fill="currentColor" />
-                        <path d="M324.49 32.1665L303.995 85.794L283.498 32.1665H266.983L293.748 102.197H314.242L341.006 32.1665H324.49Z" fill="currentColor" />
-                        <path d="M376.571 30.3656C356.603 30.3656 340.797 46.8497 340.797 67.1828C340.797 89.6597 356.094 104 378.661 104C391.29 104 399.354 99.1488 409.206 88.5848L398.189 80.0226C398.183 80.031 389.874 90.9895 377.468 90.9895C363.048 90.9895 356.977 79.3111 356.977 73.269H411.075C413.917 50.1328 398.775 30.3656 376.571 30.3656ZM357.02 61.0967C357.145 59.7487 359.023 43.3761 376.442 43.3761C393.861 43.3761 395.978 59.7464 396.099 61.0967H357.02Z" fill="currentColor" />
-                    </svg>
+    </nav><!-- .navbar -->
 
-                    {{-- 13 --}}
-                    <svg class="w-[438px] max-w-none relative -mt-[6.6rem] -ml-8 lg:ml-0 [--stroke-color:#1B1B18] dark:[--stroke-color:#FF750F]" viewBox="0 0 440 392" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <g class="mix-blend-darken dark:mix-blend-normal transition-all delay-300 opacity-100 duration-750 starting:opacity-0 text-[#1B1B18] dark:text-black">
-                            <mask id="path-1-mask" maskUnits="userSpaceOnUse" x="-0.328613" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="-0.328613" y="103" width="338" height="299"/>
-                                <path d="M234.936 400.8C204.136 400.8 178.936 392.4 159.336 375.6C140.136 358.8 130.536 337 130.536 310.2H200.736C200.736 318.2 203.736 324.8 209.736 330C215.736 335.2 223.736 337.8 233.736 337.8C243.336 337.8 251.136 335 257.136 329.4C263.536 323.8 266.736 316.6 266.736 307.8C266.736 299.8 263.936 293.2 258.336 288C252.736 282.8 245.536 280.2 236.736 280.2H199.536V218.4H236.736C243.536 218.4 249.336 216 254.136 211.2C258.936 206.4 261.336 200.4 261.336 193.2C261.336 184.8 258.736 178.2 253.536 173.4C248.336 168.6 241.736 166.2 233.736 166.2C226.536 166.2 220.336 168.4 215.136 172.8C210.336 177.2 207.936 182.8 207.936 189.6H141.336C141.336 164.8 150.136 144.6 167.736 129C185.336 113 207.936 105 235.536 105C263.136 105 285.536 112.2 302.736 126.6C320.336 141 329.136 160 329.136 183.6C329.136 200.8 324.536 214.8 315.336 225.6C306.136 236 294.336 243.2 279.936 247.2C297.136 252 310.736 260.2 320.736 271.8C331.136 283.4 336.336 298 336.336 315.6C336.336 340.4 326.936 360.8 308.136 376.8C289.336 392.8 264.936 400.8 234.936 400.8Z"/>
-                                <path d="M26.8714 167.6H1.67139V105.2H94.6714V400.2H26.8714V167.6Z"/>
-                            </mask>
-                            <path d="M234.936 400.8C204.136 400.8 178.936 392.4 159.336 375.6C140.136 358.8 130.536 337 130.536 310.2H200.736C200.736 318.2 203.736 324.8 209.736 330C215.736 335.2 223.736 337.8 233.736 337.8C243.336 337.8 251.136 335 257.136 329.4C263.536 323.8 266.736 316.6 266.736 307.8C266.736 299.8 263.936 293.2 258.336 288C252.736 282.8 245.536 280.2 236.736 280.2H199.536V218.4H236.736C243.536 218.4 249.336 216 254.136 211.2C258.936 206.4 261.336 200.4 261.336 193.2C261.336 184.8 258.736 178.2 253.536 173.4C248.336 168.6 241.736 166.2 233.736 166.2C226.536 166.2 220.336 168.4 215.136 172.8C210.336 177.2 207.936 182.8 207.936 189.6H141.336C141.336 164.8 150.136 144.6 167.736 129C185.336 113 207.936 105 235.536 105C263.136 105 285.536 112.2 302.736 126.6C320.336 141 329.136 160 329.136 183.6C329.136 200.8 324.536 214.8 315.336 225.6C306.136 236 294.336 243.2 279.936 247.2C297.136 252 310.736 260.2 320.736 271.8C331.136 283.4 336.336 298 336.336 315.6C336.336 340.4 326.936 360.8 308.136 376.8C289.336 392.8 264.936 400.8 234.936 400.8Z" fill="currentColor"/>
-                            <path d="M26.8714 167.6H1.67139V105.2H94.6714V400.2H26.8714V167.6Z" fill="currentColor"/>
-                            <path d="M234.936 400.8C204.136 400.8 178.936 392.4 159.336 375.6C140.136 358.8 130.536 337 130.536 310.2H200.736C200.736 318.2 203.736 324.8 209.736 330C215.736 335.2 223.736 337.8 233.736 337.8C243.336 337.8 251.136 335 257.136 329.4C263.536 323.8 266.736 316.6 266.736 307.8C266.736 299.8 263.936 293.2 258.336 288C252.736 282.8 245.536 280.2 236.736 280.2H199.536V218.4H236.736C243.536 218.4 249.336 216 254.136 211.2C258.936 206.4 261.336 200.4 261.336 193.2C261.336 184.8 258.736 178.2 253.536 173.4C248.336 168.6 241.736 166.2 233.736 166.2C226.536 166.2 220.336 168.4 215.136 172.8C210.336 177.2 207.936 182.8 207.936 189.6H141.336C141.336 164.8 150.136 144.6 167.736 129C185.336 113 207.936 105 235.536 105C263.136 105 285.536 112.2 302.736 126.6C320.336 141 329.136 160 329.136 183.6C329.136 200.8 324.536 214.8 315.336 225.6C306.136 236 294.336 243.2 279.936 247.2C297.136 252 310.736 260.2 320.736 271.8C331.136 283.4 336.336 298 336.336 315.6C336.336 340.4 326.936 360.8 308.136 376.8C289.336 392.8 264.936 400.8 234.936 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-1-mask)"/>
-                            <path d="M26.8714 167.6H1.67139V105.2H94.6714V400.2H26.8714V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-1-mask)"/>
-                        </g>
+  </div>
 
-                        <g class="transition-all delay-400 opacity-100 duration-750 starting:opacity-0 motion-safe:starting:-translate-x-[26px] text-[#F3BEC7] dark:text-[#4B0600]">
-                            <mask id="path-2-mask" maskUnits="userSpaceOnUse" x="25.3357" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="25.3357" y="103" width="338" height="299"/>
-                                <path d="M260.6 400.8C229.8 400.8 204.6 392.4 185 375.6C165.8 358.8 156.2 337 156.2 310.2H226.4C226.4 318.2 229.4 324.8 235.4 330C241.4 335.2 249.4 337.8 259.4 337.8C269 337.8 276.8 335 282.8 329.4C289.2 323.8 292.4 316.6 292.4 307.8C292.4 299.8 289.6 293.2 284 288C278.4 282.8 271.2 280.2 262.4 280.2H225.2V218.4H262.4C269.2 218.4 275 216 279.8 211.2C284.6 206.4 287 200.4 287 193.2C287 184.8 284.4 178.2 279.2 173.4C274 168.6 267.4 166.2 259.4 166.2C252.2 166.2 246 168.4 240.8 172.8C236 177.2 233.6 182.8 233.6 189.6H167C167 164.8 175.8 144.6 193.4 129C211 113 233.6 105 261.2 105C288.8 105 311.2 112.2 328.4 126.6C346 141 354.8 160 354.8 183.6C354.8 200.8 350.2 214.8 341 225.6C331.8 236 320 243.2 305.6 247.2C322.8 252 336.4 260.2 346.4 271.8C356.8 283.4 362 298 362 315.6C362 340.4 352.6 360.8 333.8 376.8C315 392.8 290.6 400.8 260.6 400.8Z"/>
-                                <path d="M52.5357 167.6H27.3357V105.2H120.336V400.2H52.5357V167.6Z"/>
-                            </mask>
-                            <path d="M260.6 400.8C229.8 400.8 204.6 392.4 185 375.6C165.8 358.8 156.2 337 156.2 310.2H226.4C226.4 318.2 229.4 324.8 235.4 330C241.4 335.2 249.4 337.8 259.4 337.8C269 337.8 276.8 335 282.8 329.4C289.2 323.8 292.4 316.6 292.4 307.8C292.4 299.8 289.6 293.2 284 288C278.4 282.8 271.2 280.2 262.4 280.2H225.2V218.4H262.4C269.2 218.4 275 216 279.8 211.2C284.6 206.4 287 200.4 287 193.2C287 184.8 284.4 178.2 279.2 173.4C274 168.6 267.4 166.2 259.4 166.2C252.2 166.2 246 168.4 240.8 172.8C236 177.2 233.6 182.8 233.6 189.6H167C167 164.8 175.8 144.6 193.4 129C211 113 233.6 105 261.2 105C288.8 105 311.2 112.2 328.4 126.6C346 141 354.8 160 354.8 183.6C354.8 200.8 350.2 214.8 341 225.6C331.8 236 320 243.2 305.6 247.2C322.8 252 336.4 260.2 346.4 271.8C356.8 283.4 362 298 362 315.6C362 340.4 352.6 360.8 333.8 376.8C315 392.8 290.6 400.8 260.6 400.8Z" fill="currentColor"/>
-                            <path d="M52.5357 167.6H27.3357V105.2H120.336V400.2H52.5357V167.6Z" fill="currentColor"/>
-                            <path d="M260.6 400.8C229.8 400.8 204.6 392.4 185 375.6C165.8 358.8 156.2 337 156.2 310.2H226.4C226.4 318.2 229.4 324.8 235.4 330C241.4 335.2 249.4 337.8 259.4 337.8C269 337.8 276.8 335 282.8 329.4C289.2 323.8 292.4 316.6 292.4 307.8C292.4 299.8 289.6 293.2 284 288C278.4 282.8 271.2 280.2 262.4 280.2H225.2V218.4H262.4C269.2 218.4 275 216 279.8 211.2C284.6 206.4 287 200.4 287 193.2C287 184.8 284.4 178.2 279.2 173.4C274 168.6 267.4 166.2 259.4 166.2C252.2 166.2 246 168.4 240.8 172.8C236 177.2 233.6 182.8 233.6 189.6H167C167 164.8 175.8 144.6 193.4 129C211 113 233.6 105 261.2 105C288.8 105 311.2 112.2 328.4 126.6C346 141 354.8 160 354.8 183.6C354.8 200.8 350.2 214.8 341 225.6C331.8 236 320 243.2 305.6 247.2C322.8 252 336.4 260.2 346.4 271.8C356.8 283.4 362 298 362 315.6C362 340.4 352.6 360.8 333.8 376.8C315 392.8 290.6 400.8 260.6 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-2-mask)"/>
-                            <path d="M52.5357 167.6H27.3357V105.2H120.336V400.2H52.5357V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-2-mask)"/>
-                        </g>
-                        
-                        <g class="mix-blend-color dark:mix-blend-hard-light transition-all delay-400 opacity-100 duration-750 starting:opacity-0 motion-safe:starting:-translate-x-[51px] text-[#F8B803] dark:text-[#391800]">
-                            <mask id="path-3-mask" maskUnits="userSpaceOnUse" x="51" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="51" y="103" width="338" height="299"/>
-                                <path d="M286.264 400.8C255.464 400.8 230.264 392.4 210.664 375.6C191.464 358.8 181.864 337 181.864 310.2H252.064C252.064 318.2 255.064 324.8 261.064 330C267.064 335.2 275.064 337.8 285.064 337.8C294.664 337.8 302.464 335 308.464 329.4C314.864 323.8 318.064 316.6 318.064 307.8C318.064 299.8 315.264 293.2 309.664 288C304.064 282.8 296.864 280.2 288.064 280.2H250.864V218.4H288.064C294.864 218.4 300.664 216 305.464 211.2C310.264 206.4 312.664 200.4 312.664 193.2C312.664 184.8 310.064 178.2 304.864 173.4C299.664 168.6 293.064 166.2 285.064 166.2C277.864 166.2 271.664 168.4 266.464 172.8C261.664 177.2 259.264 182.8 259.264 189.6H192.664C192.664 164.8 201.464 144.6 219.064 129C236.664 113 259.264 105 286.864 105C314.464 105 336.864 112.2 354.064 126.6C371.664 141 380.464 160 380.464 183.6C380.464 200.8 375.864 214.8 366.664 225.6C357.464 236 345.664 243.2 331.264 247.2C348.464 252 362.064 260.2 372.064 271.8C382.464 283.4 387.664 298 387.664 315.6C387.664 340.4 378.264 360.8 359.464 376.8C340.664 392.8 316.264 400.8 286.264 400.8Z"/>
-                                <path d="M78.2 167.6H53V105.2H146V400.2H78.2V167.6Z"/>
-                            </mask>
-                            <path d="M286.264 400.8C255.464 400.8 230.264 392.4 210.664 375.6C191.464 358.8 181.864 337 181.864 310.2H252.064C252.064 318.2 255.064 324.8 261.064 330C267.064 335.2 275.064 337.8 285.064 337.8C294.664 337.8 302.464 335 308.464 329.4C314.864 323.8 318.064 316.6 318.064 307.8C318.064 299.8 315.264 293.2 309.664 288C304.064 282.8 296.864 280.2 288.064 280.2H250.864V218.4H288.064C294.864 218.4 300.664 216 305.464 211.2C310.264 206.4 312.664 200.4 312.664 193.2C312.664 184.8 310.064 178.2 304.864 173.4C299.664 168.6 293.064 166.2 285.064 166.2C277.864 166.2 271.664 168.4 266.464 172.8C261.664 177.2 259.264 182.8 259.264 189.6H192.664C192.664 164.8 201.464 144.6 219.064 129C236.664 113 259.264 105 286.864 105C314.464 105 336.864 112.2 354.064 126.6C371.664 141 380.464 160 380.464 183.6C380.464 200.8 375.864 214.8 366.664 225.6C357.464 236 345.664 243.2 331.264 247.2C348.464 252 362.064 260.2 372.064 271.8C382.464 283.4 387.664 298 387.664 315.6C387.664 340.4 378.264 360.8 359.464 376.8C340.664 392.8 316.264 400.8 286.264 400.8Z" fill="currentColor"/>
-                            <path d="M78.2 167.6H53V105.2H146V400.2H78.2V167.6Z" fill="currentColor"/>
-                            <path d="M286.264 400.8C255.464 400.8 230.264 392.4 210.664 375.6C191.464 358.8 181.864 337 181.864 310.2H252.064C252.064 318.2 255.064 324.8 261.064 330C267.064 335.2 275.064 337.8 285.064 337.8C294.664 337.8 302.464 335 308.464 329.4C314.864 323.8 318.064 316.6 318.064 307.8C318.064 299.8 315.264 293.2 309.664 288C304.064 282.8 296.864 280.2 288.064 280.2H250.864V218.4H288.064C294.864 218.4 300.664 216 305.464 211.2C310.264 206.4 312.664 200.4 312.664 193.2C312.664 184.8 310.064 178.2 304.864 173.4C299.664 168.6 293.064 166.2 285.064 166.2C277.864 166.2 271.664 168.4 266.464 172.8C261.664 177.2 259.264 182.8 259.264 189.6H192.664C192.664 164.8 201.464 144.6 219.064 129C236.664 113 259.264 105 286.864 105C314.464 105 336.864 112.2 354.064 126.6C371.664 141 380.464 160 380.464 183.6C380.464 200.8 375.864 214.8 366.664 225.6C357.464 236 345.664 243.2 331.264 247.2C348.464 252 362.064 260.2 372.064 271.8C382.464 283.4 387.664 298 387.664 315.6C387.664 340.4 378.264 360.8 359.464 376.8C340.664 392.8 316.264 400.8 286.264 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-3-mask)"/>
-                            <path d="M78.2 167.6H53V105.2H146V400.2H78.2V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-3-mask)"/>
-                        </g>
-                        
-                        <g class="mix-blend-multiply dark:mix-blend-normal transition-all delay-400 opacity-100 duration-750 starting:opacity-0 motion-safe:starting:-translate-x-[78px] text-[#F3BEC7] dark:text-[#733000]">
-                            <mask id="path-4-mask" maskUnits="userSpaceOnUse" x="76.6643" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="76.6643" y="103" width="338" height="299"/>
-                                <path d="M311.929 400.8C281.129 400.8 255.929 392.4 236.329 375.6C217.129 358.8 207.529 337 207.529 310.2H277.729C277.729 318.2 280.729 324.8 286.729 330C292.729 335.2 300.729 337.8 310.729 337.8C320.329 337.8 328.129 335 334.129 329.4C340.529 323.8 343.729 316.6 343.729 307.8C343.729 299.8 340.929 293.2 335.329 288C329.729 282.8 322.529 280.2 313.729 280.2H276.529V218.4H313.729C320.529 218.4 326.329 216 331.129 211.2C335.929 206.4 338.329 200.4 338.329 193.2C338.329 184.8 335.729 178.2 330.529 173.4C325.329 168.6 318.729 166.2 310.729 166.2C303.529 166.2 297.329 168.4 292.129 172.8C287.329 177.2 284.929 182.8 284.929 189.6H218.329C218.329 164.8 227.129 144.6 244.729 129C262.329 113 284.929 105 312.529 105C340.129 105 362.529 112.2 379.729 126.6C397.329 141 406.129 160 406.129 183.6C406.129 200.8 401.529 214.8 392.329 225.6C383.129 236 371.329 243.2 356.929 247.2C374.129 252 387.729 260.2 397.729 271.8C408.129 283.4 413.329 298 413.329 315.6C413.329 340.4 403.929 360.8 385.129 376.8C366.329 392.8 341.929 400.8 311.929 400.8Z"/>
-                                <path d="M103.864 167.6H78.6643V105.2H171.664V400.2H103.864V167.6Z"/>
-                            </mask>
-                            <path d="M311.929 400.8C281.129 400.8 255.929 392.4 236.329 375.6C217.129 358.8 207.529 337 207.529 310.2H277.729C277.729 318.2 280.729 324.8 286.729 330C292.729 335.2 300.729 337.8 310.729 337.8C320.329 337.8 328.129 335 334.129 329.4C340.529 323.8 343.729 316.6 343.729 307.8C343.729 299.8 340.929 293.2 335.329 288C329.729 282.8 322.529 280.2 313.729 280.2H276.529V218.4H313.729C320.529 218.4 326.329 216 331.129 211.2C335.929 206.4 338.329 200.4 338.329 193.2C338.329 184.8 335.729 178.2 330.529 173.4C325.329 168.6 318.729 166.2 310.729 166.2C303.529 166.2 297.329 168.4 292.129 172.8C287.329 177.2 284.929 182.8 284.929 189.6H218.329C218.329 164.8 227.129 144.6 244.729 129C262.329 113 284.929 105 312.529 105C340.129 105 362.529 112.2 379.729 126.6C397.329 141 406.129 160 406.129 183.6C406.129 200.8 401.529 214.8 392.329 225.6C383.129 236 371.329 243.2 356.929 247.2C374.129 252 387.729 260.2 397.729 271.8C408.129 283.4 413.329 298 413.329 315.6C413.329 340.4 403.929 360.8 385.129 376.8C366.329 392.8 341.929 400.8 311.929 400.8Z" fill="currentColor"/>
-                            <path d="M103.864 167.6H78.6643V105.2H171.664V400.2H103.864V167.6Z" fill="currentColor"/>
-                            <path d="M311.929 400.8C281.129 400.8 255.929 392.4 236.329 375.6C217.129 358.8 207.529 337 207.529 310.2H277.729C277.729 318.2 280.729 324.8 286.729 330C292.729 335.2 300.729 337.8 310.729 337.8C320.329 337.8 328.129 335 334.129 329.4C340.529 323.8 343.729 316.6 343.729 307.8C343.729 299.8 340.929 293.2 335.329 288C329.729 282.8 322.529 280.2 313.729 280.2H276.529V218.4H313.729C320.529 218.4 326.329 216 331.129 211.2C335.929 206.4 338.329 200.4 338.329 193.2C338.329 184.8 335.729 178.2 330.529 173.4C325.329 168.6 318.729 166.2 310.729 166.2C303.529 166.2 297.329 168.4 292.129 172.8C287.329 177.2 284.929 182.8 284.929 189.6H218.329C218.329 164.8 227.129 144.6 244.729 129C262.329 113 284.929 105 312.529 105C340.129 105 362.529 112.2 379.729 126.6C397.329 141 406.129 160 406.129 183.6C406.129 200.8 401.529 214.8 392.329 225.6C383.129 236 371.329 243.2 356.929 247.2C374.129 252 387.729 260.2 397.729 271.8C408.129 283.4 413.329 298 413.329 315.6C413.329 340.4 403.929 360.8 385.129 376.8C366.329 392.8 341.929 400.8 311.929 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-4-mask)"/>
-                            <path d="M103.864 167.6H78.6643V105.2H171.664V400.2H103.864V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-4-mask)"/>
-                        </g>
-                        
-                        <g class="mix-blend-hard-light transition-all delay-400 opacity-100 duration-750 starting:opacity-0 motion-safe:starting:-translate-x-[102px] text-[#F3BEC7] dark:text-[#4B0600]">
-                            <mask id="path-5-mask" maskUnits="userSpaceOnUse" x="102.329" y="103" width="338" height="299" fill="black">
-                                <rect fill="white" x="102.329" y="103" width="338" height="299"/>
-                                <path d="M337.593 400.8C306.793 400.8 281.593 392.4 261.993 375.6C242.793 358.8 233.193 337 233.193 310.2H303.393C303.393 318.2 306.393 324.8 312.393 330C318.393 335.2 326.393 337.8 336.393 337.8C345.993 337.8 353.793 335 359.793 329.4C366.193 323.8 369.393 316.6 369.393 307.8C369.393 299.8 366.593 293.2 360.993 288C355.393 282.8 348.193 280.2 339.393 280.2H302.193V218.4H339.393C346.193 218.4 351.993 216 356.793 211.2C361.593 206.4 363.993 200.4 363.993 193.2C363.993 184.8 361.393 178.2 356.193 173.4C350.993 168.6 344.393 166.2 336.393 166.2C329.193 166.2 322.993 168.4 317.793 172.8C312.993 177.2 310.593 182.8 310.593 189.6H243.993C243.993 164.8 252.793 144.6 270.393 129C287.993 113 310.593 105 338.193 105C365.793 105 388.193 112.2 405.393 126.6C422.993 141 431.793 160 431.793 183.6C431.793 200.8 427.193 214.8 417.993 225.6C408.793 236 396.993 243.2 382.593 247.2C399.793 252 413.393 260.2 423.393 271.8C433.793 283.4 438.993 298 438.993 315.6C438.993 340.4 429.593 360.8 410.793 376.8C391.993 392.8 367.593 400.8 337.593 400.8Z"/>
-                                <path d="M129.529 167.6H104.329V105.2H197.329V400.2H129.529V167.6Z"/>
-                            </mask>
-                            <path d="M337.593 400.8C306.793 400.8 281.593 392.4 261.993 375.6C242.793 358.8 233.193 337 233.193 310.2H303.393C303.393 318.2 306.393 324.8 312.393 330C318.393 335.2 326.393 337.8 336.393 337.8C345.993 337.8 353.793 335 359.793 329.4C366.193 323.8 369.393 316.6 369.393 307.8C369.393 299.8 366.593 293.2 360.993 288C355.393 282.8 348.193 280.2 339.393 280.2H302.193V218.4H339.393C346.193 218.4 351.993 216 356.793 211.2C361.593 206.4 363.993 200.4 363.993 193.2C363.993 184.8 361.393 178.2 356.193 173.4C350.993 168.6 344.393 166.2 336.393 166.2C329.193 166.2 322.993 168.4 317.793 172.8C312.993 177.2 310.593 182.8 310.593 189.6H243.993C243.993 164.8 252.793 144.6 270.393 129C287.993 113 310.593 105 338.193 105C365.793 105 388.193 112.2 405.393 126.6C422.993 141 431.793 160 431.793 183.6C431.793 200.8 427.193 214.8 417.993 225.6C408.793 236 396.993 243.2 382.593 247.2C399.793 252 413.393 260.2 423.393 271.8C433.793 283.4 438.993 298 438.993 315.6C438.993 340.4 429.593 360.8 410.793 376.8C391.993 392.8 367.593 400.8 337.593 400.8Z" fill="currentColor"/>
-                            <path d="M129.529 167.6H104.329V105.2H197.329V400.2H129.529V167.6Z" fill="currentColor"/>
-                            <path d="M337.593 400.8C306.793 400.8 281.593 392.4 261.993 375.6C242.793 358.8 233.193 337 233.193 310.2H303.393C303.393 318.2 306.393 324.8 312.393 330C318.393 335.2 326.393 337.8 336.393 337.8C345.993 337.8 353.793 335 359.793 329.4C366.193 323.8 369.393 316.6 369.393 307.8C369.393 299.8 366.593 293.2 360.993 288C355.393 282.8 348.193 280.2 339.393 280.2H302.193V218.4H339.393C346.193 218.4 351.993 216 356.793 211.2C361.593 206.4 363.993 200.4 363.993 193.2C363.993 184.8 361.393 178.2 356.193 173.4C350.993 168.6 344.393 166.2 336.393 166.2C329.193 166.2 322.993 168.4 317.793 172.8C312.993 177.2 310.593 182.8 310.593 189.6H243.993C243.993 164.8 252.793 144.6 270.393 129C287.993 113 310.593 105 338.193 105C365.793 105 388.193 112.2 405.393 126.6C422.993 141 431.793 160 431.793 183.6C431.793 200.8 427.193 214.8 417.993 225.6C408.793 236 396.993 243.2 382.593 247.2C399.793 252 413.393 260.2 423.393 271.8C433.793 283.4 438.993 298 438.993 315.6C438.993 340.4 429.593 360.8 410.793 376.8C391.993 392.8 367.593 400.8 337.593 400.8Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-5-mask)"/>
-                            <path d="M129.529 167.6H104.329V105.2H197.329V400.2H129.529V167.6Z" stroke="var(--stroke-color)" stroke-width="2.4" mask="url(#path-5-mask)"/>
-                        </g>
-                    </svg>
-                    <div class="absolute inset-0 rounded-t-lg lg:rounded-t-none lg:rounded-r-lg shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]"></div>
-                </div>
-            </main>
+</header><!-- End Header -->
+
+    <!-- ======= Hero Section ======= -->
+  <section id="hero" class="d-flex align-items-center position-relative overflow-hidden py-5">
+    <!-- Background Video Ambient Layer -->
+    <video class="hero-video-bg" autoplay muted loop playsinline poster="{{ asset('general/assets/img/cefaempresa.png') }}">
+      <source src="{{ asset('video/banner.mp4') }}" type="video/mp4">
+    </video>
+
+    <!-- Overlay Gradient -->
+    <div class="hero-overlay"></div>
+
+    <!-- Content Container -->
+    <div class="container position-relative hero-content py-5">
+      <div class="row align-items-center">
+        <!-- Left Column: Title, Info, Actions -->
+        <div class="col-lg-6 d-flex flex-column justify-content-center text-start" data-aos="fade-up" data-aos-delay="200">
+          
+          <div class="mb-3">
+            <span class="badge bg-white bg-opacity-25 text-white px-3 py-2 rounded-pill fw-bold shadow-sm d-inline-flex align-items-center gap-2" style="border: 1px solid rgba(255,255,255,0.4); backdrop-filter: blur(8px);">
+              <img src="{{ asset('general/assets/img/cefaempresa.png') }}" alt="Logo Mega Uni Store" style="height: 24px; width: 24px; object-fit: contain; background: white; border-radius: 50%; padding: 2px;">
+              <span>Tienda universitaria online • Mega Uni Store</span>
+            </span>
+          </div>
+
+          <h1 class="text-white fw-bold display-4 mb-2" style="text-shadow: 0 4px 15px rgba(0,0,0,0.6); font-weight: 800;">
+            Bienvenido a <br><span style="color: #7FB2DE; text-shadow: 0 0 20px rgba(122, 170, 214, 0.5);">Mega Uni Store</span>
+          </h1>
+
+          <h2 class="text-white-50 fs-5 mb-3" style="text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+            <i class="fas fa-store text-warning me-1"></i> Tu tienda universitaria — compra fácil, rápido y seguro
+          </h2>
+
+          <p class="text-white fs-6 mb-4 opacity-90 leading-relaxed" style="max-width: 580px; text-shadow: 0 2px 8px rgba(0,0,0,0.7);">
+            En Mega Uni Store encuentras todo lo que necesitas en un solo lugar: explora el catálogo, arma tu carrito y compra de forma fácil y segura. Tu tienda, siempre disponible.
+          </p>
+
+          <!-- Social Links -->
+          <div class="d-flex align-items-center gap-2 mb-4">
+            <span class="text-white-50 fs-7 me-2">Síguenos:</span>
+            <a href="#" target="_blank" class="hero-social-btn" title="Instagram Mega Uni Store"><i class="fab fa-instagram"></i></a>
+            <a href="#" target="_blank" class="hero-social-btn" title="Facebook Mega Uni Store"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" target="_blank" class="hero-social-btn" title="YouTube CEFA"><i class="fab fa-youtube"></i></a>
+            <a href="#" target="_blank" class="hero-social-btn" title="TikTok Mega Uni Store"><i class="fab fa-tiktok"></i></a>
+          </div>
+
+          <!-- Buttons -->
+          <div class="d-flex flex-wrap gap-3">
+            <a href="#modules" class="btn btn-success text-white px-4 py-3 rounded-pill shadow-lg d-inline-flex align-items-center gap-2 fw-bold" style="background-color: #2E6EA8; border: none;">
+              <i class="bi bi-grid-3x3-gap-fill fs-5"></i> Ver catálogo
+            </a>
+            <a href="{{ asset('video/banner.mp4') }}" class="btn btn-outline-light px-4 py-3 rounded-pill shadow-sm glightbox d-inline-flex align-items-center gap-2 fw-semibold">
+              <i class="bi bi-play-circle-fill fs-5 text-warning"></i> Pantalla Completa
+            </a>
+          </div>
+
         </div>
 
-        @if (Route::has('login'))
-            <div class="h-14.5 hidden lg:block"></div>
+        <!-- Right Column: Interactive Video Showcase Player -->
+        <div class="col-lg-6 mt-4 mt-lg-0 text-center" data-aos="zoom-in" data-aos-delay="200">
+          <div class="hero-video-showcase rounded-4 overflow-hidden position-relative">
+            <video class="w-100 h-100 rounded-4" style="object-fit: cover; min-height: 320px; max-height: 400px; display: block;" autoplay muted loop playsinline controls poster="{{ asset('general/assets/img/cefaempresa.png') }}">
+              <source src="{{ asset('video/banner.mp4') }}" type="video/mp4">
+              Tu navegador no soporta la reproducción de vídeo.
+            </video>
+            <div class="position-absolute top-0 start-0 m-3 px-3 py-1 bg-dark bg-opacity-75 text-white rounded-pill fs-7 border border-secondary shadow-sm">
+              <i class="bi bi-camera-reels-fill text-success me-1"></i> Conoce Mega Uni Store
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section><!-- End Hero -->
+<main id="main">
+
+    <!-- ======= Cliens Section ======= -->
+    <section id="clients" class="cliens section-bg">
+      <div class="container">
+
+        <div class="row" data-aos="zoom-in">
+
+          <div class="col-lg-3 col-md-6 col-6 d-flex align-items-center justify-content-center">
+            <a href="http://oferta.senasofiaplus.edu.co/sofia-oferta/"><img src="https://sicefa.com.co/general/assets/img/clients/client-1.png" class="img-fluid"></a>
+          </div>
+
+          <div class="col-lg-2 col-md-6 col-6 d-flex align-items-center justify-content-center">
+            <a href="https://sena.territorio.la/index.php?login=true#"><img src="https://sicefa.com.co/general/assets/img/clients/client-2.png" class="img-fluid"></a>
+          </div>
+
+          <div class="col-lg-2 col-md-6 col-6 d-flex align-items-center justify-content-center">
+            <a href="https://biblioteca.sena.edu.co"><img src="https://sicefa.com.co/general/assets/img/clients/client-3.png" class="img-fluid"></a>
+          </div>
+
+          <div class="col-lg-3 col-md-6 col-6 d-flex align-items-center justify-content-center">
+            <a href="https://ape.sena.edu.co/Paginas/Inicio.aspx"><img src="https://sicefa.com.co/general/assets/img/clients/client-4.png" class="img-fluid"></a>
+          </div>  
+
+          <div class="col-lg-2 col-md-6 col-6 d-flex align-items-center justify-content-center">
+            <a href="https://ape.sena.edu.co/Paginas/Inicio.aspx"><img src="https://sicefa.com.co/general/assets/img/clients/client-5.png" class="img-fluid"></a>
+          </div>
+
+          
+
+        </div>
+
+      </div>
+    </section><!-- End Cliens Section -->
+
+    <!-- ======= Portfolio Section ======= -->
+    <!-- ======= Noticias Mega Uni Store Section ======= -->
+    <section id="noticias" class="news py-5" style="background-color: #f8f9fa;">
+      <div class="container" data-aos="fade-up">
+
+        <div class="section-title text-center mb-5">
+          <span class="text-uppercase fw-bold text-success" style="color: #2E6EA8 !important; letter-spacing: 1.5px;">Actualidad y Novedades</span>
+          <h2 class="fw-bold text-dark fs-2">Noticias Mega Uni Store</h2>
+          <p class="text-muted">Infórmate sobre los avances, actividades y convocatorias de la empresa didáctica en Mega Uni Store</p>
+        </div>
+
+        <div class="row g-4">
+
+          <!-- Noticia 1 -->
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden transition-all hover-lift">
+              <div class="position-relative overflow-hidden" style="height: 210px; background: #142033;">
+                <img src="{{ asset('general/assets/img/cefaempresa.png') }}" class="w-100 h-100 p-4" style="object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));" alt="Noticia ERP">
+                <span class="position-absolute top-0 end-0 m-3 badge text-white px-3 py-2 rounded-pill fs-7" style="background-color: #2E6EA8 !important;">
+                  <i class="fas fa-laptop-code me-1"></i> Tecnología ERP
+                </span>
+              </div>
+              <div class="card-body p-4 d-flex flex-column">
+                <div class="text-muted fs-7 mb-2">
+                  <i class="far fa-calendar-alt me-1 text-success"></i> 05 de Agosto, 2026
+                </div>
+                <h5 class="card-title fw-bold text-dark mb-3 fs-5">
+                  Lanzamiento de la Plataforma Integrada ERP Mega Uni Store
+                </h5>
+                <p class="card-text text-muted fs-6 mb-4 flex-grow-1">
+                  Se inicia la operación del nuevo sistema ERP centralizado para la administración de procesos estratégicos, misionales de inventario y ventas, y apoyo contable en el centro Mega Uni Store.
+                </p>
+                <div class="pt-3 border-top d-flex align-items-center justify-content-between">
+                  <span class="fs-7 text-muted fw-semibold">Centro Mega Uni Store</span>
+                  <a href="#noticias" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold">
+                    Leer más <i class="fas fa-arrow-right ms-1"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Noticia 2 -->
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden transition-all hover-lift">
+              <div class="position-relative overflow-hidden" style="height: 210px; background: linear-gradient(135deg, #2E6EA8, #142033);">
+                <div class="d-flex align-items-center justify-content-center h-100 text-white p-4 text-center">
+                  <div>
+                    <i class="fas fa-users-cog display-4 mb-2 opacity-75"></i>
+                    <h6 class="text-white-50 mb-0">Etapa Lectiva y Productiva</h6>
+                  </div>
+                </div>
+                <span class="position-absolute top-0 end-0 m-3 badge text-white px-3 py-2 rounded-pill fs-7" style="background-color: #142033 !important;">
+                  <i class="fas fa-user-graduate me-1"></i> Convocatoria
+                </span>
+              </div>
+              <div class="card-body p-4 d-flex flex-column">
+                <div class="text-muted fs-7 mb-2">
+                  <i class="far fa-calendar-alt me-1 text-success"></i> 02 de Agosto, 2026
+                </div>
+                <h5 class="card-title fw-bold text-dark mb-3 fs-5">
+                  Abierta Convocatoria para Turnos de Aprendices en Mega Uni Store
+                </h5>
+                <p class="card-text text-muted fs-6 mb-4 flex-grow-1">
+                  Aprendices de las áreas agrícola, pecuaria y agroindustrial se vinculan a la rotación de turnos rutinarios y especiales en las gerencias de producción y comercial.
+                </p>
+                <div class="pt-3 border-top d-flex align-items-center justify-content-between">
+                  <span class="fs-7 text-muted fw-semibold">Talento Humano</span>
+                  <a href="#noticias" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold">
+                    Leer más <i class="fas fa-arrow-right ms-1"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Noticia 3 -->
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+            <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden transition-all hover-lift">
+              <div class="position-relative overflow-hidden" style="height: 210px; background: linear-gradient(135deg, #142033, #20c997);">
+                <div class="d-flex align-items-center justify-content-center h-100 text-white p-4 text-center">
+                  <div>
+                    <i class="fas fa-seedling display-4 mb-2 opacity-75"></i>
+                    <h6 class="text-white-50 mb-0">Producción Agroindustrial</h6>
+                  </div>
+                </div>
+                <span class="position-absolute top-0 end-0 m-3 badge bg-warning text-dark px-3 py-2 rounded-pill fs-7">
+                  <i class="fas fa-chart-line me-1"></i> Resultados
+                </span>
+              </div>
+              <div class="card-body p-4 d-flex flex-column">
+                <div class="text-muted fs-7 mb-2">
+                  <i class="far fa-calendar-alt me-1 text-success"></i> 28 de Julio, 2026
+                </div>
+                <h5 class="card-title fw-bold text-dark mb-3 fs-5">
+                  Balance Positivo en la Comercialización de Productos del Centro
+                </h5>
+                <p class="card-text text-muted fs-6 mb-4 flex-grow-1">
+                  Se destacan excelentes indicadores de ventas en los derivados lácteos, cárnicos, productos de panadería y café producidos por los aprendices en las unidades.
+                </p>
+                <div class="pt-3 border-top d-flex align-items-center justify-content-between">
+                  <span class="fs-7 text-muted fw-semibold">Gerencia Comercial</span>
+                  <a href="#noticias" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-semibold">
+                    Leer más <i class="fas fa-arrow-right ms-1"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section><!-- End Noticias Mega Uni Store Section -->
+
+    <!-- ======= Organigrama Section ======= -->
+    <section id="organigrama" class="portfolio section-bg py-5">
+        <div class="container" data-aos="fade-up">
+
+            <div class="section-title text-center mb-4">
+                <span class="text-uppercase fw-bold text-success" style="color: #2E6EA8 !important; letter-spacing: 1.5px;">Estructura Organizacional</span>
+                <h2 class="fw-bold text-dark fs-2">Organigrama Mega Uni Store</h2>
+                <p class="text-muted">Tu tienda universitaria • Colombia</p>
+            </div>
+
+            <!-- Organigrama Diagram Showcase Card -->
+            <div class="organigrama-card p-3 p-md-4 bg-white rounded-4 shadow-lg border border-1 border-light position-relative overflow-hidden" data-aos="zoom-in" data-aos-delay="150">
+                <div class="text-center mb-3">
+                    <a href="{{ asset('general/assets/img/organigrama.png') }}" class="glightbox" title="Organigrama Mega Uni Store Mega Uni Store">
+                        <img src="{{ asset('general/assets/img/organigrama.png') }}" class="img-fluid rounded-3 shadow-sm hover-zoom" alt="Organigrama Mega Uni Store Mega Uni Store" style="max-height: 650px; width: auto; object-fit: contain;">
+                    </a>
+                </div>
+                <div class="d-flex flex-wrap align-items-center justify-content-between pt-3 border-top px-2">
+                    <div class="d-flex align-items-center me-3 mb-2 mb-md-0">
+                        <img src="{{ asset('general/assets/img/cefaempresa.png') }}" alt="Logo Mega Uni Store" style="height: 32px; width: 32px; object-fit: contain; margin-right: 10px;">
+                        <span class="fs-7 text-muted fw-semibold">Estructura de Funcionarios y Aprendices (Etapa Lectiva y Productiva)</span>
+                    </div>
+                    <a href="{{ asset('general/assets/img/organigrama.png') }}" class="btn btn-sm text-white rounded-pill px-4 fw-semibold glightbox" style="background-color: #2E6EA8;">
+                        <i class="fas fa-search-plus me-1"></i> Ampliar Organigrama
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </section><!-- End Organigrama Section -->
+    
+    <!-- ======= Visítanos / Puertas Abiertas Section ======= -->
+    <section id="visitas" class="py-5" style="background: linear-gradient(135deg, #f0f7f2 0%, #ffffff 100%); border-top: 1px solid #e2ece5; border-bottom: 1px solid #e2ece5;">
+      <div class="container" data-aos="fade-up">
+
+        <div class="section-title text-center mb-5">
+          <span class="text-uppercase fw-bold text-success" style="color: #2E6EA8 !important; letter-spacing: 1.5px;">Puertas Abiertas • Experiencia Didáctica</span>
+          <h2 class="fw-bold text-dark fs-2">¡Visita el Centro Mega Uni Store y Mega Uni Store!</h2>
+          <p class="text-muted fs-6" style="max-width: 750px; margin: 0 auto;">
+            Invitamos a colegios, escuelas, universidades, grupos de investigación, empresarios y a la comunidad en general a conocer nuestro modelo de formación profesional y unidades de producción.
+          </p>
+        </div>
+
+        <div class="row g-4 mb-5">
+
+          <!-- Card 1: Colegios e Instituciones Educativas -->
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 text-center bg-white transition-all hover-lift">
+              <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px; background-color: rgba(46, 110, 168, 0.12); color: #2E6EA8;">
+                <i class="fas fa-school fs-2"></i>
+              </div>
+              <h4 class="fw-bold text-dark mb-3 fs-5">Colegios e Instituciones</h4>
+              <p class="text-muted fs-6 mb-3">
+                Recorridos guiados pedagógicos para estudiantes de básica y media. Orientación vocacional en agricultura, pecuaria, agroindustria y tecnología.
+              </p>
+              <ul class="text-start text-muted fs-7 list-unstyled mb-0 border-top pt-3">
+                <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Recorrido por unidades formativas</li>
+                <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Demostración del modelo didáctico</li>
+                <li><i class="fas fa-check-circle text-success me-2"></i> Charlas de orientación técnica</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Card 2: Universidades e Investigadores -->
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 text-center bg-white transition-all hover-lift">
+              <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px; background-color: rgba(0, 50, 77, 0.12); color: #142033;">
+                <i class="fas fa-university fs-2"></i>
+              </div>
+              <h4 class="fw-bold text-dark mb-3 fs-5">Universidades y Académicos</h4>
+              <p class="text-muted fs-6 mb-3">
+                Pasantías, proyectos de investigación aplicada e intercambio de conocimientos con nuestros programas de educación superior y fábrica de software.
+              </p>
+              <ul class="text-start text-muted fs-7 list-unstyled mb-0 border-top pt-3">
+                <li class="mb-2"><i class="fas fa-check-circle text-primary me-2"></i> Transferencia tecnológica y ERP</li>
+                <li class="mb-2"><i class="fas fa-check-circle text-primary me-2"></i> Enfoque en innovación y prototipado</li>
+                <li><i class="fas fa-check-circle text-primary me-2"></i> Alianzas de investigación aplicada</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Card 3: Comunidad y Emprendedores -->
+          <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="300">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 text-center bg-white transition-all hover-lift">
+              <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px; background-color: rgba(245, 124, 0, 0.12); color: #f57c00;">
+                <i class="fas fa-users-viewfinder fs-2"></i>
+              </div>
+              <h4 class="fw-bold text-dark mb-3 fs-5">Comunidad y Emprendedores</h4>
+              <p class="text-muted fs-6 mb-3">
+                Conoce la oferta de productos lácteos, cárnicos, café y panadería en el punto de venta de Mega Uni Store y participa en muestras de emprendimiento.
+              </p>
+              <ul class="text-start text-muted fs-7 list-unstyled mb-0 border-top pt-3">
+                <li class="mb-2"><i class="fas fa-check-circle me-2" style="color: #f57c00;"></i> Adquisición de productos del centro</li>
+                <li class="mb-2"><i class="fas fa-check-circle me-2" style="color: #f57c00;"></i> Ferias de emprendimiento rural</li>
+                <li><i class="fas fa-check-circle me-2" style="color: #f57c00;"></i> Interacción con aprendices en turnos</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Banner Call-to-Action for Visit Booking -->
+        <div class="card border-0 rounded-4 overflow-hidden shadow-lg text-white" style="background: linear-gradient(135deg, #0A1119 0%, #142033 60%, #2E6EA8 100%);">
+          <div class="card-body p-4 p-md-5">
+            <div class="row align-items-center">
+              <div class="col-lg-8 mb-4 mb-lg-0">
+                <span class="badge text-dark px-3 py-2 rounded-pill fs-7 mb-3 fw-bold" style="background-color: #7FB2DE !important;">
+                  <i class="fas fa-calendar-alt me-1"></i> Agende su Visita Guiada
+                </span>
+                <h3 class="fw-bold fs-2 text-white mb-2">¿Deseas programar una visita pedagógica?</h3>
+                <p class="text-white-50 fs-6 mb-0">
+                  Escríbenos a través del formulario de contacto para definir la agenda, fecha y número de asistentes de tu delegación educativa o empresarial.
+                </p>
+              </div>
+              <div class="col-lg-4 text-lg-end">
+                <a href="#contact" class="btn text-white btn-lg rounded-pill px-4 py-3 fw-bold shadow-lg border-0 hover-lift" style="background-color: #2E6EA8;">
+                  <i class="fas fa-paper-plane me-2"></i> Agendar Visita
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section><!-- End Visítanos Section -->
+    
+    
+    
+    <!-- ======= Services / Aplicativos Section ======= -->
+    <section id="modules" class="services section-bg py-5">
+      <div class="container" data-aos="fade-up">
+
+        <div class="section-title text-center mb-5">
+          <h2 style="color: #2E6EA8 !important;">Arquitectura de Módulos</h2>
+          <p>Módulos de gestión organizados por categorías institucionales para Mega Uni Store</p>
+        </div>
+
+        @if(isset($bloques) && count($bloques) > 0)
+          @foreach($bloques as $bloque)
+            <!-- BLOQUE: {{ strtoupper($bloque->name) }} -->
+            <div id="modules-{{ $bloque->slug }}" class="process-category-block mb-5 p-4 rounded-4 shadow-sm bg-white border-start border-5" style="border-left-color: {{ $bloque->color ?? '#2E6EA8' }} !important;" data-aos="fade-up">
+              <div class="d-flex align-items-center mb-4 pb-2 border-bottom">
+                <div class="process-icon-box me-3 p-3 rounded-circle" style="background-color: {{ $bloque->color ?? '#2E6EA8' }}1f; color: {{ $bloque->color ?? '#2E6EA8' }};">
+                  <i class="{{ $bloque->icon ?? 'fas fa-cubes' }} fs-2"></i>
+                </div>
+                <div>
+                  <h3 class="mb-1 fs-4 fw-bold text-dark">{{ $bloque->name }}</h3>
+                  <p class="mb-0 text-muted fs-6">{{ $bloque->description }}</p>
+                </div>
+              </div>
+
+              <div class="row g-4">
+                @forelse($bloque->apps as $app)
+                  <div class="col-xl-{{ count($bloque->apps) <= 2 ? '6' : '4' }} col-md-6" data-aos="zoom-in">
+                    <div class="icon-box h-100 p-4 rounded-3 border bg-light shadow-sm hover-lift">
+                      <div class="d-flex align-items-center mb-3">
+                        <div class="icon-circle p-3 rounded-3 me-3 text-white" style="background-color: {{ $app->color ?? $bloque->color ?? '#2E6EA8' }};">
+                          <i class="{{ $app->icon ?? 'fas fa-cube' }} fs-4"></i>
+                        </div>
+                        <div>
+                          <h4 class="mb-0 fs-5 fw-bold"><a href="{{ url($app->url) }}" class="text-dark">{{ $app->name }}</a></h4>
+                          <span class="badge text-dark fs-7" style="background-color: {{ $bloque->color ?? '#2E6EA8' }}22; border: 1px solid {{ $bloque->color ?? '#2E6EA8' }}44;">{{ $bloque->name }}</span>
+                        </div>
+                      </div>
+                      <p class="text-muted fs-6 mb-3">
+                        {{ $app->description }}
+                      </p>
+                      <a href="{{ url($app->url) }}" class="btn btn-sm text-white rounded-pill px-3 fw-semibold shadow-sm" style="background-color: {{ $app->color ?? $bloque->color ?? '#2E6EA8' }};">
+                        Acceder a {{ $app->name }} <i class="fas fa-arrow-right ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+                @empty
+                  <div class="col-12">
+                    <p class="text-muted fst-italic">No hay submódulos asignados a este proceso actualmente.</p>
+                  </div>
+                @endforelse
+              </div>
+            </div>
+          @endforeach
         @endif
-    </body>
+
+      </div>
+    </section><!-- End Services Section -->
+    
+
+    <!--include('layouts/partials/skins')--->
+    
+    <!-- ======= sefa Section ======= -->
+    <section id="cefa" class="cta">
+      <div class="container" data-aos="zoom-in">
+
+        <div class="row">
+          <div class="col-lg-9 text-center text-lg-start">
+            <h3>Conoce nuestro centro de formación</h3>
+            <p>Realiza un paseo virtual por el centro de formación conoce las áreas de producción y todos los servicios a tu disposición</p>
+          </div>
+          <div class="col-lg-3 cta-btn-container text-center">
+            <a class="cta-btn align-middle" href="https://sicefa.com.co/cefamaps/index">Ir a Cefamaps</a>
+          </div>
+        </div>
+
+      </div>
+    </section><!-- End sefa Section -->
+    <!-- ======= Why Us Section ======= -->
+<section id="why-us" class="why-us section-bg">
+    <div class="container-fluid" data-aos="fade-up">
+
+        <div class="row">
+
+            <div class="col-lg-7 d-flex flex-column justify-content-center align-items-stretch  order-2 order-lg-1">
+
+                <div class="content">
+                    <h3>Mega Uni Store</h3>
+                    <p>
+                        Es el espacio ofrecido para formar profesionales integrales con capacidad de análisis y toma
+                        dediciones en el entorno empresarial, mediante la innovación e investigación.
+                    </p>
+                </div>
+
+                <div class="accordion-list">
+                    <ul>
+                        <li>
+                            <a data-bs-toggle="collapse" class="collapse"
+                                data-bs-target="#accordion-list-1"><span>01</span> ¿Que es? <i
+                                    class="bx bx-chevron-down icon-show"></i><i
+                                    class="bx bx-chevron-up icon-close"></i></a>
+                            <div id="accordion-list-1" class="collapse show" data-bs-parent=".accordion-list">
+                                <p>
+                                    Mega Uni Store es un modelo didáctico de empresa, que busca impartir y trasmitir a el
+                                    aprendiz los conocimientos administrativos, productivos, técnicos, financieros,
+                                    ambiéntales, y de comercialización adquiridos en el proceso de formación por medio
+                                    del manejo real de una empresa en las diferentes áreas y unidades productivas.
+                                </p>
+                            </div>
+                        </li>
+
+                        <li>
+                            <a data-bs-toggle="collapse" data-bs-target="#accordion-list-2"
+                                class="collapsed"><span>02</span> Msión <i
+                                    class="bx bx-chevron-down icon-show"></i><i
+                                    class="bx bx-chevron-up icon-close"></i></a>
+                            <div id="accordion-list-2" class="collapse" data-bs-parent=".accordion-list">
+                                <p>
+                                    Fortalecer la formación por competencias desde las estrategias de formación por
+                                    proyectos, impulsando el emprendimiento, la innovación, la investigación y el
+                                    trabajo colaborativo, para tener un ambiente de aprendizaje integral en que los
+                                    aprendices a través del aprender haciendo y el hacer transformado se integren con
+                                    diferentes especialidades que lo lleven a adquirir todas las competencias adquiridas
+                                    para la gestión empresarial de proyectos.
+                                </p>
+                            </div>
+                        </li>
+
+                        <li>
+                            <a data-bs-toggle="collapse" data-bs-target="#accordion-list-3"
+                                class="collapsed"><span>03</span> visión <i
+                                    class="bx bx-chevron-down icon-show"></i><i
+                                    class="bx bx-chevron-up icon-close"></i></a>
+                            <div id="accordion-list-3" class="collapse" data-bs-parent=".accordion-list">
+                                <p>
+                                    Un modelo empresarial organizado mostrando resultados con proyectos
+                                    formativos-productivos que lleven al aprendiz, al empresario y a cualquier ciudadano
+                                    a implementar en su entorno proyectos empresariales enfocados al desarrollo de la
+                                    región (nación, departamento, municipio) implementando tecnologías innovadoras que
+                                    conduzcan a un desarrollo sostenible.
+                                </p>
+                            </div>
+                        </li>
+
+                        <li>
+                            <a data-bs-toggle="collapse" data-bs-target="#accordion-list-4"
+                                class="collapsed"><span>04</span> Modelo Mega Uni Store <i
+                                    class="bx bx-chevron-down icon-show"></i><i
+                                    class="bx bx-chevron-up icon-close"></i></a>
+                            <div id="accordion-list-4" class="collapse" data-bs-parent=".accordion-list">
+                                <p>
+                                    La estrategia Mega Uni Store consta de Resultados de Aprendizaje en: Desarrollo de
+                                    labores administrativas y de mercadeo en la empresa agropecuaria o agroindustrial.
+                                    Operación del sistema productivo de tipo agropecuario o agroindustrial. Competencias
+                                    comportamentales.
+                                </p>
+                            </div>
+                        </li>
+
+                    </ul>
+                </div>
+
+            </div>
+
+            <div class="col-lg-5 d-flex align-items-center justify-content-center order-1 order-lg-2 py-4 py-lg-0" data-aos="zoom-in" data-aos-delay="150">
+                <div class="position-relative p-2 bg-white rounded-4 shadow-lg border border-2 border-light overflow-hidden">
+                    <img src="{{ asset('general/assets/img/sena-empresa-equipo.jpg') }}" alt="Equipo Mega Uni Store Mega Uni Store" class="img-fluid rounded-3 shadow-sm hover-zoom" style="max-height: 450px; width: 100%; object-fit: cover;">
+                    <div class="position-absolute bottom-0 start-0 end-0 p-3 bg-dark bg-opacity-75 text-white m-3 rounded-3 backdrop-blur border border-secondary border-opacity-50">
+                        <div class="d-flex align-items-center">
+                            <img src="{{ asset('general/assets/img/cefaempresa.png') }}" alt="Logo Mega Uni Store" class="bg-white rounded-circle p-1 me-2" style="width: 32px; height: 32px; object-fit: contain;">
+                            <div>
+                                <span class="fw-bold fs-7 d-block text-white">Aprendices e Instructores Mega Uni Store</span>
+                                <small class="text-white-50 fs-8">Mega Uni Store • Colombia</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section><!-- End Why Us Section -->
+
+    <!-- ======= About Us Section ======= -->
+<section id="about" class="about">
+    <div class="container" data-aos="fade-up">
+
+        <div class="section-title">
+            <h2>Acerca de Nosotros</h2>
+        </div>
+
+        <div class="row content">
+            <div class="col-lg-6">
+                <h2>Mega Uni Store y su comunidad</h2>
+                <p>
+                    Mega Uni Store ofrece al centro de formación agroindustrial “Mega Uni Store”, un conjunto de aplicaciones web
+                    2.0, que permiten gestionar eficientemente la información académica, técnica y administrativa de las
+                    áreas productivas de la finca, así como también permite gestionar otras áreas que aportan
+                    significativamente al control y buen manejo de los bienes y talento humano del CEFA.</p>
+
+                <P>Mega Uni Store Nació como proyecto formativo del programa Tecnológico en Análisis y Desarrollo de sistemas de
+                    Información (ADSI), el cual ha evolucionado en su concepción, funcionalidad y metodología de
+                    desarrollo desde el primer curso que inicio el proyecto en 2009; Hoy podemos decir que tenemos una
+                    herramienta madura en cuanto al conocimiento de las áreas implicadas y que cuenta con estandares de
+                    calidad en el desarrollo usando herramientas actuales de gran acogida.
+                </p>
+            </div>
+            <div class="col-lg-6 pt-4 pt-lg-0">
+                <h2>Mega Uni Store y nuestra misión</h2>
+                <p>
+                    La estrategia Mega Uni Store "Emprecefa", vincula a los aprendices a una experiencia empresarial, en
+                    la cual los involucrados adquieren capacidades, desestrezas y habilidades administrativas y
+                    operativas para su futuro profesional. Son variados los procesos que se manejan en una empresa real,
+                    por lo que se necesita un sistema de información completo tipo ERP (Enterprice Resource Planning ->
+                    Planeación de recursos empresariales), que integre las operaciones administrativas y de producción
+                    de bienes o servicios.
+                </p>
+                <p>
+                    Mega Uni Store responde a dicha necesidad tecnologica y permite La planificación de los recursos de
+                    Emprecefa, manejando la producción, logística, inventario y contabilidad de forma modular. Ademas,
+                    Mega Uni Store tambien interviene en los procesos administrativos, academicos y tecnicos de las unidades
+                    productivas del CEFA.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</section><!-- End About Us Section -->
+
+    
+
+    
+
+    
+
+   
+
+    <!-- ======= Contact Section ======= -->
+<section id="contact" class="contact">
+    <div class="container" data-aos="fade-up">
+
+        <div class="section-title">
+            <h2>Contacto</h2>
+            <p>En esta sección podrán depositar todas peticiones, quejas, reclamos y sugerencias relacionadas con el
+                manejo de la página web y sus distintas aplicaciones.</p>
+            <p>Los campos con un ( * ) son obligatorios</p>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-lg-5 d-flex align-items-stretch">
+                <div class="info w-100">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <a href="#" target="_blank" class="d-flex align-items-center">
+                                <i class="fab fa-facebook-f"></i>
+                                <div>
+                                    <h4>Facebook</h4>
+                                    <p class="mb-0">Página oficial</p>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <a href="#" target="_blank" class="d-flex align-items-center">
+                                <i class="fab fa-instagram"></i>
+                                <div>
+                                    <h4>Instagram</h4>
+                                    <p class="mb-0">@megaunistore</p>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <a href="#" target="_blank" class="d-flex align-items-center">
+                                <i class="fab fa-youtube"></i>
+                                <div>
+                                    <h4>YouTube</h4>
+                                    <p class="mb-0">CEFASCHANNEL</p>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <a href="#" target="_blank" class="d-flex align-items-center">
+                                <i class="fab fa-tiktok"></i>
+                                <div>
+                                    <h4>TikTok</h4>
+                                    <p class="mb-0">@megaunistore_45</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 rounded-3 overflow-hidden shadow-sm">
+                        <iframe
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3253.9238532120967!2d-75.36235506309659!3d2.613761562673928!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e3b3f4b1c54ddc5%3A0x6a0d5a458d5d190d!2sCentro%20de%20Formaci%C3%B3n%20Agroindustrial%20La%20Angostura!5e1!3m2!1ses!2sco!4v1637598702785!5m2!1ses!2sco"
+                            width="100%" height="320" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-lg-7 mt-5 mt-lg-0 d-flex align-items-stretch">
+                <form action="#" method="post" role="form" class="php-email-form">
+                    <div class="row">
+                        <div class="form-group col-md-6">
+                            <label for="name">Nombre</label>
+                            <input type="text" name="name" class="form-control" id="name" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="name">Apellido</label>
+                            <input type="text" name="name" class="form-control" id="name" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="name">Correo</label>
+                            <input type="Correo" class="form-control" name="email" id="email" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="name">Telefono</label>
+                            <input type="telefono" class="form-control" name="email" id="email" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="name">Asunto *</label>
+                        <input type="text" class="form-control" name="subject" id="subject" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="name">Tipo *</label>
+                        <select name="" id="" class="form-control">
+                            <option>...</option>
+                            <option value="">Peticiones</option>
+                            <option value="">Queja</option>
+                            <option value="">Reclamo</option>
+                            <option value="">Suerencias</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="name">Mensaje *</label>
+                        <textarea class="form-control" name="message" rows="10" required></textarea>
+                    </div>
+                    <div class="my-3">
+                        <div class="loading">Loading</div>
+                        <div class="error-message"></div>
+                        <div class="sent-message">Your message has been sent. Thank you!</div>
+                    </div>
+                    <div class="text-center"><button type="submit">Send Message</button></div>
+                </form>
+            </div>
+
+        </div>
+
+    </div>
+</section><!-- End Contact Section -->
+
+</main>
+
+    <footer id="footer">
+    <div class="footer-top">
+        <div class="container">
+            <div class="row g-4">
+
+                <!-- Columna 1: Identidad Mega Uni Store -->
+                <div class="col-lg-4 col-md-6 footer-info">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{{ asset('general/assets/img/cefaempresa.png') }}" alt="Logo Mega Uni Store" class="me-3 rounded-circle bg-white p-2 shadow-sm" style="width: 55px; height: 55px; object-fit: contain;">
+                        <div>
+                            <h3 class="text-white fw-bold mb-0 fs-4">MEGA UNI STORE</h3>
+                            <span class="fs-7 fw-semibold" style="color: #7FB2DE !important;">Plataforma ERP Integrada</span>
+                        </div>
+                    </div>
+                    <p class="fs-6 opacity-90 mb-3" style="color: rgba(255,255,255,0.82);">
+                        Modelo didáctico de formación profesional para la vivencia real del entorno empresarial en el comunidad universitaria <strong>"Mega Uni Store"</strong> (Colombia).
+                    </p>
+                    <div class="d-flex align-items-center mt-3">
+                        <a href="#" target="_blank" class="footer-social-btn" title="Instagram Mega Uni Store"><i class="fab fa-instagram"></i></a>
+                        <a href="#" target="_blank" class="footer-social-btn" title="Facebook Mega Uni Store"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" target="_blank" class="footer-social-btn" title="YouTube CEFA"><i class="fab fa-youtube"></i></a>
+                        <a href="#" target="_blank" class="footer-social-btn" title="TikTok Mega Uni Store"><i class="fab fa-tiktok"></i></a>
+                    </div>
+                </div>
+
+                <!-- Columna 2: Módulos -->
+                <div class="col-lg-3 col-md-6 footer-links">
+                    <h4>Módulos</h4>
+                    <ul>
+                        <li><i class="fas fa-chevron-right"></i> <a href="#modules-estrategicos">Procesos Estratégicos</a></li>
+                        <li><i class="fas fa-chevron-right"></i> <a href="#modules-misionales">Procesos Misionales</a></li>
+                        <li><i class="fas fa-chevron-right"></i> <a href="#modules-apoyo">Procesos de Apoyo</a></li>
+                        <li><i class="fas fa-chevron-right"></i> <a href="#organigrama">Organigrama Mega Uni Store</a></li>
+                        <li><i class="fas fa-chevron-right"></i> <a href="#cefa">CEFAMAPS (Zonificación)</a></li>
+                    </ul>
+                </div>
+
+                <!-- Columna 3: Enlaces de Interés -->
+                <div class="col-lg-2 col-md-6 footer-links">
+                    <h4>Enlaces Útiles</h4>
+                    <ul>
+                        <li><i class="fas fa-chevron-right"></i> <a href="https://gestorasig.wixsite.com/megaunistore" target="_blank">Portal Oficial Wix</a></li>
+                        <li><i class="fas fa-chevron-right"></i> <a href="https://oferta.senasofiaplus.edu.co/sofia-oferta/" target="_blank">Ayuda y soporte</a></li>
+                        <li><i class="fas fa-chevron-right"></i> <a href="https://ape.sena.edu.co" target="_blank">Agencia de Empleo</a></li>
+                        <li><i class="fas fa-chevron-right"></i> <a href="https://centroagroindustrial.blogspot.com" target="_blank">Blog CEFA</a></li>
+                        <li><i class="fas fa-chevron-right"></i> <a href="#why-us">Acerca de Mega Uni Store</a></li>
+                    </ul>
+                </div>
+
+                <!-- Columna 4: Contacto Institucional -->
+                <div class="col-lg-3 col-md-6 footer-contact">
+                    <h4>Contacto CEFA</h4>
+                    <p style="color: rgba(255,255,255,0.85);">
+                        <i class="fas fa-map-marker-alt me-2" style="color: #7FB2DE !important;"></i> Km 38 Vía al Sur, Neiva<br>
+                        Colombia<br><br>
+                        <i class="fas fa-building me-2" style="color: #7FB2DE !important;"></i> comunidad universitaria<br><br>
+                        <i class="fas fa-envelope me-2" style="color: #7FB2DE !important;"></i> Mega Uni Store Mega Uni Store
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bottom">
+        <div class="container d-md-flex py-3 justify-content-between align-items-center text-center text-md-start">
+            <div class="copyright text-white-50">
+                &copy; {{ date('Y') }} <strong><span class="text-white">Mega Uni Store</span></strong> • comunidad universitaria. Todos los derechos reservados.
+            </div>
+            <div class="credits text-white-50 mt-2 mt-md-0">
+                Plataforma ERP Integrada Mega Uni Store
+            </div>
+        </div>
+    </div>
+</footer> <!-- End Footer -->
+
+    <!-- Vendor JS Files -->
+  <script src="https://sicefa.com.co/general/assets/vendor/aos/aos.js"></script>
+  <script src="https://sicefa.com.co/general/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="https://sicefa.com.co/general/assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="https://sicefa.com.co/general/assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
+  <script src="https://sicefa.com.co/general/assets/vendor/php-email-form/validate.js"></script>
+  <script src="https://sicefa.com.co/general/assets/vendor/swiper/swiper-bundle.min.js"></script>
+  <script src="https://sicefa.com.co/general/assets/vendor/waypoints/noframework.waypoints.js"></script>
+
+  <!-- Template Main JS File -->
+  <script src="https://sicefa.com.co/general/assets/js/main.js"></script>
+<!-- JQuery -->
+  <script src="https://sicefa.com.co/AdminLTE/plugins/jquery/jquery.min.js"></script>
+    <!-- ======= Asistente Virtual Mega Uni Store Bot Widget ======= -->
+    <div id="senaBotTrigger" class="sena-bot-trigger" title="Asistente Virtual Mega Uni Store">
+        <div class="position-relative d-flex align-items-center justify-content-center w-100 h-100">
+            <img src="{{ asset('general/assets/img/cefaempresa.png') }}" alt="Asistente Mega Uni Store" class="rounded-circle bg-white p-1 shadow-sm" style="width: 48px; height: 48px; object-fit: contain;">
+            <div class="sena-bot-chat-icon-badge" title="Soporte Mega Uni Store Bot">
+                <i class="fas fa-headset" style="font-size: 10px;"></i>
+            </div>
+        </div>
+        <span class="sena-bot-badge"></span>
+    </div>
+
+    <div id="senaBotChat" class="sena-bot-chat">
+        <div class="sena-bot-header">
+            <div class="d-flex align-items-center">
+                <img src="{{ asset('general/assets/img/cefaempresa.png') }}" class="rounded-circle bg-white p-1 me-2" style="width: 38px; height: 38px; object-fit: contain;">
+                <div>
+                    <h6 class="mb-0 text-white fw-bold fs-6">Mega Uni Store Bot</h6>
+                    <span class="fs-7 text-success" style="color: #7FB2DE !important;"><i class="fas fa-circle me-1" style="font-size: 8px;"></i> Asistente En Línea</span>
+                </div>
+            </div>
+            <button id="senaBotClose" class="btn text-white p-0 border-0 fs-5 opacity-75">&times;</button>
+        </div>
+
+        <div id="senaBotBody" class="sena-bot-body">
+            <div class="bot-msg">
+                ¡Hola! 👋 Soy <strong>Mega Uni Store Bot</strong>, tu asistente virtual para la plataforma ERP de Mega Uni Store Mega Uni Store. <br><br>
+                ¿En qué puedo ayudarte hoy? Selecciona una opción o escríbeme:
+                <div class="mt-2 d-flex flex-wrap gap-1">
+                    <span class="sena-bot-chip" onclick="askSenaBot('¿Qué es Mega Uni Store?')">🏢 ¿Qué es Mega Uni Store?</span>
+                    <span class="sena-bot-chip" onclick="askSenaBot('Ver Módulos')">📊 Módulos</span>
+                    <span class="sena-bot-chip" onclick="askSenaBot('Ver Organigrama')">🗺️ Organigrama</span>
+                    <span class="sena-bot-chip" onclick="askSenaBot('Ver Noticias')">📰 Noticias</span>
+                    <span class="sena-bot-chip" onclick="askSenaBot('Contacto')">📞 Contacto</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="sena-bot-footer">
+            <input type="text" id="senaBotInput" class="sena-bot-input" placeholder="Escribe tu consulta..." onkeypress="if(event.key==='Enter') sendSenaBotMessage()">
+            <button onclick="sendSenaBotMessage()" class="btn text-white rounded-circle p-0 d-flex align-items-center justify-content-center" style="background-color: #2E6EA8; width: 38px; height: 38px;">
+                <i class="fas fa-paper-plane fs-7"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const trigger = document.getElementById('senaBotTrigger');
+        const chat = document.getElementById('senaBotChat');
+        const closeBtn = document.getElementById('senaBotClose');
+        const input = document.getElementById('senaBotInput');
+        const body = document.getElementById('senaBotBody');
+
+        if (!trigger || !chat) return;
+
+        trigger.addEventListener('click', function() {
+          chat.classList.toggle('active');
+        });
+
+        closeBtn.addEventListener('click', function() {
+          chat.classList.remove('active');
+        });
+
+        window.askSenaBot = function(text) {
+          input.value = text;
+          sendSenaBotMessage();
+        };
+
+        window.sendSenaBotMessage = function() {
+          const text = input.value.trim();
+          if (!text) return;
+
+          // Append User Message
+          const userDiv = document.createElement('div');
+          userDiv.className = 'user-msg';
+          userDiv.textContent = text;
+          body.appendChild(userDiv);
+          input.value = '';
+          body.scrollTop = body.scrollHeight;
+
+          // Generate Bot Response
+          setTimeout(function() {
+            const botDiv = document.createElement('div');
+            botDiv.className = 'bot-msg';
+            
+            const lower = text.toLowerCase();
+            let response = '';
+
+            if (lower.includes('qué es') || lower.includes('que es') || lower.includes('sena empresa')) {
+              response = '🏢 <strong>Mega Uni Store</strong> es un modelo didáctico de formación profesional en el Centro Agroindustrial "Mega Uni Store" (Colombia). Permite a los aprendices vivir la operación real de una empresa en áreas administrativas, productivas y comerciales.';
+            } else if (lower.includes('proceso') || lower.includes('erp') || lower.includes('modulo') || lower.includes('módulo')) {
+              response = '📊 <strong>Módulos Mega Uni Store:</strong><br>• 🟢 <strong>Estratégicos:</strong> Planeación e Indicadores.<br>• 🔵 <strong>Misionales:</strong> Inventario, Ventas y Compras.<br>• 🟠 <strong>Apoyo:</strong> Contabilidad y Talento Humano.<br><br><a href="#modules" onclick="document.getElementById(\'senaBotChat\').classList.remove(\'active\')">Ir a Módulos &rarr;</a>';
+            } else if (lower.includes('organigrama') || lower.includes('estructura')) {
+              response = '🗺️ El <strong>Organigrama de Mega Uni Store</strong> muestra la jerarquía desde la Subdirección y Coordinación hasta los Gerentes (Administrativo, Producción, Comercial), Gestores y Aprendices.<br><br><a href="#organigrama" onclick="document.getElementById(\'senaBotChat\').classList.remove(\'active\')">Ver Organigrama Completo &rarr;</a>';
+            } else if (lower.includes('noticia') || lower.includes('novedad')) {
+              response = '📰 Entérate de las últimas novedades sobre la plataforma ERP, convocatorias de turnos para aprendices y balance comercial.<br><br><a href="#noticias" onclick="document.getElementById(\'senaBotChat\').classList.remove(\'active\')">Ver Noticias &rarr;</a>';
+            } else if (lower.includes('contacto') || lower.includes('telefono') || lower.includes('ubicacion')) {
+              response = '📍 <strong>Mega Uni Store:</strong> tu tienda universitaria online, disponible 24/7.<br>📱 Síguenos en nuestras redes sociales.';
+            } else {
+              response = '🤖 Gracias por tu consulta. Puedes explorar los procesos ERP, consultar el organigrama o ver las noticias más recientes.<br><br>¿Te gustaría revisar los <a href="#modules" onclick="document.getElementById(\'senaBotChat\').classList.remove(\'active\')">Módulos ERP</a>?';
+            }
+
+            botDiv.innerHTML = response;
+            body.appendChild(botDiv);
+            body.scrollTop = body.scrollHeight;
+          }, 500);
+        };
+      });
+    </script>
+
+    <!-- Submodule Explorer Modal -->
+    <div class="modal fade" id="moduleModal" tabindex="-1" aria-labelledby="moduleModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+          <div class="modal-header text-white" id="moduleModalHeader" style="background: linear-gradient(135deg, #0A1119, #142033); border-bottom: 3px solid #2E6EA8;">
+            <div class="d-flex align-items-center">
+              <div id="moduleModalIcon" class="p-2 rounded-circle bg-white text-dark me-3 shadow-sm" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-cubes fs-4 text-success"></i>
+              </div>
+              <div>
+                <h5 class="modal-title fw-bold mb-0 text-white" id="moduleModalTitle">Submódulo ERP</h5>
+                <span class="badge bg-success text-white fs-7" id="moduleModalCategory">Proceso Mega Uni Store</span>
+              </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4">
+            <p class="lead text-dark fs-6 mb-3" id="moduleModalDescription">Descripción del submódulo ERP.</p>
+            
+            <div class="card border-0 bg-light rounded-3 p-3 mb-3">
+              <h6 class="fw-bold text-dark mb-2"><i class="fas fa-cogs text-primary me-2"></i> Funcionalidades Principales de la Arquitectura:</h6>
+              <ul class="text-muted fs-6 mb-0 ps-3" id="moduleModalFeatures">
+                <li>Gestión de registros y control en tiempo real.</li>
+              </ul>
+            </div>
+
+            <div class="alert alert-success border-0 bg-success bg-opacity-10 text-success d-flex align-items-center rounded-3 mb-0" role="alert">
+              <i class="fas fa-info-circle me-2 fs-5"></i>
+              <div class="fs-7">
+                Este submódulo forma parte de la arquitectura modular ERP de Mega Uni Store Mega Uni Store. Requiere autenticación de usuario o aprendiz asignado al turno.
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer bg-light border-top">
+            <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+            <a href="/login" class="btn btn-success text-white rounded-pill px-4 fw-semibold" style="background-color: #2E6EA8; border: none;">
+              <i class="fas fa-sign-in-alt me-1"></i> Iniciar Sesión para Acceder
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const moduleData = {
+        planeacion: {
+          title: "Submódulo de Planeación",
+          category: "Procesos Estratégicos",
+          icon: "fas fa-clipboard-list text-success",
+          desc: "Herramienta de direccionamiento estratégico para la formulación de planes de acción anuales, metas organizacionales y distribución de objetivos en las unidades de producción de Mega Uni Store.",
+          features: [
+            "Formulación y aprobación de planes de acción por área.",
+            "Asignación de presupuestos y metas periódicas.",
+            "Seguimiento a planes de mejora e investigación aplicada.",
+            "Consolidación de informes gerenciales para la Subdirección."
+          ]
+        },
+        indicadores: {
+          title: "Submódulo de Indicadores",
+          category: "Procesos Estratégicos",
+          icon: "fas fa-chart-line text-success",
+          desc: "Tablero de control ejecutivo y evaluación continua de KPIs (Key Performance Indicators) empresariales, académicos y de rendimiento de Mega Uni Store.",
+          features: [
+            "Medición de efectividad en ventas y producción agroindustrial.",
+            "Gráficos analíticos de rendimiento por unidad productiva.",
+            "Monitoreo de cumplimiento de aprendices en turnos.",
+            "Exportación de reportes ejecutivos en PDF y Excel."
+          ]
+        },
+        inventario: {
+          title: "Submódulo de Inventario",
+          category: "Procesos Misionales",
+          icon: "fas fa-boxes text-primary",
+          desc: "Control automatizado de bodegas, existencias de insumos agrícolas, pecuarios y agroindustriales, materias primas y productos terminados.",
+          features: [
+            "Trazabilidad de entradas, salidas y transferencias entre bodegas.",
+            "Alertas automáticas de nivel mínimo de stock.",
+            "Kardex valorizado por método PEPS/Promedio Ponderado.",
+            "Control de lotes y fechas de vencimiento de alimentos procesados."
+          ]
+        },
+        ventas: {
+          title: "Submódulo de Ventas",
+          category: "Procesos Misionales",
+          icon: "fas fa-cash-register text-primary",
+          desc: "Gestión de comercialización y Puntos de Venta (POS) para los productos elaborados por los aprendices en el Centro Mega Uni Store (lácteos, cárnicos, café, panadería).",
+          features: [
+            "Terminal Punto de Venta (POS) rápido e intuitivo.",
+            "Generación de comprobantes y recibos de venta.",
+            "Cierre de caja diario y arqueos por turno de aprendiz.",
+            "Integración en tiempo real con la reducción de inventario."
+          ]
+        },
+        compras: {
+          title: "Submódulo de Compras",
+          category: "Procesos Misionales",
+          icon: "fas fa-shopping-cart text-primary",
+          desc: "Administración del ciclo de abastecimiento, solicitudes de requisición de insumos, cotizaciones de proveedores y órdenes de compra.",
+          features: [
+            "Registro y calificación de proveedores regionales.",
+            "Gestión de órdenes de compra con flujo de aprobación.",
+            "Recepción e inspección de materias primas en almacén.",
+            "Integración automática con cuentas por pagar de Contabilidad."
+          ]
+        },
+        contabilidad: {
+          title: "Submódulo de Contabilidad",
+          category: "Procesos de Apoyo",
+          icon: "fas fa-file-invoice-dollar text-warning",
+          desc: "Registro contable y financiero de todas las operaciones comerciales, comprobantes de ingreso, egreso, asientos contables y estados financieros.",
+          features: [
+            "Plan Único de Cuentas (PUC) adaptado a la empresa didáctica.",
+            "Emisión de comprobantes diarios y libro mayor.",
+            "Generación de Balance General y Estado de Resultados.",
+            "Auditoría y control de costos de producción agroindustrial."
+          ]
+        },
+        talento: {
+          title: "Submódulo de Talento Humano",
+          category: "Procesos de Apoyo",
+          icon: "fas fa-users-cog text-warning",
+          desc: "Gestión del capital humano, asignación y rotación de turnos de aprendices (rutinarios y especiales), instructores líderes y evaluación de competencias.",
+          features: [
+            "Programación de turnos operacionales por unidad de producción.",
+            "Control biométrico / digital de asistencia de aprendices.",
+            "Evaluación de desempeño y competencias comportamentales.",
+            "Directorio de funcionarios, instructores y pasantes."
+          ]
+        }
+      };
+
+      window.openModuleModal = function(moduleKey) {
+        const data = moduleData[moduleKey];
+        if (!data) return;
+
+        document.getElementById('moduleModalTitle').textContent = data.title;
+        document.getElementById('moduleModalCategory').textContent = data.category;
+        document.getElementById('moduleModalDescription').textContent = data.desc;
+        
+        const iconDiv = document.getElementById('moduleModalIcon');
+        iconDiv.innerHTML = `<i class="${data.icon} fs-4"></i>`;
+
+        const list = document.getElementById('moduleModalFeatures');
+        list.innerHTML = '';
+        data.features.forEach(f => {
+          const li = document.createElement('li');
+          li.className = 'mb-2';
+          li.innerHTML = `<i class="fas fa-check text-success me-2 fs-7"></i> ${f}`;
+          list.appendChild(li);
+        });
+
+        const modalEl = document.getElementById('moduleModal');
+        const modal = new bootstrap.Modal(modalEl);
+        modal.show();
+      };
+    </script>
+
+    
+<script>
+(function(){
+  var h=document.getElementById('header');
+  function upd(){
+    var hero=document.getElementById('hero');
+    var trigger=hero?(hero.offsetHeight-90):500;
+    if(window.scrollY>trigger){h.classList.add('reveal');}else{h.classList.remove('reveal');}
+  }
+  window.addEventListener('scroll',upd,{passive:true});
+  window.addEventListener('resize',upd);
+  document.addEventListener('DOMContentLoaded',upd); upd();
+})();
+</script>
+
+@include('partials.page-transition')
+
+</body>
 </html>

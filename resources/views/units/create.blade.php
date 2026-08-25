@@ -1,19 +1,16 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Nueva unidad</h2>
-    </x-slot>
+<x-mus.page title="Nueva unidad" subtitle="Define cómo se mide este producto" icon="ruler"
+            :crumbs="['Unidades' => route('units.index'), 'Nuevo' => null]">
 
-    <div class="py-12">
-        <div class="max-w-xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <form action="{{ route('units.store') }}" method="POST">
-                    @csrf
-                    @include('units.form')
+    <form method="POST" action="{{ route('units.store') }}" novalidate>
+        @csrf
 
-                    <button class="px-4 py-2 bg-gray-800 text-white rounded">Guardar</button>
-                    <a href="{{ route('units.index') }}" class="ml-2 text-gray-600">Cancelar</a>
-                </form>
-            </div>
-        </div>
-    </div>
-</x-app-layout>
+        <x-mus.panel title="Datos de la unidad" sub="Nombre, símbolo y tipo de medida">
+            @include('units.form', ['item' => null])
+
+            <x-slot name="foot">
+                <x-mus.btn href="{{ route('units.index') }}" icon="back">Cancelar</x-mus.btn>
+                <x-mus.btn type="submit" variant="primary" icon="save">Guardar unidad</x-mus.btn>
+            </x-slot>
+        </x-mus.panel>
+    </form>
+</x-mus.page>

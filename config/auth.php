@@ -42,6 +42,19 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        /*
+         * Los clientes de la tienda pública entran por una puerta aparte.
+         *
+         * No es un rol más dentro de 'web': es otro guard sobre otra tabla.
+         * Así un cliente no es que «no tenga permiso» en el panel — es que
+         * ahí no está autenticado en absoluto. La seguridad deja de
+         * depender de que ningún can() esté mal escrito.
+         */
+        'cliente' => [
+            'driver' => 'session',
+            'provider' => 'clientes',
+        ],
     ],
 
     /*
@@ -65,6 +78,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+
+        'clientes' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Customer::class,
         ],
 
         // 'users' => [

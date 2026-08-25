@@ -25,3 +25,19 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# ─────── MEGA UNI STORE ───────
+# Paquetes de entrega ya aplicados. Se conservan en disco un rato por si
+# hay que mirar atrás, pero no tienen por qué viajar en el historial: todo
+# lo que contienen ya está en los archivos del proyecto.
+/_to_delete
+
+# Respaldos de la base. Son datos, no código, y pesan: el repositorio es
+# para lo que se escribe, no para lo que se guarda.
+/storage/app/respaldos
+
+# Vistas de trabajo y comparativas que no son parte del sistema.
+/_estilos.html
+
+# El texto del commit, no es parte del sistema.
+/_commit.txt

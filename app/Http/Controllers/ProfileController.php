@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\GuardaImagen;
 use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,6 +12,8 @@ use Illuminate\View\View;
 
 class ProfileController extends Controller
 {
+    use GuardaImagen;
+
     /**
      * Display the user's profile form.
      */
@@ -22,17 +25,26 @@ class ProfileController extends Controller
     }
 
     /**
-     * Update the user's profile information.
+     * Guarda nombre, correo y foto de perfil.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $usuario = $request->user();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $usuario->fill($request->datosDelPerfil());
+
+        if ($usuario->isDirty('email')) {
+            $usuario->email_verified_at = null;
         }
 
-        $request->user()->save();
+        // La foto va al disco; en la columna solo queda la ruta.
+        $foto = $this->guardarImagen($request, 'usuarios', $usuario->avatar_url, 'foto');
+
+        if ($foto !== false) {
+            $usuario->avatar_url = $foto;
+        }
+
+        $usuario->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

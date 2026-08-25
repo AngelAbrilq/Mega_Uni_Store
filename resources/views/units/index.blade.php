@@ -1,62 +1,74 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Unidades de medida</h2>
+<x-mus.page title="Unidades" subtitle="Medidas con las que vendes tus productos" icon="ruler">
+    <x-slot name="actions">
+        @can('unidades.crear')
+            <x-mus.btn href="{{ route('units.create') }}" variant="primary" icon="plus"
+                       data-modal="Nueva unidad" data-modal-ancho="620">
+                Nuevo
+            </x-mus.btn>
+        @endcan
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+    <x-mus.panel :pad="false" :reveal="true">
+        @if ($units->total())
+            <x-mus.toolbar :count="$units->total()" label="unidades" :action="route('units.index')" :q="$q ?? ''" />
 
-                @if (session('success'))
-                    <div class="mb-4 rounded bg-green-100 text-green-800 px-4 py-2">
-                        {{ session('success') }}
-                    </div>
-                @endif
-
-                <a href="{{ route('units.create') }}"
-                    class="inline-block mb-4 px-4 py-2 bg-gray-800 text-white rounded">
-                    + Nueva unidad
-                </a>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b">
-                                <th class="py-2">ID</th>
-                                <th class="py-2">Nombre</th>
-                                <th class="py-2">Símbolo</th>
-                                <th class="py-2">Tipo</th>
-                                <th class="py-2 text-right">Acciones</th>
+            <div class="mt-wrap">
+                <table class="mt">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nombre</th>
+                            <th>Símbolo</th>
+                            <th>Tipo</th>
+                            <th class="num">Productos</th>
+                            <th>Creada</th>
+                            <th class="act"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($units as $unit)
+                            <tr data-row>
+                                <td><span class="mt__id">{{ $unit->id }}</span></td>
+                                <td><b>{{ $unit->name }}</b></td>
+                                <td><x-mus.badge tone="info">{{ $unit->symbol }}</x-mus.badge></td>
+                                <td>{{ $unit->type ?: '—' }}</td>
+                                <td class="num">
+                                    <x-mus.badge :tone="$unit->products_count ? 'info' : 'off'">{{ $unit->products_count }}</x-mus.badge>
+                                </td>
+                                <td><span style="color:var(--muted-2)">{{ $unit->created_at?->locale('es')->isoFormat('D MMM YYYY') ?? '—' }}</span></td>
+                                <td class="act">
+                                    <span class="mt__acts">
+                                        @can('unidades.ver')<x-mus.btn href="{{ route('units.show', $unit) }}"
+                                                   variant="ghost" :sm="true" class="mb--icon" title="Ver">
+                                            <x-mus.icon name="eye" :w="15" />
+                                        </x-mus.btn>@endcan
+                                        @can('unidades.editar')<x-mus.btn href="{{ route('units.edit', $unit) }}"
+                                                   variant="ghost" :sm="true" class="mb--icon" title="Editar">
+                                            <x-mus.icon name="pencil" :w="15" />
+                                        </x-mus.btn>@endcan
+                                        @can('unidades.eliminar')<x-mus.del :action="route('units.destroy', $unit)"
+                                                   what="la unidad" />@endcan
+                                    </span>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($units as $unit)
-                                <tr class="border-b">
-                                    <td class="py-2">{{ $unit->id }}</td>
-                                    <td class="py-2">{{ $unit->name }}</td>
-                                    <td class="py-2">{{ $unit->symbol }}</td>
-                                    <td class="py-2">{{ $unit->type ?? '—' }}</td>
-                                    <td class="py-2 text-right">
-                                        <a href="{{ route('units.edit', $unit) }}" class="text-blue-600">Editar</a>
-                                        <form action="{{ route('units.destroy', $unit) }}" method="POST" class="inline"
-                                            onsubmit="return confirm('¿Eliminar esta unidad?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="text-red-600 ml-2">Eliminar</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="py-4 text-gray-500">No hay unidades todavía.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                <div class="mt-4">
-                    {{ $units->links() }}
-                </div>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
-        </div>
-    </div>
-</x-app-layout>
+
+            <x-mus.pagination :items="$units" label="unidades" />
+        @else
+            <x-mus.empty icon="ruler" title="Sin unidades de medida"
+                         text="Las unidades definen cómo se vende cada producto: por kilo, por caja, por metro.">
+                @can('unidades.crear')
+                    <x-slot name="action">
+                        <x-mus.btn href="{{ route('units.create') }}" variant="primary" icon="plus"
+                       data-modal="Nueva unidad" data-modal-ancho="620">
+                            Nueva unidad
+                        </x-mus.btn>
+                    </x-slot>
+                @endcan
+            </x-mus.empty>
+        @endif
+    </x-mus.panel>
+</x-mus.page>

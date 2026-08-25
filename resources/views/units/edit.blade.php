@@ -1,20 +1,21 @@
-<x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Editar unidad</h2>
+<x-mus.page title="Editar unidad" subtitle="{{ $unit->name }}" icon="ruler"
+            :crumbs="['Unidades' => route('units.index'), 'Editar' => null]">
+
+    <x-slot name="actions">
+        <x-mus.btn href="{{ route('units.show', $unit) }}" icon="eye">Ver detalle</x-mus.btn>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <form action="{{ route('units.update', $unit) }}" method="POST">
-                    @csrf
-                    @method('PUT')
-                    @include('units.form')
+    <form method="POST" action="{{ route('units.update', $unit) }}" novalidate>
+        @csrf
+        @method('PUT')
 
-                    <button class="px-4 py-2 bg-gray-800 text-white rounded">Actualizar</button>
-                    <a href="{{ route('units.index') }}" class="ml-2 text-gray-600">Cancelar</a>
-                </form>
-            </div>
-        </div>
-    </div>
-</x-app-layout>
+        <x-mus.panel title="Datos de la unidad" sub="Nombre, símbolo y tipo de medida">
+            @include('units.form', ['item' => $unit])
+
+            <x-slot name="foot">
+                <x-mus.btn href="{{ route('units.index') }}" icon="back">Cancelar</x-mus.btn>
+                <x-mus.btn type="submit" variant="primary" icon="save">Guardar cambios</x-mus.btn>
+            </x-slot>
+        </x-mus.panel>
+    </form>
+</x-mus.page>

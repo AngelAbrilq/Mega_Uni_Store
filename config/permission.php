@@ -2,7 +2,7 @@
 
 use Spatie\Permission\DefaultTeamResolver;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
+use App\Models\Rol;
 
 return [
 
@@ -28,7 +28,13 @@ return [
          * `Spatie\Permission\Contracts\Role` contract.
          */
 
-        'role' => Role::class,
+        /**
+         * MEGA UNI STORE: se usa `App\Models\Rol`, que extiende el de
+         * spatie, para que buscar un rol por nombre no se salga del negocio
+         * activo. Dos peluquerías pueden llamar «Estilista» a su rol sin
+         * pisarse. Ver el propio archivo para el razonamiento completo.
+         */
+        'role' => Rol::class,
 
         /*
          * When using the "Teams" feature from this package, we need to know which

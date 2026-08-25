@@ -1,48 +1,56 @@
-<section>
-    <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Update Password') }}
-        </h2>
-
-        <p class="mt-1 text-sm text-gray-600">
-            {{ __('Ensure your account is using a long, random password to stay secure.') }}
-        </p>
-    </header>
-
-    <form method="post" action="{{ route('password.update') }}" class="mt-6 space-y-6">
+<x-mus.panel title="Contraseña" sub="Usa una larga y que no repitas en otros sitios">
+    <form method="POST" action="{{ route('password.update') }}" id="formClave">
         @csrf
         @method('put')
 
-        <div>
-            <x-input-label for="update_password_current_password" :value="__('Current Password')" />
-            <x-text-input id="update_password_current_password" name="current_password" type="password" class="mt-1 block w-full" autocomplete="current-password" />
-            <x-input-error :messages="$errors->updatePassword->get('current_password')" class="mt-2" />
-        </div>
+        <div class="mf">
+            {{-- El estilo va en la clase, no en línea: si no, la regla de
+                 celular no lo puede pasar a una sola columna. --}}
+            <div class="mf__grid mf__grid--3">
+                @php $eb = $errors->updatePassword ?? $errors; @endphp
 
-        <div>
-            <x-input-label for="update_password_password" :value="__('New Password')" />
-            <x-text-input id="update_password_password" name="password" type="password" class="mt-1 block w-full" autocomplete="new-password" />
-            <x-input-error :messages="$errors->updatePassword->get('password')" class="mt-2" />
-        </div>
+                <div class="{{ $eb->first('current_password') ? 'mfld--err' : '' }}">
+                    <label class="mfld__lab" for="f_current_password">Contraseña actual <span class="mfld__req">*</span></label>
+                    <div class="mfld__box">
+                        <input id="f_current_password" name="current_password" type="password"
+                               class="mfld__in" autocomplete="current-password" required>
+                    </div>
+                    @if ($eb->first('current_password'))
+                        <p class="mfld__err"><x-mus.icon name="alert" :w="12" stroke-width="2.2" />
+                            <span>{{ $eb->first('current_password') }}</span></p>
+                    @endif
+                </div>
 
-        <div>
-            <x-input-label for="update_password_password_confirmation" :value="__('Confirm Password')" />
-            <x-text-input id="update_password_password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" autocomplete="new-password" />
-            <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-2" />
-        </div>
+                <div class="{{ $eb->first('password') ? 'mfld--err' : '' }}">
+                    <label class="mfld__lab" for="f_new_password">Contraseña nueva <span class="mfld__req">*</span></label>
+                    <div class="mfld__box">
+                        <input id="f_new_password" name="password" type="password"
+                               class="mfld__in" autocomplete="new-password" required>
+                    </div>
+                    @if ($eb->first('password'))
+                        <p class="mfld__err"><x-mus.icon name="alert" :w="12" stroke-width="2.2" />
+                            <span>{{ $eb->first('password') }}</span></p>
+                    @else
+                        <p class="mfld__hint">Mínimo 8 caracteres.</p>
+                    @endif
+                </div>
 
-        <div class="flex items-center gap-4">
-            <x-primary-button>{{ __('Save') }}</x-primary-button>
-
-            @if (session('status') === 'password-updated')
-                <p
-                    x-data="{ show: true }"
-                    x-show="show"
-                    x-transition
-                    x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-gray-600"
-                >{{ __('Saved.') }}</p>
-            @endif
+                <div class="{{ $eb->first('password_confirmation') ? 'mfld--err' : '' }}">
+                    <label class="mfld__lab" for="f_password_confirmation">Confirmar <span class="mfld__req">*</span></label>
+                    <div class="mfld__box">
+                        <input id="f_password_confirmation" name="password_confirmation" type="password"
+                               class="mfld__in" autocomplete="new-password" required>
+                    </div>
+                    @if ($eb->first('password_confirmation'))
+                        <p class="mfld__err"><x-mus.icon name="alert" :w="12" stroke-width="2.2" />
+                            <span>{{ $eb->first('password_confirmation') }}</span></p>
+                    @endif
+                </div>
+            </div>
         </div>
     </form>
-</section>
+
+    <x-slot name="foot">
+        <x-mus.btn type="submit" variant="primary" icon="save" form="formClave">Cambiar contraseña</x-mus.btn>
+    </x-slot>
+</x-mus.panel>

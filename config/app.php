@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => env('APP_TIMEZONE', 'America/Bogota'),
 
     /*
     |--------------------------------------------------------------------------
@@ -78,11 +78,19 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    /*
+     | El idioma base es español: es el mercado del producto y el idioma en
+     | el que están escritas las vistas que todavía no se han traducido.
+     |
+     | `fallback_locale` también es 'es' a propósito. Si un texto falta en
+     | inglés, es mejor que salga en español —el usuario lo entiende o lo
+     | busca— que ver la clave cruda «mus.acciones.guardar» en pantalla.
+     */
+    'locale' => env('APP_LOCALE', 'es'),
 
-    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'es'),
 
-    'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+    'faker_locale' => env('APP_FAKER_LOCALE', 'es_ES'),
 
     /*
     |--------------------------------------------------------------------------

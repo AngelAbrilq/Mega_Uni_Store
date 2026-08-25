@@ -28,6 +28,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Dispara la animación de bienvenida en el layout del panel.
+        // Solo vive una petición: al recargar el dashboard ya no aparece.
+        $request->session()->flash('mus_welcome', $request->user()->name);
+        $request->session()->flash('mus_welcome_new', false);
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
@@ -36,11 +41,21 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $nombre = $request->user()?->name;
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
+
+        // Aviso que se muestra al aterrizar en el inicio.
+        $request->session()->flash(
+            'mus_bye',
+            $nombre
+                ? 'Hasta pronto, ' . \Illuminate\Support\Str::of($nombre)->trim()->explode(' ')->first() . '.'
+                : 'Tu sesión se cerró correctamente.'
+        );
 
         return redirect('/');
     }
