@@ -1,3 +1,5 @@
+@php use App\Support\Formato; @endphp
+
 <x-mus.page title="Devoluciones" subtitle="Mercancía que volvió del cliente" icon="back">
 
     <div class="skpi" data-reveal data-stagger>
@@ -40,7 +42,7 @@
                                 <td class="num">{{ $d->items_count }}</td>
                                 <td class="num"><b style="color:var(--bad)"><i class="moneda">$</i>{{ number_format((float) $d->total, 0, ',', '.') }}</b></td>
                                 <td>{{ $d->user->name ?? '—' }}</td>
-                                <td>{{ $d->returned_at?->locale('es')->isoFormat('D MMM, HH:mm') }}</td>
+                                <td>{{ Formato::enPalabras($d->returned_at, 'D MMM, HH:mm') }}</td>
                                 <td class="act">
                                     <x-mus.btn href="{{ route('returns.show', $d) }}"
                                                variant="ghost" :sm="true" class="mb--icon" title="Ver">

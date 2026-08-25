@@ -6,11 +6,11 @@
     $unidades = 0;
 @endphp
 <!DOCTYPE html>
-<html lang="es">
+<html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Cierre Z · Turno #{{ $cash->id }} — {{ $cfg['negocio.nombre'] }}</title>
+    <title>{{ __('mus.caja.z_titulo', ['n' => $cash->id, 'negocio' => $cfg['negocio.nombre']]) }}</title>
     <style>
         *{ box-sizing:border-box; }
         body{ margin:0; padding:22px; background:#EEF2F7;
@@ -80,8 +80,8 @@
 </head>
 <body>
     <div class="barra">
-        <button type="button" class="p" onclick="window.print()">Imprimir</button>
-        <a class="g" href="{{ route('cash.show', $cash) }}">Volver</a>
+        <button type="button" class="p" onclick="window.print()">{{ __('mus.acciones.imprimir') }}</button>
+        <a class="g" href="{{ route('cash.show', $cash) }}">{{ __('mus.acciones.volver') }}</a>
     </div>
 
     <div class="tirilla">
@@ -94,92 +94,92 @@
                 </svg>
             </span>
             <h1>{{ $cfg['negocio.nombre'] }}</h1>
-            @if ($cfg['negocio.nit'])<p>NIT {{ $cfg['negocio.nit'] }}</p>@endif
+            @if ($cfg['negocio.nit'])<p>{{ __('mus.campos.nit') }} {{ $cfg['negocio.nit'] }}</p>@endif
             @if ($cfg['negocio.direccion'])<p>{{ $cfg['negocio.direccion'] }}</p>@endif
-            <span class="tipo">CIERRE Z</span>
+            <span class="tipo">{{ __('mus.caja.z_encabezado') }}</span>
         </div>
 
         @if ($abierta)
-            <div class="aviso">TURNO TODAVÍA ABIERTO · informe provisional</div>
+            <div class="aviso">{{ __('mus.caja.z_provisional') }}</div>
         @endif
 
         <div class="sec">
-            <h2>Turno</h2>
-            <div class="fila"><span>Número</span><b>#{{ $cash->id }}</b></div>
-            <div class="fila"><span>Responsable</span><b>{{ $cash->user->name ?? '—' }}</b></div>
-            <div class="fila"><span>Apertura</span><b>{{ $cash->opened_at?->format('d/m/Y H:i') }}</b></div>
+            <h2>{{ __('mus.caja.z_turno') }}</h2>
+            <div class="fila"><span>{{ __('mus.ventas.numero') }}</span><b>#{{ $cash->id }}</b></div>
+            <div class="fila"><span>{{ __('mus.caja.responsable') }}</span><b>{{ $cash->user->name ?? '—' }}</b></div>
+            <div class="fila"><span>{{ __('mus.caja.apertura') }}</span><b>{{ $cash->opened_at?->format('d/m/Y H:i') }}</b></div>
             <div class="fila">
-                <span>Cierre</span>
-                <b>{{ $cash->closed_at?->format('d/m/Y H:i') ?? 'sin cerrar' }}</b>
+                <span>{{ __('mus.caja.cierre') }}</span>
+                <b>{{ $cash->closed_at?->format('d/m/Y H:i') ?? mb_strtolower(__('mus.caja.z_sin_cerrar')) }}</b>
             </div>
             @if ($cash->closer)
-                <div class="fila"><span>Cerró</span><b>{{ $cash->closer->name }}</b></div>
+                <div class="fila"><span>{{ __('mus.caja.cerro') }}</span><b>{{ $cash->closer->name }}</b></div>
             @endif
         </div>
 
         <div class="sec">
-            <h2>Ventas del turno</h2>
-            <div class="fila"><span>Operaciones</span><b>{{ $ventas->count() }}</b></div>
+            <h2>{{ __('mus.caja.ventas_turno') }}</h2>
+            <div class="fila"><span>{{ __('mus.caja.z_operaciones') }}</span><b>{{ $ventas->count() }}</b></div>
             @if ($anuladas->count())
-                <div class="fila"><span>Anuladas</span><b>{{ $anuladas->count() }}</b></div>
+                <div class="fila"><span>{{ __('mus.ventas.anuladas') }}</span><b>{{ $anuladas->count() }}</b></div>
             @endif
             <div class="fila">
-                <span>Ticket promedio</span>
+                <span>{{ __('mus.ventas.ticket_promedio') }}</span>
                 <b>${{ number_format($ventas->count() ? $totalV / $ventas->count() : 0, 0, ',', '.') }}</b>
             </div>
-            <div class="fila tot"><span>TOTAL VENDIDO</span>
+            <div class="fila tot"><span>{{ __('mus.caja.z_total') }}</span>
                 <b>${{ number_format($totalV, 0, ',', '.') }}</b></div>
         </div>
 
         <div class="sec">
-            <h2>Cobros por medio de pago</h2>
+            <h2>{{ __('mus.caja.z_cobros') }}</h2>
             @forelse ($porMedio as $m)
                 <div class="fila">
                     <span>{{ $m->method_name }} <i style="color:#B8C4D4">({{ $m->veces }})</i></span>
                     <b>${{ number_format((float) $m->total, 0, ',', '.') }}</b>
                 </div>
             @empty
-                <div class="fila"><span>Sin cobros registrados</span><b>—</b></div>
+                <div class="fila"><span>{{ __('mus.caja.z_sin_cobros') }}</span><b>—</b></div>
             @endforelse
         </div>
 
         <div class="sec">
-            <h2>Arqueo de efectivo</h2>
+            <h2>{{ __('mus.caja.z_arqueo') }}</h2>
             <div class="caja">
-                <div class="fila"><span>Base inicial</span>
+                <div class="fila"><span>{{ __('mus.caja.base_inicial') }}</span>
                     <b>${{ number_format((float) $cash->opening_amount, 0, ',', '.') }}</b></div>
-                <div class="fila"><span>Cobros en efectivo</span>
+                <div class="fila"><span>{{ __('mus.caja.z_cobros_efectivo') }}</span>
                     <b>${{ number_format($esperado - (float) $cash->opening_amount, 0, ',', '.') }}</b></div>
-                <div class="fila tot"><span>ESPERADO</span>
+                <div class="fila tot"><span>{{ __('mus.caja.z_esperado') }}</span>
                     <b>${{ number_format($esperado, 0, ',', '.') }}</b></div>
 
                 @unless ($abierta)
-                    <div class="fila" style="margin-top:8px"><span>Contado</span>
+                    <div class="fila" style="margin-top:8px"><span>{{ __('mus.caja.contado') }}</span>
                         <b>${{ number_format((float) $cash->counted_amount, 0, ',', '.') }}</b></div>
                 @endunless
             </div>
 
             @unless ($abierta)
                 @if (abs($dif) < 0.01)
-                    <div class="dif ok">LA CAJA CUADRÓ</div>
+                    <div class="dif ok">{{ __('mus.caja.z_cuadro') }}</div>
                 @elseif ($dif > 0)
-                    <div class="dif sobra">SOBRANTE ${{ number_format($dif, 0, ',', '.') }}</div>
+                    <div class="dif sobra">{{ __('mus.caja.z_sobrante', ['monto' => \App\Support\Formato::moneda($dif)]) }}</div>
                 @else
-                    <div class="dif falta">FALTANTE ${{ number_format(abs($dif), 0, ',', '.') }}</div>
+                    <div class="dif falta">{{ __('mus.caja.z_faltante', ['monto' => \App\Support\Formato::moneda(abs($dif))]) }}</div>
                 @endif
             @endunless
         </div>
 
         @if ($top->count())
             <div class="sec">
-                <h2>Lo más vendido</h2>
+                <h2>{{ __('mus.caja.z_mas_vendido') }}</h2>
                 <table>
                     @foreach ($top as $t)
                         @php $unidades += (float) $t->unidades; @endphp
                         <tr>
                             <td>
                                 <span class="nom">{{ \Illuminate\Support\Str::limit($t->name, 26) }}</span><br>
-                                <span class="sub">{{ rtrim(rtrim(number_format((float) $t->unidades, 2, ',', '.'), '0'), ',') }} und.</span>
+                                <span class="sub">{{ rtrim(rtrim(number_format((float) $t->unidades, 2, ',', '.'), '0'), ',') }} {{ __('mus.caja.z_und') }}</span>
                             </td>
                             <td class="n">${{ number_format((float) $t->total, 0, ',', '.') }}</td>
                         </tr>
@@ -188,11 +188,11 @@
             </div>
         @endif
 
-        <div class="firma">Firma del cajero</div>
-        <div class="firma">Firma de quien recibe</div>
+        <div class="firma">{{ __('mus.caja.z_firma_cajero') }}</div>
+        <div class="firma">{{ __('mus.caja.z_firma_recibe') }}</div>
 
         <div class="pie">
-            Cierre Z generado el {{ now()->format('d/m/Y H:i') }}<br>
+            {{ __('mus.caja.z_generado', ['fecha' => now()->format('d/m/Y H:i')]) }}<br>
             {{ $cfg['negocio.nombre'] }}
         </div>
     </div>

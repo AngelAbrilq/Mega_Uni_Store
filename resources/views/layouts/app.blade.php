@@ -1698,9 +1698,9 @@
                         : 'Retomamos justo donde lo dejaste.' }}
                 </p>
                 <div class="g-bar"><i></i></div>
-                <p class="g-status" id="musGateStatus">Verificando sesión</p>
+                <p class="g-status" id="musGateStatus">{{ __('mus.puertas.verificando') }}</p>
             </div>
-            <div class="g-skip">Clic para entrar</div>
+            <div class="g-skip">{{ __('mus.puertas.clic_entrar') }}</div>
         </div>
     @endif
 
@@ -1733,7 +1733,7 @@
                 <span class="b-dot" style="--a:330deg"></span>
             </div>
             <h3 class="b-title" id="musByeTitle"></h3>
-            <p class="b-sub">Hasta pronto</p>
+            <p class="b-sub">{{ __('mus.puertas.hasta_pronto') }}</p>
             <div class="b-bar"><i></i></div>
         </div>
     </div>
@@ -1772,11 +1772,11 @@
                             <circle cx="12" cy="12" r="2.6"/>
                         </svg>
                     </span>
-                    <b>Estás viendo «{{ $musMirando->nombre }}»</b>
-                    <em>Lo que hagas queda a tu nombre en la auditoría del cliente.</em>
+                    <b>{{ __('mus.puertas.mirando', ['negocio' => $musMirando->nombre]) }}</b>
+                    <em>{{ __('mus.puertas.mirando_aviso') }}</em>
                     <form method="POST" action="{{ route('sistema.salir') }}" data-sin-ctx>
                         @csrf
-                        <button type="submit">Volver a lo mío</button>
+                        <button type="submit">{{ __('mus.puertas.volver_a_lo_mio') }}</button>
                     </form>
                 </div>
             @endif
@@ -1794,9 +1794,9 @@
                             <circle cx="12" cy="12" r="9"/><path d="M12 7.2V12l3.2 2"/>
                         </svg>
                     </span>
-                    <b>Prueba de «{{ $musDemoEmpresa->nombre }}»</b>
-                    <span class="mdemo-banda__t" id="musDemoReloj">{{ $musDemoMin }} min</span>
-                    <em>Los datos son de ejemplo. Al terminar, escríbenos y te montamos el tuyo.</em>
+                    <b>{{ __('mus.puertas.demo_de', ['negocio' => $musDemoEmpresa->nombre]) }}</b>
+                    <span class="mdemo-banda__t" id="musDemoReloj">{{ $musDemoMin }} {{ __('mus.puertas.demo_min') }}</span>
+                    <em>{{ __('mus.puertas.demo_aviso') }}</em>
                 </div>
             @endif
 
@@ -1830,7 +1830,7 @@
                 <div class="mbell" id="musBell">
                     <button class="mbell__btn {{ $musAlertas['criticas'] ? 'is-alta' : ($musAlertas['total'] ? 'is-media' : '') }}"
                             type="button" id="musBellBtn"
-                            aria-label="Avisos del sistema ({{ $musAlertas['total'] }})">
+                            aria-label="{{ __('mus.buscador.avisos_n', ['n' => $musAlertas['total']]) }}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
                              stroke-linecap="round" stroke-linejoin="round">
                             <path d="M18 8.5a6 6 0 1 0-12 0c0 5-2.2 6.5-2.2 6.5h16.4S18 13.5 18 8.5"/>
@@ -1843,7 +1843,7 @@
 
                     <div class="mbell__box" id="musBellBox">
                         <header>
-                            <b>Avisos</b>
+                            <b>{{ __('mus.buscador.avisos') }}</b>
                             <span>{{ $musAlertas['total'] ? $musAlertas['total'] . ' pendiente(s)' : 'todo en orden' }}</span>
                         </header>
 
@@ -1858,19 +1858,19 @@
                         @empty
                             <div class="mbell__ok">
                                 <x-mus.icon name="check" :w="22" stroke-width="2" />
-                                <p>No hay nada que atender.</p>
+                                <p>{{ __('mus.buscador.sin_avisos') }}</p>
                             </div>
                         @endforelse
                     </div>
                 </div>
 
-                <button class="mkbd-btn" type="button" data-cmd-open aria-label="Buscar (Ctrl K)">
+                <button class="mkbd-btn" type="button" data-cmd-open aria-label="{{ __('mus.buscador.abrir') }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/>
                     </svg>
-                    Buscar
-                    <kbd>Ctrl K</kbd>
+                    {{ __('mus.acciones.buscar') }}
+                    <kbd>{{ __('mus.buscador.kbd_ctrl_k') }}</kbd>
                 </button>
 
                 <span class="mus-progress" id="musProgress"></span>
@@ -1883,8 +1883,8 @@
             <div class="mmod" id="musMod" role="dialog" aria-modal="true" aria-hidden="true">
                 <div class="mmod__caja" id="musModCaja">
                     <header class="mmod__barra">
-                        <h2 id="musModTitulo">Cargando…</h2>
-                        <button type="button" class="mmod__x" data-mod-cerrar aria-label="Cerrar">
+                        <h2 id="musModTitulo">{{ __('mus.puertas.cargando') }}</h2>
+                        <button type="button" class="mmod__x" data-mod-cerrar aria-label="{{ __('mus.acciones.cerrar') }}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2.2" stroke-linecap="round">
                                 <path d="M6 6 18 18M18 6 6 18"/>
@@ -2198,7 +2198,7 @@
             arrancar();
         } else {
             var st = document.getElementById('musGateStatus');
-            var frases = ['Verificando sesión', 'Cargando módulos', 'Preparando tu panel', 'Todo listo'];
+            var frases = @json(__('mus.puertas.gate_frases'));
             var fi = 0;
             if (st) st.style.transition = 'opacity .24s ease';
             var tick = setInterval(function () {
@@ -2313,13 +2313,13 @@
                 </svg>
                 <input class="mcmd__in" id="musCmdIn" type="text" autocomplete="off" spellcheck="false"
                        placeholder="{{ __('mus.ui.buscar_ph') }}">
-                <span class="mcmd__kbd">ESC</span>
+                <span class="mcmd__kbd">{{ mb_strtoupper(__('mus.buscador.kbd_esc')) }}</span>
             </div>
             <div class="mcmd__list" id="musCmdList"></div>
             <div class="mcmd__foot">
                 <span><b>↑ ↓</b> {{ __('mus.ui.moverse') }}</span>
-                <span><b>Enter</b> {{ __('mus.ui.abrir') }}</span>
-                <span><b>Esc</b> {{ __('mus.ui.cerrar_kbd') }}</span>
+                <span><b>{{ __('mus.buscador.kbd_enter') }}</b> {{ __('mus.ui.abrir') }}</span>
+                <span><b>{{ __('mus.buscador.kbd_esc') }}</b> {{ __('mus.ui.cerrar_kbd') }}</span>
             </div>
         </div>
     </div>
@@ -2351,7 +2351,7 @@
                 '<span class="mtoast__ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
                 'stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' + (ICO[tipo] || ICO.info) + '</svg></span>' +
                 '<span class="mtoast__txt"><b></b>' + (texto ? '<span></span>' : '') + '</span>' +
-                '<button class="mtoast__x" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" ' +
+                '<button class="mtoast__x" aria-label=' + JSON.stringify(@json(__('mus.acciones.cerrar'))) + '><svg viewBox="0 0 24 24" fill="none" ' +
                 'stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>' +
                 '<span class="mtoast__bar"><i></i></span>';
             t.querySelector('.mtoast__txt b').textContent = titulo;
@@ -3003,7 +3003,7 @@
                 focoPrevio = document.activeElement;
                 urlAbierta = url;
 
-                titulo.textContent = texto || 'Cargando…';
+                titulo.textContent = texto || @json(__('mus.puertas.cargando'));
                 caja.style.setProperty('--mmw', (parseInt(ancho, 10) || 760) + 'px');
 
                 cargando();

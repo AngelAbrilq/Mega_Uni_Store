@@ -30,6 +30,8 @@ return [
     'devoluciones'    => 'Devoluciones',
     'devoluciones_sub' => 'Cambios y reintegros',
     'reportes'        => 'Reportes',
+    'agenda'          => 'Agenda',
+    'recursos'        => 'Quién atiende',
     'reportes_sub'    => 'Cómo va el negocio',
     'productos'       => 'Productos',
     'productos_sub'   => 'Catálogo y precios',

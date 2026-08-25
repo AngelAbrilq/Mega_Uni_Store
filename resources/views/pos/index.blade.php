@@ -1,22 +1,21 @@
-<x-mus.page title="Punto de venta" subtitle="Atiende al cliente y cobra" icon="money">
+<x-mus.page :title="__('mus.pos.titulo')" :subtitle="__('mus.pos.subtitulo')" icon="money">
     <x-slot name="actions">
         @if ($turno)
             <x-mus.btn href="{{ route('cash.show', $turno) }}" icon="clock">
-                Turno abierto · base ${{ number_format((float) $turno->opening_amount, 0, ',', '.') }}
+                {{ __('mus.pos.turno_abierto', ['base' => '$' . number_format((float) $turno->opening_amount, 0, ',', '.')]) }}
             </x-mus.btn>
         @elseif (Route::has('cash.create'))
-            <x-mus.btn href="{{ route('cash.create') }}" variant="primary" icon="money">Abrir caja</x-mus.btn>
+            <x-mus.btn href="{{ route('cash.create') }}" variant="primary" icon="money">{{ __('mus.caja.abrir') }}</x-mus.btn>
         @endif
-        <x-mus.btn href="{{ route('sales.index') }}" icon="back">Ventas del día</x-mus.btn>
+        <x-mus.btn href="{{ route('sales.index') }}" icon="back">{{ __('mus.pos.ventas_dia') }}</x-mus.btn>
     </x-slot>
 
     @unless ($turno)
         <div class="pos-aviso" data-reveal>
             <span><x-mus.icon name="alert" :w="16" stroke-width="2.2" /></span>
             <div>
-                <b>No tienes un turno de caja abierto.</b>
-                <p>Puedes vender igual, pero la venta no quedará asociada a ningún arqueo.
-                   Lo recomendable es abrir la caja con su base antes de empezar.</p>
+                <b>{{ __('mus.pos.sin_turno') }}</b>
+                <p>{{ __('mus.pos.sin_turno_detalle') }}</p>
             </div>
         </div>
     @endunless
@@ -31,7 +30,7 @@
                     <div class="pos-buscar">
                         <x-mus.icon name="search" :w="16" stroke-width="2" />
                         <input type="text" id="posBuscar" autocomplete="off" autofocus
-                               placeholder="Nombre, SKU o código de barras…  (F2)">
+                               placeholder="{{ __('mus.pos.buscar_ph') }}">
                         <kbd>F2</kbd>
                     </div>
                     <span class="pos-cat__n" id="posCuenta"></span>
@@ -40,7 +39,7 @@
                 <div class="pos-grid" id="posGrid"></div>
                 <div class="pos-vacio" id="posVacio" hidden>
                     <x-mus.icon name="search" :w="26" stroke-width="1.5" />
-                    <p>Ningún producto coincide con la búsqueda.</p>
+                    <p>{{ __('mus.pos.sin_coincidencias') }}</p>
                 </div>
             </section>
 
@@ -48,29 +47,29 @@
             <section class="pos-tic" data-reveal="right">
                 <header class="pos-tic__head">
                     <div>
-                        <h3>Venta en curso</h3>
-                        <p id="posResumen">Sin productos</p>
+                        <h3>{{ __('mus.pos.venta_en_curso') }}</h3>
+                        <p id="posResumen">{{ __('mus.pos.sin_productos') }}</p>
                     </div>
-                    <button type="button" class="mb mb--ghost mb--sm" id="posVaciar">Vaciar</button>
+                    <button type="button" class="mb mb--ghost mb--sm" id="posVaciar">{{ __('mus.acciones.limpiar') }}</button>
                 </header>
 
                 <div class="pos-tic__body" id="posLineas"></div>
 
                 <div class="pos-tic__empty" id="posTicVacio">
                     <x-mus.icon name="box" :w="26" stroke-width="1.5" />
-                    <p>Toca un producto para agregarlo.</p>
+                    <p>{{ __('mus.pos.toca_para_agregar') }}</p>
                 </div>
 
                 <div class="pos-tot">
-                    <div><span>Subtotal</span><b id="totSub">$0</b></div>
-                    <div><span>Descuentos</span><b id="totDesc">$0</b></div>
-                    <div><span>Impuestos</span><b id="totImp">$0</b></div>
-                    <div class="pos-tot__big"><span>Total</span><b id="totTotal">$0</b></div>
+                    <div><span>{{ __('mus.campos.subtotal') }}</span><b id="totSub">$0</b></div>
+                    <div><span>{{ __('mus.campos.descuentos') }}</span><b id="totDesc">$0</b></div>
+                    <div><span>{{ __('mus.campos.impuestos') }}</span><b id="totImp">$0</b></div>
+                    <div class="pos-tot__big"><span>{{ __('mus.campos.total') }}</span><b id="totTotal">$0</b></div>
                 </div>
 
                 <div class="pos-tic__foot">
                     <select name="customer_id" class="pos-sel" id="posCliente">
-                        <option value="">Consumidor final</option>
+                        <option value="">{{ __('mus.vacio.consumidor_final') }}</option>
                         @foreach ($clientes as $c)
                             <option value="{{ $c->id }}">
                                 {{ trim($c->first_name . ' ' . $c->last_name) }}
@@ -81,7 +80,7 @@
 
                     <button type="button" class="mb mb--primary mb--block" id="posCobrar" disabled>
                         <x-mus.icon name="money" :w="16" stroke-width="2" />
-                        Cobrar <span id="posCobrarTot"></span>
+                        {{ __('mus.acciones.cobrar') }} <span id="posCobrarTot"></span>
                         <kbd>F9</kbd>
                     </button>
                 </div>
@@ -91,28 +90,28 @@
         {{-- ══════════ Barra de cobro fija (solo celular) ══════════ --}}
         <div class="pos-movil" id="posMovil">
             <button type="button" class="pos-movil__t" id="posMovilVer">
-                <span id="posMovilN">Sin productos</span>
+                <span id="posMovilN">{{ __('mus.pos.sin_productos') }}</span>
                 <b id="posMovilTot">$0</b>
             </button>
             <button type="button" class="mb mb--primary" id="posMovilCobrar">
                 <x-mus.icon name="money" :w="16" stroke-width="2" />
-                Cobrar
+                {{ __('mus.acciones.cobrar') }}
             </button>
         </div>
 
         {{-- ══════════ Modal de cobro ══════════ --}}
-        <div class="pos-modal" id="posModal" role="dialog" aria-modal="true" aria-label="Cobrar">
+        <div class="pos-modal" id="posModal" role="dialog" aria-modal="true" aria-label="{{ __('mus.pos.cobrar_aria') }}">
             <div class="pos-modal__box">
                 <header>
-                    <h3>Cobrar</h3>
-                    <button type="button" id="posCerrar" aria-label="Cerrar">
+                    <h3>{{ __('mus.acciones.cobrar') }}</h3>
+                    <button type="button" id="posCerrar" aria-label="{{ __('mus.acciones.cerrar') }}">
                         <x-mus.icon name="close" :w="16" stroke-width="2.4" />
                     </button>
                 </header>
 
                 <div class="pos-cobro">
                     <div class="pos-cobro__tot">
-                        <span>Total a cobrar</span>
+                        <span>{{ __('mus.pos.total_a_cobrar') }}</span>
                         <b id="modalTotal">$0</b>
                     </div>
 
@@ -132,24 +131,24 @@
                     </div>
 
                     <button type="button" class="mb mb--ghost mb--sm mb--block" id="posExacto">
-                        Pago exacto en el primer medio
+                        {{ __('mus.pos.pago_exacto') }}
                     </button>
 
                     <div class="pos-cobro__res">
-                        <div><span>Recibido</span><b id="modalRecibido">$0</b></div>
-                        <div><span>Falta</span><b id="modalFalta" class="bad">$0</b></div>
-                        <div><span>Cambio</span><b id="modalCambio" class="ok">$0</b></div>
+                        <div><span>{{ __('mus.pos.recibido') }}</span><b id="modalRecibido">$0</b></div>
+                        <div><span>{{ __('mus.pos.falta') }}</span><b id="modalFalta" class="bad">$0</b></div>
+                        <div><span>{{ __('mus.pos.cambio') }}</span><b id="modalCambio" class="ok">$0</b></div>
                     </div>
 
                     <textarea name="notes" rows="2" class="pos-notas"
-                              placeholder="Nota de la venta (opcional)"></textarea>
+                              placeholder="{{ __('mus.pos.nota_venta') }}"></textarea>
                 </div>
 
                 <footer>
-                    <button type="button" class="mb mb--ghost" id="posVolver">Volver</button>
+                    <button type="button" class="mb mb--ghost" id="posVolver">{{ __('mus.acciones.volver') }}</button>
                     <button type="submit" class="mb mb--primary" id="posConfirmar" disabled>
                         <x-mus.icon name="check" :w="15" stroke-width="2.4" />
-                        Confirmar venta
+                        {{ __('mus.pos.confirmar_venta') }}
                     </button>
                 </footer>
             </div>

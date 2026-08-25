@@ -1,4 +1,6 @@
 @php
+    use App\Support\Formato;
+
     $tonos = ['creado' => 'ok', 'actualizado' => 'info', 'eliminado' => 'bad', 'restaurado' => 'warn'];
 
     $mostrar = function ($v) {
@@ -11,7 +13,7 @@
 @endphp
 
 <x-mus.page title="{{ $audit->evento_label }} {{ $audit->modelo }}"
-            subtitle="{{ $audit->auditable_label }} · {{ $audit->created_at?->locale('es')->isoFormat('D [de] MMMM [de] YYYY, HH:mm:ss') }}"
+            subtitle="{{ $audit->auditable_label }} · {{ Formato::enPalabras($audit->created_at, 'D [de] MMMM [de] YYYY, HH:mm:ss') }}"
             icon="key"
             :crumbs="['Auditoría' => route('audit.index'), 'Detalle' => null]">
 

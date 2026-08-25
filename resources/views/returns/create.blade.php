@@ -1,3 +1,5 @@
+@php use App\Support\Formato; @endphp
+
 <x-mus.page title="Devolución sobre {{ $sale->number }}"
             subtitle="Elige qué se devuelve y cuánto" icon="back"
             :crumbs="['Ventas' => route('sales.index'), 'Devolución' => null]">
@@ -101,7 +103,7 @@
                     </x-slot>
                 </x-mus.panel>
 
-                <x-mus.panel title="La venta original" sub="{{ $sale->sold_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') }}">
+                <x-mus.panel title="La venta original" sub="{{ Formato::enPalabras($sale->sold_at, 'D MMM YYYY, HH:mm') }}">
                     <dl class="mdl">
                         <div><dt>Número</dt><dd>{{ $sale->number }}</dd></div>
                         <div><dt>Cliente</dt><dd>{{ $sale->customer?->full_name ?? 'Consumidor final' }}</dd></div>

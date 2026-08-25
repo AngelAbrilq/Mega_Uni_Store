@@ -42,6 +42,7 @@ return [
         'cerrar'      => 'Close',
         'confirmar'   => 'Confirm',
         'aceptar'     => 'OK',
+        'cobrar'      => 'Take payment',
         'anular'      => 'Void',
         'aplicar'     => 'Apply',
         'seleccionar' => 'Select',
@@ -165,6 +166,8 @@ return [
         'sin_categoria'   => 'No category',
         'sin_proveedor'   => 'No supplier',
         'consumidor_final' => 'Walk-in customer',
+        'alguien'         => 'Someone',
+        'sin_turno'       => 'No shift',
         'guion'           => '—',
     ],
 
@@ -224,5 +227,218 @@ return [
         'aqui_vendes'   => 'Whatever you register stays in this store.',
         'est_vencida'   => 'trial expired',
         'est_suspendida'=> 'suspended',
+    ],
+
+    /* ────────────────── System gates ──────────────────
+       The layout's transition screens: session check, sign-off, the red
+       "you are viewing another business" banner, and the trial clock. */
+    'puertas' => [
+        'verificando'    => 'Checking your session',
+        'clic_entrar'    => 'Click to continue',
+        'hasta_pronto'   => 'See you soon',
+        'cargando'       => 'Loading…',
+        /* The phrases that cycle on the entry screen. Read from JavaScript,
+           which is why they live here and not loose in the script. */
+        'gate_frases'    => ['Checking your session', 'Loading modules', 'Getting your panel ready', 'All set'],
+        'mirando'        => 'You are viewing “:negocio”',
+        'mirando_aviso'  => 'Anything you do here is logged under your name in the customer\'s audit trail.',
+        'volver_a_lo_mio' => 'Back to my account',
+        'demo_de'        => 'Trial of “:negocio”',
+        'demo_min'       => 'min',
+        'demo_aviso'     => 'This is sample data. When you are done, get in touch and we will set up yours.',
+    ],
+
+    /* ────────────────── Search and alerts ────────────────── */
+    'buscador' => [
+        'avisos'          => 'Alerts',
+        'avisos_n'        => 'System alerts (:n)',
+        'sin_avisos'      => 'Nothing needs your attention.',
+        'abrir'           => 'Search (Ctrl K)',
+        'kbd_ctrl_k'      => 'Ctrl K',
+        'kbd_enter'       => 'Enter',
+        'kbd_esc'         => 'Esc',
+    ],
+
+    /* ────────────────── Point of sale ────────────────── */
+    'pos' => [
+        'titulo'          => 'Point of sale',
+        'subtitulo'       => 'Serve the customer and take payment',
+        'buscar_ph'       => 'Name, SKU or barcode…  (F2)',
+        'sin_coincidencias' => 'No product matches that search.',
+
+        'turno_abierto'   => 'Shift open · float :base',
+        'ventas_dia'      => 'Sales today',
+        'sin_turno'       => 'You do not have a register shift open.',
+        'sin_turno_detalle' => 'You can still sell, but the sale will not belong to any cash count. '
+            . 'Better to open the register with its float before you start.',
+
+        'venta_en_curso'  => 'Current sale',
+        'sin_productos'   => 'No items yet',
+        'toca_para_agregar' => 'Tap a product to add it.',
+        'nota_venta'      => 'Sale note (optional)',
+
+        'total_a_cobrar'  => 'Amount due',
+        'pago_exacto'     => 'Exact amount on the first method',
+        'recibido'        => 'Tendered',
+        'falta'           => 'Still owed',
+        'cambio'          => 'Change',
+        'cobrar_aria'     => 'Take payment for this sale',
+        /* Strings the register's JavaScript builds. They live here rather
+           than loose in the script because they are the most-read text in
+           the whole system: the cashier sees them on every tap. */
+        'js_producto'     => 'item',
+        'js_productos'    => 'items',
+        'js_unidad'       => 'unit',
+        'js_unidades'     => 'units',
+        'js_sin_stock'    => 'Out of stock',
+        'js_solo_quedan'  => 'Only :n of “:que” left.',
+        'js_guardando'    => 'Saving…',
+        'confirmar_venta' => 'Complete sale',
+    ],
+
+    /* ────────────────── Sales ────────────────── */
+    'ventas' => [
+        'titulo'          => 'Sales',
+        'subtitulo'       => 'Everything that has gone through the register',
+        'nueva'           => 'New sale',
+        'ir_al_pos'       => 'Go to point of sale',
+        'buscar_ph'       => 'Number or customer…',
+
+        'del_periodo'     => 'Sales this period',
+        'facturado'       => 'Revenue',
+        'utilidad'        => 'Profit',
+        'margen_pct'      => 'Margin %',
+        'ticket_promedio' => 'Average ticket',
+        'anuladas'        => 'Voided',
+        'todas'           => 'All',
+        'pagadas'         => 'Paid',
+        'todos_vendedores' => 'All cashiers',
+
+        'numero'          => 'Number',
+        'vendedor'        => 'Cashier',
+        'articulos'       => 'Items',
+        'anulada'         => 'Voided',
+        'pagada'          => 'Paid',
+
+        'vacio_titulo'    => 'No sales in this period',
+        'vacio_texto'     => 'Change the date range, or ring up your first sale at the point of sale.',
+
+        /* ── Detail ── */
+        'una'             => 'Sale',
+        'recibo'          => 'Receipt',
+        'devolucion'      => 'Return',
+        'anular'          => 'Void',
+        'volver_listado'  => 'Back to the list',
+
+        'esta_anulada'    => 'Sale voided',
+        'la_anulo'        => ':quien voided it on :cuando. The goods went back into stock.',
+        'con_devoluciones' => ':n return(s) against this sale',
+        'se_regreso'      => ':monto was refunded to the customer.',
+
+        'productos_vendidos' => 'Items sold',
+        'renglones'       => 'lines',
+        'cant'            => 'Qty',
+        'devuelto'        => 'Returned',
+        'como_se_pago'    => 'How it was paid',
+        'medios'          => 'method(s)',
+        'datos'           => 'Sale details',
+        'turno_caja'      => 'Register shift',
+        'costo_vendido'   => 'Cost of goods sold',
+        'nota'            => 'Note',
+
+        'anular_titulo'   => 'Void this sale',
+        'anular_aviso'    => 'The sale is not deleted: it is marked as voided and the items go back into '
+            . 'stock with their own inventory movement. This cannot be undone.',
+        'anular_motivo'   => 'Reason for voiding',
+        'anular_motivo_ph' => 'e.g. the customer returned the goods',
+        'anular_si'       => 'Yes, void this sale',
+    ],
+
+    /* ────────────────── Register ────────────────── */
+    'caja' => [
+        'titulo'          => 'Register',
+        'subtitulo'       => 'Shifts, cash counts and discrepancies',
+        'abrir'           => 'Open shift',
+        'ir_a_mi_turno'   => 'Go to my open shift',
+        'turnos'          => 'shifts',
+        'responsable'     => 'Cashier',
+        'base'            => 'Float',
+        'esperado'        => 'Expected',
+        'contado'         => 'Counted',
+        'diferencia'      => 'Difference',
+        'abierta'         => 'Open',
+        'cerrada'         => 'Closed',
+
+        'vacio_titulo'    => 'No register shift has been opened yet',
+        'vacio_texto'     => 'Open a shift with its starting float so cash sales can be reconciled.',
+        'vacio_accion'    => 'Open the first shift',
+
+        /* ── Opening ── */
+        'abrir_titulo'    => 'Open a register shift',
+        'abrir_subtitulo' => 'Count the float before you start selling',
+        'base_inicial'    => 'Starting float',
+        'base_sub'        => 'The cash the drawer starts with',
+        'base_monto'      => 'Float amount',
+        'base_hint'       => 'What is physically in the drawer before the first sale.',
+        'obs_hint'        => 'Optional. For example: who handed over the float.',
+        'abrir_aviso'     => 'When you close the shift, the system works out how much cash there should be '
+            . '(float + sales paid in cash) and compares it with what you count. '
+            . 'The difference is recorded.',
+
+        /* ── Shift detail ── */
+        'turno_num'       => 'Register shift #:n',
+        'abierto_el'      => '· opened on :fecha',
+        'cierre_z'        => 'Z report',
+        'cerrar_arquear'  => 'Close and count',
+        'vendido_turno'   => 'Sold this shift',
+        'efectivo_esperado' => 'Expected cash',
+        'efectivo_esperado_sub' => 'float + cash payments',
+        'desde_hace'      => 'for',
+        'ventas_turno'    => 'Sales this shift',
+        'registros'       => 'records',
+        'sin_ventas'      => 'No sales yet',
+        'sin_ventas_texto' => 'Your first sale will show up here.',
+        'sin_cobros_turno' => 'Nothing has been collected on this shift yet.',
+        'por_medio_pago'  => 'By payment method',
+        'por_medio_sub'   => 'What to compare against when you count',
+        'datos_turno'     => 'Shift details',
+        'abrio'           => 'Opened by',
+        'apertura'        => 'Opened',
+        'cerro'           => 'Closed by',
+        'cierre'          => 'Closed',
+        'volver_turnos'   => 'Back to shifts',
+
+        /* ── Cash count ── */
+        'arqueo'          => 'Cash count',
+        'arqueo_segun'    => 'The system expects',
+        'arqueo_detalle'  => 'in cash (a :base float plus cash payments). '
+            . 'Count the drawer and enter what is actually there.',
+        'efectivo_contado' => 'Cash counted',
+        'cerrar_turno'    => 'Close shift',
+
+        /* ── Z report ── */
+        'cuadro'          => 'register balanced',
+        'sobrante'        => 'over',
+        'faltante'        => 'short',
+        'z_titulo'        => 'Z report · Shift #:n — :negocio',
+        'z_encabezado'    => 'Z REPORT',
+        'z_provisional'   => 'SHIFT STILL OPEN · provisional report',
+        'z_turno'         => 'Shift',
+        'z_sin_cerrar'    => 'Not closed',
+        'z_operaciones'   => 'Transactions',
+        'z_total'         => 'TOTAL SOLD',
+        'z_cobros'        => 'Payments by method',
+        'z_sin_cobros'    => 'No payments recorded',
+        'z_arqueo'        => 'Cash count',
+        'z_cobros_efectivo' => 'Cash payments',
+        'z_esperado'      => 'EXPECTED',
+        'z_cuadro'        => 'REGISTER BALANCED',
+        'z_sobrante'      => 'OVER :monto',
+        'z_faltante'      => 'SHORT :monto',
+        'z_mas_vendido'   => 'Best sellers',
+        'z_und'           => 'units',
+        'z_firma_cajero'  => 'Cashier signature',
+        'z_firma_recibe'  => 'Received by',
+        'z_generado'      => 'Z report generated on :fecha',
     ],
 ];

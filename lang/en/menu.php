@@ -25,6 +25,8 @@ return [
     'devoluciones'    => 'Returns',
     'devoluciones_sub' => 'Exchanges and refunds',
     'reportes'        => 'Reports',
+    'agenda'          => 'Schedule',
+    'recursos'        => 'Who attends',
     'reportes_sub'    => 'How the business is doing',
     'productos'       => 'Products',
     'productos_sub'   => 'Catalog and prices',

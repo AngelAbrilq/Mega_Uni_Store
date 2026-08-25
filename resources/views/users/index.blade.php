@@ -1,4 +1,6 @@
 @php
+    use App\Support\Formato;
+
     $colores = [
         'Superadministrador' => '#1B4870',
         'Administrador'      => '#2E6EA8',
@@ -79,7 +81,7 @@
                                         <x-mus.badge tone="bad" :dot="true">Sin rol</x-mus.badge>
                                     @endforelse
                                 </td>
-                                <td>{{ $user->created_at?->locale('es')->isoFormat('D MMM YYYY') ?? '—' }}</td>
+                                <td>{{ Formato::enPalabras($user->created_at, 'D MMM YYYY', '—') }}</td>
                                 <td class="act">
                                     <span class="mt__acts">
                                         @can('usuarios.ver')

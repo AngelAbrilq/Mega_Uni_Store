@@ -12,6 +12,7 @@
             ['sales.index',     __('menu.ventas'),       'receipt', 'ventas.ver'],
             ['cash.index',      __('menu.caja'),         'wallet',  'caja.ver'],
             ['returns.index',   __('menu.devoluciones'), 'back',    'ventas.ver'],
+            ['agenda.index',    __('menu.agenda'),       'clock',   'citas.ver'],
             ['reports.index',   __('menu.reportes'),     'trend',   'reportes.ver'],
         ],
         __('menu.grupos.catalogo') => [
@@ -32,6 +33,7 @@
             ['attributes.index',      __('menu.atributos'),   'tag',     'atributos.ver'],
         ],
         __('menu.grupos.administracion') => [
+            ['recursos.index', __('menu.recursos'),  'users',  'agenda.recursos'],
             ['users.index',    __('menu.usuarios'),  'shield', 'usuarios.ver'],
             ['roles.index',    __('menu.roles'),     'roles',  'roles.gestionar'],
             ['audit.index',    __('menu.auditoria'), 'key',    'auditoria.ver'],

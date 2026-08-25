@@ -1,9 +1,11 @@
 @php
+    use App\Support\Formato;
+
     $tonos = ['borrador' => 'warn', 'recibida' => 'ok', 'anulada' => 'bad'];
 @endphp
 
 <x-mus.page title="Compra {{ $purchase->number }}"
-            subtitle="{{ $purchase->supplier->name ?? '' }} · {{ $purchase->ordered_at?->locale('es')->isoFormat('D [de] MMMM [de] YYYY') }}"
+            subtitle="{{ $purchase->supplier->name ?? '' }} · {{ Formato::enPalabras($purchase->ordered_at, 'D [de] MMMM [de] YYYY') }}"
             icon="truck"
             :crumbs="['Compras' => route('purchases.index'), 'Detalle' => null]">
 
@@ -41,7 +43,7 @@
             <div>
                 <b>Mercancía recibida</b>
                 <p>{{ $purchase->receiver->name ?? 'Alguien' }} le dio entrada
-                   el {{ $purchase->received_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') }}.
+                   el {{ Formato::enPalabras($purchase->received_at, 'D MMM YYYY, HH:mm') }}.
                    El inventario ya está actualizado.</p>
             </div>
         </div>
@@ -123,10 +125,10 @@
                     </dd>
                 </div>
                 <div><dt>Registró</dt><dd>{{ $purchase->user->name ?? '—' }}</dd></div>
-                <div><dt>Fecha del pedido</dt><dd>{{ $purchase->ordered_at?->locale('es')->isoFormat('D MMM YYYY') }}</dd></div>
+                <div><dt>Fecha del pedido</dt><dd>{{ Formato::enPalabras($purchase->ordered_at, 'D MMM YYYY') }}</dd></div>
                 @if ($purchase->received_at)
                     <div><dt>Recibió</dt><dd>{{ $purchase->receiver->name ?? '—' }}</dd></div>
-                    <div><dt>Entrada</dt><dd>{{ $purchase->received_at->locale('es')->isoFormat('D MMM YYYY, HH:mm') }}</dd></div>
+                    <div><dt>Entrada</dt><dd>{{ Formato::enPalabras($purchase->received_at, 'D MMM YYYY, HH:mm') }}</dd></div>
                 @endif
                 @if ($purchase->notes)
                     <div><dt>Observaciones</dt><dd style="white-space:pre-line">{{ $purchase->notes }}</dd></div>

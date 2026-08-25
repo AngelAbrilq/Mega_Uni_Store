@@ -1,3 +1,5 @@
+@php use App\Support\Formato; @endphp
+
 <x-mus.page title="{{ trim($customer->first_name . ' ' . $customer->last_name) }}" subtitle="Ficha de cliente" icon="users"
             :crumbs="['Clientes' => route('customers.index'), 'Detalle' => null]">
 
@@ -55,11 +57,11 @@
                 </div>
                 <div>
                     <dt>Creado</dt>
-                    <dd>{{ $customer->created_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') ?? '—' }}</dd>
+                    <dd>{{ Formato::enPalabras($customer->created_at, 'D MMM YYYY, HH:mm', '—') }}</dd>
                 </div>
                 <div>
                     <dt>Última edición</dt>
-                    <dd>{{ $customer->updated_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') ?? '—' }}</dd>
+                    <dd>{{ Formato::enPalabras($customer->updated_at, 'D MMM YYYY, HH:mm', '—') }}</dd>
                 </div>
             </dl>
 

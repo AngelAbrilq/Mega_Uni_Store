@@ -1,33 +1,29 @@
-<x-mus.page title="Abrir turno de caja" subtitle="Cuenta la base antes de empezar a vender" icon="money"
-            :crumbs="['Caja' => route('cash.index'), 'Abrir' => null]">
+<x-mus.page :title="__('mus.caja.abrir_titulo')" :subtitle="__('mus.caja.abrir_subtitulo')" icon="money"
+            :crumbs="[__('mus.caja.titulo') => route('cash.index'), __('mus.caja.abrir') => null]">
 
     <form method="POST" action="{{ route('cash.store') }}" novalidate>
         @csrf
 
-        <x-mus.panel title="Base inicial" sub="El efectivo con el que arranca el cajón">
+        <x-mus.panel :title="__('mus.caja.base_inicial')" :sub="__('mus.caja.base_sub')">
             <div class="mf">
                 <div class="mf__grid">
-                    <x-mus.field name="opening_amount" label="Monto de la base" type="number"
+                    <x-mus.field name="opening_amount" :label="__('mus.caja.base_monto')" type="number"
                                  step="1" min="0" prefix="$" :required="true" :value="0"
-                                 hint="Lo que hay físicamente en la caja antes de la primera venta." />
+                                 :hint="__('mus.caja.base_hint')" />
 
-                    <x-mus.textarea name="notes" label="Observaciones" :rows="2"
-                                    hint="Opcional. Por ejemplo: quién entregó la base." />
+                    <x-mus.textarea name="notes" :label="__('mus.campos.observaciones')" :rows="2"
+                                    :hint="__('mus.caja.obs_hint')" />
                 </div>
             </div>
 
             <div class="cnota">
                 <x-mus.icon name="info" :w="15" />
-                <p>
-                    Al cerrar el turno el sistema calculará cuánto efectivo debería haber
-                    (base + ventas cobradas en efectivo) y lo comparará con lo que cuentes.
-                    La diferencia queda registrada.
-                </p>
+                <p>{{ __('mus.caja.abrir_aviso') }}</p>
             </div>
 
             <x-slot name="foot">
-                <x-mus.btn href="{{ route('cash.index') }}" icon="back">Cancelar</x-mus.btn>
-                <x-mus.btn type="submit" variant="primary" icon="save">Abrir turno</x-mus.btn>
+                <x-mus.btn href="{{ route('cash.index') }}" icon="back">{{ __('mus.acciones.cancelar') }}</x-mus.btn>
+                <x-mus.btn type="submit" variant="primary" icon="save">{{ __('mus.caja.abrir') }}</x-mus.btn>
             </x-slot>
         </x-mus.panel>
     </form>

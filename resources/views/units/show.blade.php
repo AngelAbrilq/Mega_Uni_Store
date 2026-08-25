@@ -1,3 +1,5 @@
+@php use App\Support\Formato; @endphp
+
 <x-mus.page title="{{ $unit->name }}" subtitle="Unidad de medida" icon="ruler"
             :crumbs="['Unidades' => route('units.index'), 'Detalle' => null]">
 
@@ -34,11 +36,11 @@
                 </div>
                 <div>
                     <dt>Creado</dt>
-                    <dd>{{ $unit->created_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') ?? '—' }}</dd>
+                    <dd>{{ Formato::enPalabras($unit->created_at, 'D MMM YYYY, HH:mm', '—') }}</dd>
                 </div>
                 <div>
                     <dt>Última edición</dt>
-                    <dd>{{ $unit->updated_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') ?? '—' }}</dd>
+                    <dd>{{ Formato::enPalabras($unit->updated_at, 'D MMM YYYY, HH:mm', '—') }}</dd>
                 </div>
             </dl>
 

@@ -1,18 +1,20 @@
-<x-mus.page title="Venta {{ $sale->number }}"
-            subtitle="{{ $sale->sold_at?->locale('es')->isoFormat('D [de] MMMM [de] YYYY, HH:mm') }}"
+@php use App\Support\Formato; @endphp
+
+<x-mus.page :title="__('mus.ventas.una') . ' ' . $sale->number"
+            subtitle="{{ Formato::enPalabras($sale->sold_at, 'D [de] MMMM [de] YYYY, HH:mm') }}"
             icon="money"
-            :crumbs="['Ventas' => route('sales.index'), 'Detalle' => null]">
+            :crumbs="[__('mus.entidades.ventas') => route('sales.index'), __('mus.acciones.ver_detalle') => null]">
 
     <x-slot name="actions">
-        <x-mus.btn href="{{ route('sales.recibo', $sale) }}" icon="id" target="_blank" id="btnRecibo">Recibo</x-mus.btn>
+        <x-mus.btn href="{{ route('sales.recibo', $sale) }}" icon="id" target="_blank" id="btnRecibo">{{ __('mus.ventas.recibo') }}</x-mus.btn>
         @can('ventas.devolver')
             @unless ($sale->anulada)
-                <x-mus.btn href="{{ route('returns.create', $sale) }}" icon="back">Devolución</x-mus.btn>
+                <x-mus.btn href="{{ route('returns.create', $sale) }}" icon="back">{{ __('mus.ventas.devolucion') }}</x-mus.btn>
             @endunless
         @endcan
         @can('ventas.anular')
             @unless ($sale->anulada)
-                <x-mus.btn variant="danger" icon="alert" id="btnAnular">Anular</x-mus.btn>
+                <x-mus.btn variant="danger" icon="alert" id="btnAnular">{{ __('mus.ventas.anular') }}</x-mus.btn>
             @endunless
         @endcan
     </x-slot>
@@ -21,12 +23,11 @@
         <div class="vanul" data-reveal>
             <span><x-mus.icon name="alert" :w="17" stroke-width="2.2" /></span>
             <div>
-                <b>Venta anulada</b>
-                <p>
-                    {{ $sale->voider->name ?? 'Alguien' }} la anuló
-                    el {{ $sale->voided_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') }}.
-                    La mercancía volvió al inventario.
-                </p>
+                <b>{{ __('mus.ventas.esta_anulada') }}</b>
+                <p>{{ __('mus.ventas.la_anulo', [
+                        'quien'  => $sale->voider->name ?? __('mus.vacio.alguien'),
+                        'cuando' => Formato::enPalabras($sale->voided_at, 'D MMM YYYY, HH:mm'),
+                   ]) }}</p>
                 @if ($sale->void_reason)
                     <q>{{ $sale->void_reason }}</q>
                 @endif
@@ -38,8 +39,8 @@
         <div class="vdev" data-reveal>
             <span><x-mus.icon name="back" :w="16" stroke-width="2.2" /></span>
             <div>
-                <b>{{ $sale->returns->count() }} devolución(es) sobre esta venta</b>
-                <p>Se le regresaron ${{ number_format((float) $sale->returns->sum('total'), 0, ',', '.') }} al cliente.</p>
+                <b>{{ __('mus.ventas.con_devoluciones', ['n' => $sale->returns->count()]) }}</b>
+                <p>{{ __('mus.ventas.se_regreso', ['monto' => Formato::moneda($sale->returns->sum('total'))]) }}</p>
                 <ul>
                     @foreach ($sale->returns as $d)
                         <li>
@@ -55,18 +56,18 @@
     @endif
 
     <div class="vgrid">
-        <x-mus.panel title="Productos vendidos" :pad="false"
-                     sub="{{ $sale->items->count() }} renglones">
+        <x-mus.panel :title="__('mus.ventas.productos_vendidos')" :pad="false"
+                     :sub="$sale->items->count() . ' ' . __('mus.ventas.renglones')">
             <div class="mt-wrap">
                 <table class="mt">
                     <thead>
                         <tr>
-                            <th>Producto</th>
-                            <th class="num">Cant.</th>
-                            <th class="num">Devuelto</th>
-                            <th class="num">Precio</th>
-                            <th class="num">Impuesto</th>
-                            <th class="num">Total</th>
+                            <th>{{ __('mus.entidades.producto') }}</th>
+                            <th class="num">{{ __('mus.ventas.cant') }}</th>
+                            <th class="num">{{ __('mus.ventas.devuelto') }}</th>
+                            <th class="num">{{ __('mus.campos.precio') }}</th>
+                            <th class="num">{{ __('mus.campos.impuesto') }}</th>
+                            <th class="num">{{ __('mus.campos.total') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -99,17 +100,17 @@
             </div>
 
             <div class="vtot">
-                <div><span>Subtotal</span><b><i class="moneda">$</i>{{ number_format((float) $sale->subtotal, 0, ',', '.') }}</b></div>
+                <div><span>{{ __('mus.campos.subtotal') }}</span><b><i class="moneda">$</i>{{ number_format((float) $sale->subtotal, 0, ',', '.') }}</b></div>
                 @if ((float) $sale->discount_total > 0)
-                    <div><span>Descuentos</span><b>−${{ number_format((float) $sale->discount_total, 0, ',', '.') }}</b></div>
+                    <div><span>{{ __('mus.campos.descuentos') }}</span><b>−${{ number_format((float) $sale->discount_total, 0, ',', '.') }}</b></div>
                 @endif
-                <div><span>Impuestos</span><b><i class="moneda">$</i>{{ number_format((float) $sale->tax_total, 0, ',', '.') }}</b></div>
-                <div class="vtot__big"><span>Total</span><b><i class="moneda">$</i>{{ number_format((float) $sale->total, 0, ',', '.') }}</b></div>
+                <div><span>{{ __('mus.campos.impuestos') }}</span><b><i class="moneda">$</i>{{ number_format((float) $sale->tax_total, 0, ',', '.') }}</b></div>
+                <div class="vtot__big"><span>{{ __('mus.campos.total') }}</span><b><i class="moneda">$</i>{{ number_format((float) $sale->total, 0, ',', '.') }}</b></div>
             </div>
         </x-mus.panel>
 
         <div style="display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-content:start">
-            <x-mus.panel title="Cómo se pagó" sub="{{ $sale->payments->count() }} medio(s)">
+            <x-mus.panel :title="__('mus.ventas.como_se_pago')" :sub="$sale->payments->count() . ' ' . __('mus.ventas.medios')">
                 <ul class="vpag">
                     @foreach ($sale->payments as $p)
                         <li>
@@ -120,35 +121,35 @@
                     @endforeach
                 </ul>
                 <dl class="mdl" style="margin-top:10px">
-                    <div><dt>Recibido</dt><dd><i class="moneda">$</i>{{ number_format((float) $sale->paid_total, 0, ',', '.') }}</dd></div>
-                    <div><dt>Cambio</dt><dd><i class="moneda">$</i>{{ number_format((float) $sale->change_amount, 0, ',', '.') }}</dd></div>
+                    <div><dt>{{ __('mus.pos.recibido') }}</dt><dd><i class="moneda">$</i>{{ number_format((float) $sale->paid_total, 0, ',', '.') }}</dd></div>
+                    <div><dt>{{ __('mus.pos.cambio') }}</dt><dd><i class="moneda">$</i>{{ number_format((float) $sale->change_amount, 0, ',', '.') }}</dd></div>
                 </dl>
             </x-mus.panel>
 
-            <x-mus.panel title="Datos de la venta">
+            <x-mus.panel :title="__('mus.ventas.datos')">
                 <dl class="mdl">
                     <div>
-                        <dt>Cliente</dt>
+                        <dt>{{ __('mus.campos.cliente') }}</dt>
                         <dd>
                             @if ($sale->customer)
                                 <a href="{{ route('customers.show', $sale->customer) }}">{{ $sale->customer->full_name }}</a>
-                            @else Consumidor final @endif
+                            @else {{ __('mus.vacio.consumidor_final') }} @endif
                         </dd>
                     </div>
-                    <div><dt>Vendedor</dt><dd>{{ $sale->user->name ?? '—' }}</dd></div>
+                    <div><dt>{{ __('mus.ventas.vendedor') }}</dt><dd>{{ $sale->user->name ?? '—' }}</dd></div>
                     <div>
-                        <dt>Turno de caja</dt>
+                        <dt>{{ __('mus.ventas.turno_caja') }}</dt>
                         <dd>
                             @if ($sale->cashSession)
                                 <a href="{{ route('cash.show', $sale->cashSession) }}">
                                     #{{ $sale->cashSession->id }}
                                 </a>
-                            @else Sin turno @endif
+                            @else {{ __('mus.vacio.sin_turno') }} @endif
                         </dd>
                     </div>
-                    <div><dt>Costo de lo vendido</dt><dd><i class="moneda">$</i>{{ number_format((float) $sale->cost_total, 0, ',', '.') }}</dd></div>
+                    <div><dt>{{ __('mus.ventas.costo_vendido') }}</dt><dd><i class="moneda">$</i>{{ number_format((float) $sale->cost_total, 0, ',', '.') }}</dd></div>
                     <div>
-                        <dt>Utilidad</dt>
+                        <dt>{{ __('mus.ventas.utilidad') }}</dt>
                         <dd style="color:var(--ok);font-weight:700">
                             ${{ number_format((float) $sale->profit_total, 0, ',', '.') }}
                             <span style="color:var(--muted);font-weight:500">
@@ -157,13 +158,13 @@
                         </dd>
                     </div>
                     @if ($sale->notes)
-                        <div><dt>Nota</dt><dd>{{ $sale->notes }}</dd></div>
+                        <div><dt>{{ __('mus.ventas.nota') }}</dt><dd>{{ $sale->notes }}</dd></div>
                     @endif
                 </dl>
 
                 <x-slot name="foot">
                     <x-mus.btn href="{{ route('sales.index') }}" icon="back" :block="true">
-                        Volver al listado
+                        {{ __('mus.ventas.volver_listado') }}
                     </x-mus.btn>
                 </x-slot>
             </x-mus.panel>
@@ -176,20 +177,16 @@
             <div class="vmodal" id="modalAnular" role="dialog" aria-modal="true">
                 <form method="POST" action="{{ route('sales.anular', $sale) }}" class="vmodal__box">
                     @csrf
-                    <h3>Anular la venta {{ $sale->number }}</h3>
-                    <p>
-                        La venta no se borra: queda marcada como anulada y los
-                        {{ $sale->items->count() }} productos vuelven al inventario con
-                        su movimiento de kardex. Esto no se puede deshacer.
-                    </p>
+                    <h3>{{ __('mus.ventas.anular_titulo') }} {{ $sale->number }}</h3>
+                    <p>{{ __('mus.ventas.anular_aviso') }}</p>
                     <label>
-                        Motivo de la anulación
+                        {{ __('mus.ventas.anular_motivo') }}
                         <textarea name="motivo" rows="3" required minlength="5"
-                                  placeholder="Ej.: el cliente devolvió la mercancía"></textarea>
+                                  placeholder="{{ __('mus.ventas.anular_motivo_ph') }}"></textarea>
                     </label>
                     <div class="vmodal__foot">
-                        <button type="button" class="mb mb--ghost" id="btnCancelarAnular">Cancelar</button>
-                        <button type="submit" class="mb mb--danger">Sí, anular la venta</button>
+                        <button type="button" class="mb mb--ghost" id="btnCancelarAnular">{{ __('mus.acciones.cancelar') }}</button>
+                        <button type="submit" class="mb mb--danger">{{ __('mus.ventas.anular_si') }}</button>
                     </div>
                 </form>
             </div>

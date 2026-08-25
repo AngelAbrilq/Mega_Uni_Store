@@ -64,6 +64,14 @@
                      :value="$item?->min_stock ?? 0" :required="true"
                      hint="Cuando baje de aquí, hay que reponer." />
 
+        {{-- Lo que convierte un producto en un servicio agendable. Va aquí,
+             en el mismo formulario, y no en una pantalla aparte: el corte de
+             dama tiene costo, precio e impuesto igual que un martillo. Lo
+             único que lo distingue es que ocupa una hora del día. --}}
+        <x-mus.field name="duracion_minutos" label="Dura (minutos)" type="number" step="5" min="0" max="600"
+                     :value="$item?->duracion_minutos"
+                     hint="Solo para servicios que se agendan. Vacío = no aparece en la agenda." />
+
         <x-mus.imagen name="imagen" label="Foto del producto" :actual="$item?->imagen"
                       hint="JPG, PNG o WEBP · máximo 2 MB. Se guarda en el servidor; en la base de datos solo queda la ruta." />
 

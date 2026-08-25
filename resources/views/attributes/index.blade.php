@@ -1,3 +1,5 @@
+@php use App\Support\Formato; @endphp
+
 <x-mus.page title="Atributos" subtitle="Variantes que distinguen un producto de otro" icon="tag">
     <x-slot name="actions">
         @can('atributos.crear')
@@ -35,7 +37,7 @@
                                     @else
                                         <x-mus.badge tone="off" :dot="true">Inactivo</x-mus.badge>
                                     @endif</td>
-                                <td><span style="color:var(--muted-2)">{{ $attribute->created_at?->locale('es')->isoFormat('D MMM YYYY') ?? '—' }}</span></td>
+                                <td><span style="color:var(--muted-2)">{{ Formato::enPalabras($attribute->created_at, 'D MMM YYYY', '—') }}</span></td>
                                 <td class="act">
                                     <span class="mt__acts">
                                         @can('atributos.ver')<x-mus.btn href="{{ route('attributes.show', $attribute) }}"

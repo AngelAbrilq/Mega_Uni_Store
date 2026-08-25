@@ -199,22 +199,50 @@ class Rubros
             // Los servicios van con stock alto: no se agotan, pero así el
             // POS los maneja igual que un producto y no hay que explicar
             // dos flujos distintos en una demostración de dos horas.
+            /**
+             * La séptima columna es la duración en minutos.
+             *
+             * Es lo que separa un servicio de un producto: el shampoo se
+             * vende y ya; el corte ocupa cuarenta y cinco minutos del día de
+             * alguien. Con la duración puesta, el servicio sale en la agenda
+             * y al escogerlo se llenan solos la hora de salida y el precio.
+             *
+             * Los tres del final no la llevan a propósito: una cera para
+             * peinar no se agenda.
+             */
             'productos' => [
-                ['Corte de dama',                'Corte y peinado',      35_000, 0,     999, 'serv'],
-                ['Corte de caballero',           'Corte y peinado',      22_000, 0,     999, 'serv'],
-                ['Corte de niño',                'Corte y peinado',      18_000, 0,     999, 'serv'],
-                ['Cepillado',                    'Corte y peinado',      30_000, 0,     999, 'serv'],
-                ['Tinte raíz',                   'Color',                65_000, 22_000, 999, 'serv'],
-                ['Mechas o balayage',            'Color',               180_000, 55_000, 999, 'serv'],
-                ['Keratina',                     'Tratamientos',        150_000, 48_000, 999, 'serv'],
-                ['Hidratación profunda',         'Tratamientos',         45_000, 12_000, 999, 'serv'],
-                ['Arreglo de barba',             'Barbería',             15_000, 0,     999, 'serv'],
-                ['Corte + barba',                'Barbería',             33_000, 0,     999, 'serv'],
-                ['Manicure tradicional',         'Manicure y pedicure',  20_000, 4_000,  999, 'serv'],
-                ['Pedicure con esmaltado',       'Manicure y pedicure',  28_000, 6_000,  999, 'serv'],
+                ['Corte de dama',                'Corte y peinado',      35_000, 0,     999, 'serv',  45],
+                ['Corte de caballero',           'Corte y peinado',      22_000, 0,     999, 'serv',  30],
+                ['Corte de niño',                'Corte y peinado',      18_000, 0,     999, 'serv',  30],
+                ['Cepillado',                    'Corte y peinado',      30_000, 0,     999, 'serv',  40],
+                ['Tinte raíz',                   'Color',                65_000, 22_000, 999, 'serv',  90],
+                ['Mechas o balayage',            'Color',               180_000, 55_000, 999, 'serv', 180],
+                ['Keratina',                     'Tratamientos',        150_000, 48_000, 999, 'serv', 120],
+                ['Hidratación profunda',         'Tratamientos',         45_000, 12_000, 999, 'serv',  45],
+                ['Arreglo de barba',             'Barbería',             15_000, 0,     999, 'serv',  20],
+                ['Corte + barba',                'Barbería',             33_000, 0,     999, 'serv',  45],
+                ['Manicure tradicional',         'Manicure y pedicure',  20_000, 4_000,  999, 'serv',  40],
+                ['Pedicure con esmaltado',       'Manicure y pedicure',  28_000, 6_000,  999, 'serv',  60],
                 ['Shampoo profesional 500 ml',   'Productos',            42_000, 27_000,  14, 'und'],
                 ['Cera para peinar 100 g',       'Productos',            25_000, 15_000,  20, 'und'],
                 ['Aceite para barba 30 ml',      'Productos',            32_000, 19_000,  12, 'und'],
+            ],
+
+            /**
+             * Quién atiende, para que la agenda no abra en blanco.
+             *
+             * [nombre, tipo, color, entra, sale]
+             *
+             * Dos personas y una cabina: lo mínimo para que se vea de qué se
+             * trata la pantalla —tres columnas, una al lado de la otra— sin
+             * que quien demuestra tenga que crear nada antes de empezar. El
+             * horario es de lunes a sábado; el domingo queda cerrado, que es
+             * como trabaja el rubro.
+             */
+            'recursos' => [
+                ['Laura Martínez', 'persona', '#8B5CF6', '09:00', '18:00'],
+                ['Carlos Rueda',   'persona', '#2E6EA8', '09:00', '18:00'],
+                ['Cabina de uñas', 'espacio', '#3E7D5C', '10:00', '17:00'],
             ],
         ];
     }

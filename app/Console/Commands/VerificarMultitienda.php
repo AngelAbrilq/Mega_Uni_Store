@@ -60,6 +60,7 @@ class VerificarMultitienda extends Command
         $this->cruces();
         $this->roles();
         $this->planes();
+        $this->agenda();
         $this->indices();
 
         $this->newLine();
@@ -257,6 +258,7 @@ class VerificarMultitienda extends Command
             'compras'      => ['purchases',    'C-', 'tienda_id',       'number'],
             'devoluciones' => ['sale_returns', 'D-', 'tienda_id',       'number'],
             'traslados'    => ['traslados',    'T-', 'desde_tienda_id', 'numero'],
+            'citas'        => ['citas',        'A-', 'tienda_id',       'numero'],
         ];
 
         $tiendas = DB::table('tiendas')->whereNull('deleted_at')->get();
@@ -457,6 +459,8 @@ class VerificarMultitienda extends Command
             ['compras con un proveedor de otro negocio',     'purchases',       'supplier_id', 'suppliers'],
             ['existencias de un producto de otro negocio',   'existencias',     'product_id',  'products'],
             ['movimientos de un producto de otro negocio',   'stock_movements', 'product_id',  'products'],
+            ['citas con un cliente de otro negocio',         'citas',           'customer_id', 'customers'],
+            ['citas con un servicio de otro negocio',        'citas',           'product_id',  'products'],
         ];
 
         $revisados = 0;
@@ -710,7 +714,131 @@ class VerificarMultitienda extends Command
         return $avisos;
     }
 
-    /* ═══════════════ 9. Índices ═══════════════ */
+    /* ═══════════════ 9. La agenda ═══════════════ */
+
+    /**
+     * Que la agenda no tenga dos citas en el mismo sitio a la misma hora.
+     *
+     * `AgendaService` lo impide al agendar, con la fila del recurso
+     * bloqueada dentro de una transacción. Pero eso protege lo que entra
+     * por el sistema, y la tabla también se puede tocar por fuera: una
+     * importación, un arreglo a mano en la base, un respaldo restaurado a
+     * medias. Un solape no da error en ninguna pantalla — se descubre el
+     * día que llegan dos clientes a la misma hora y solo hay una silla.
+     *
+     * Por eso se cuenta aquí: es lo único que puede verlo antes.
+     */
+    private function agenda(): void
+    {
+        $this->components->info('Agenda');
+
+        if (! Schema::hasTable('citas') || ! Schema::hasTable('recursos')) {
+            $this->line('  <fg=yellow>·</> todavía no está la migración de la agenda');
+
+            return;
+        }
+
+        /* ── Quién atiende ── */
+        $recursos = DB::table('recursos')->whereNull('deleted_at')->count();
+        $activos  = DB::table('recursos')->whereNull('deleted_at')->where('activo', true)->count();
+
+        $this->line("  <fg=green>✓</> {$recursos} recurso(s), {$activos} activo(s)");
+
+        if ($activos > 0) {
+            $sinHorario = DB::table('recursos as r')
+                ->whereNull('r.deleted_at')
+                ->where('r.activo', true)
+                ->whereNotExists(fn ($q) => $q->select(DB::raw(1))
+                    ->from('horarios as h')
+                    ->whereColumn('h.recurso_id', 'r.id'))
+                ->count();
+
+            if ($sinHorario > 0) {
+                // No es un error de datos: es un recurso al que nadie le
+                // puede agendar nada y que sin embargo sale en la pantalla.
+                $this->line("  <fg=yellow>·</> {$sinHorario} recurso(s) activos sin horario: no se les puede agendar");
+            } else {
+                $this->line('  <fg=green>✓</> todos los recursos activos tienen horario');
+            }
+        }
+
+        /* ── Horarios al revés ── */
+        $alReves = DB::table('horarios')->whereColumn('hasta', '<=', 'desde')->count();
+
+        if ($alReves > 0) {
+            $this->line("  <fg=red>✗</> {$alReves} franja(s) de horario que terminan antes de empezar — revisa horarios");
+            $this->problemas++;
+        }
+
+        /* ── Citas ── */
+        $citas = DB::table('citas')->whereNull('deleted_at')->count();
+
+        if ($citas === 0) {
+            $this->line('  <fg=green>·</> todavía no hay citas agendadas');
+
+            return;
+        }
+
+        $this->line("  <fg=green>✓</> {$citas} cita(s) agendadas");
+
+        $volteadas = DB::table('citas')->whereNull('deleted_at')->whereColumn('fin', '<=', 'inicio')->count();
+
+        if ($volteadas > 0) {
+            $this->line("  <fg=red>✗</> {$volteadas} cita(s) que terminan antes de empezar");
+            $this->problemas++;
+        }
+
+        /* ── El solape ──
+           Se comparan solo las vivas: una cancelada encima de una viva no
+           estorba a nadie, y contarla llenaría el informe de ruido.
+           `a.id < b.id` para no contar cada par dos veces. */
+        $vivas = ['pendiente', 'confirmada', 'atendida'];
+
+        $solapes = DB::table('citas as a')
+            ->join('citas as b', function ($j) {
+                $j->on('b.recurso_id', '=', 'a.recurso_id')
+                  ->on('a.id', '<', 'b.id')
+                  ->on('a.inicio', '<', 'b.fin')
+                  ->on('a.fin', '>', 'b.inicio');
+            })
+            ->whereNull('a.deleted_at')
+            ->whereNull('b.deleted_at')
+            ->whereIn('a.estado', $vivas)
+            ->whereIn('b.estado', $vivas)
+            ->count();
+
+        if ($solapes === 0) {
+            $this->line('  <fg=green>✓</> ninguna cita pisa a otra en el mismo recurso');
+        } else {
+            $this->line("  <fg=red>✗</> {$solapes} par(es) de citas encimadas en el mismo recurso");
+            $this->problemas++;
+        }
+
+        /* ── El recurso de otro local ──
+           Una cita del norte con la silla del centro está bien marcada por
+           los dos lados y aun así es imposible de atender. */
+        $cruzadas = DB::table('citas as c')
+            ->join('recursos as r', 'r.id', '=', 'c.recurso_id')
+            ->whereNull('c.deleted_at')
+            ->whereColumn('r.tienda_id', '!=', 'c.tienda_id')
+            ->count();
+
+        if ($cruzadas === 0) {
+            $this->line('  <fg=green>✓</> ninguna cita apunta al recurso de otro local');
+        } else {
+            $this->line("  <fg=red>✗</> {$cruzadas} cita(s) con un recurso de otro local — revisa citas.recurso_id");
+            $this->problemas++;
+        }
+
+        /* ── Cobradas ── */
+        $cobradas = DB::table('citas')->whereNull('deleted_at')->whereNotNull('sale_id')->count();
+
+        if ($cobradas > 0) {
+            $this->line("  <fg=green>✓</> {$cobradas} cita(s) ya convertidas en venta");
+        }
+    }
+
+    /* ═══════════════ 10. Índices ═══════════════ */
 
     /**
      * Los únicos que pasaron de globales a «por empresa» o «por tienda».
@@ -735,6 +863,7 @@ class VerificarMultitienda extends Command
             'settings'     => [['empresa_id', 'key']],
             'existencias'  => [['tienda_id', 'product_id']],
             'traslados'    => [['desde_tienda_id', 'numero']],
+            'citas'        => [['tienda_id', 'numero']],
         ];
 
         foreach ($esperados as $tabla => $combinaciones) {

@@ -1,4 +1,6 @@
 @php
+    use App\Support\Formato;
+
     /* Agrupa los permisos del usuario por módulo para leerlos de un vistazo. */
     $porModulo = [];
     foreach ($user->getAllPermissions() as $p) {
@@ -48,7 +50,7 @@
                 </div>
                 <div>
                     <dt>Alta</dt>
-                    <dd>{{ $user->created_at?->locale('es')->isoFormat('D [de] MMMM, YYYY') ?? '—' }}</dd>
+                    <dd>{{ Formato::enPalabras($user->created_at, 'D [de] MMMM, YYYY', '—') }}</dd>
                 </div>
                 <div>
                     <dt>Roles</dt>

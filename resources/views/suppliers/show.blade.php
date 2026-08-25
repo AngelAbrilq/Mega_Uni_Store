@@ -1,3 +1,5 @@
+@php use App\Support\Formato; @endphp
+
 <x-mus.page title="{{ $supplier->name }}" subtitle="Ficha de proveedor" icon="truck"
             :crumbs="['Proveedores' => route('suppliers.index'), 'Detalle' => null]">
 
@@ -59,11 +61,11 @@
                 </div>
                 <div>
                     <dt>Creado</dt>
-                    <dd>{{ $supplier->created_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') ?? '—' }}</dd>
+                    <dd>{{ Formato::enPalabras($supplier->created_at, 'D MMM YYYY, HH:mm', '—') }}</dd>
                 </div>
                 <div>
                     <dt>Última edición</dt>
-                    <dd>{{ $supplier->updated_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') ?? '—' }}</dd>
+                    <dd>{{ Formato::enPalabras($supplier->updated_at, 'D MMM YYYY, HH:mm', '—') }}</dd>
                 </div>
             </dl>
 

@@ -6,9 +6,11 @@ use App\Models\Category;
 use App\Models\Customer;
 use App\Models\Empresa;
 use App\Models\Existencia;
+use App\Models\Horario;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Product;
+use App\Models\Recurso;
 use App\Models\Rol;
 use App\Models\Setting;
 use App\Models\Supplier;
@@ -216,7 +218,14 @@ class DemoService
         }
 
         /* ── Productos ── */
-        foreach ($rubro['productos'] as [$nombre, $categoria, $precio, $costo, $stock, $unidad]) {
+        foreach ($rubro['productos'] as $fila) {
+            [$nombre, $categoria, $precio, $costo, $stock, $unidad] = $fila;
+
+            // Séptima posición, opcional: cuánto dura si es un servicio que
+            // se agenda. Va opcional para que los rubros que no agendan nada
+            // —la ferretería, el supermercado— no tengan que declararla.
+            $duracion = $fila[6] ?? null;
+
             $producto = Product::create([
                 'name'        => $nombre,
                 'category_id' => $categorias[$categoria] ?? null,
@@ -224,6 +233,7 @@ class DemoService
                 'tax_id'      => $iva->id,
                 'price'       => $precio,
                 'cost'        => $costo,
+                'duracion_minutos' => $duracion,
                 'is_active'   => true,
                 'created_by'  => $usuario->id,
             ]);
@@ -249,6 +259,48 @@ class DemoService
                     'Existencia inicial de la demostración',
                     $costo,
                 );
+            }
+        }
+
+        $this->quienAtiende($rubro);
+    }
+
+    /**
+     * Quién atiende, si el rubro agenda.
+     *
+     * La ferretería y el supermercado no declaran `recursos` y aquí no pasa
+     * nada: la agenda les queda vacía porque no la usan. La peluquería sí, y
+     * abre con sus tres columnas puestas — que es la diferencia entre
+     * mostrarle a alguien una pantalla y mostrarle su propio negocio.
+     */
+    private function quienAtiende(array $rubro): void
+    {
+        if (empty($rubro['recursos'])) {
+            return;
+        }
+
+        $orden = 0;
+
+        foreach ($rubro['recursos'] as [$nombre, $tipo, $color, $entra, $sale]) {
+            $recurso = Recurso::create([
+                'tienda_id' => Contexto::tiendaId(),
+                'nombre'    => $nombre,
+                'tipo'      => $tipo,
+                'color'     => $color,
+                'activo'    => true,
+                'orden'     => $orden++,
+            ]);
+
+            // Lunes a sábado. El domingo se deja sin fila: sin horario, la
+            // agenda lo pinta cerrado y no deja agendar — que es justo lo
+            // que tiene que pasar.
+            foreach ([1, 2, 3, 4, 5, 6] as $dia) {
+                Horario::create([
+                    'recurso_id' => $recurso->id,
+                    'dia_semana' => $dia,
+                    'desde'      => $entra,
+                    'hasta'      => $sale,
+                ]);
             }
         }
     }

@@ -1,3 +1,5 @@
+@php use App\Support\Formato; @endphp
+
 <x-mus.page title="{{ $attribute->name }}" subtitle="Atributo de producto" icon="tag"
             :crumbs="['Atributos' => route('attributes.index'), 'Detalle' => null]">
 
@@ -34,11 +36,11 @@
                 </div>
                 <div>
                     <dt>Creado</dt>
-                    <dd>{{ $attribute->created_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') ?? '—' }}</dd>
+                    <dd>{{ Formato::enPalabras($attribute->created_at, 'D MMM YYYY, HH:mm', '—') }}</dd>
                 </div>
                 <div>
                     <dt>Última edición</dt>
-                    <dd>{{ $attribute->updated_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') ?? '—' }}</dd>
+                    <dd>{{ Formato::enPalabras($attribute->updated_at, 'D MMM YYYY, HH:mm', '—') }}</dd>
                 </div>
             </dl>
 

@@ -43,9 +43,9 @@
                     <div><dt>Correo</dt><dd>{{ $empresa->correo ?: '—' }}</dd></div>
                     <div><dt>Teléfono</dt><dd>{{ $empresa->telefono ?: '—' }}</dd></div>
                     <div><dt>NIT</dt><dd>{{ $empresa->nit ?: '—' }}</dd></div>
-                    <div><dt>Alta</dt><dd>{{ $empresa->created_at?->locale('es')->isoFormat('D MMM YYYY') }}</dd></div>
+                    <div><dt>Alta</dt><dd>{{ Formato::enPalabras($empresa->created_at, 'D MMM YYYY') }}</dd></div>
                     <div><dt>Cliente desde</dt>
-                         <dd>{{ $empresa->suscrita_desde?->locale('es')->isoFormat('D MMM YYYY') ?? '—' }}</dd></div>
+                         <dd>{{ Formato::enPalabras($empresa->suscrita_desde, 'D MMM YYYY', '—') }}</dd></div>
                 </dl>
             </div>
 
@@ -185,7 +185,7 @@
                     <tbody>
                         @foreach ($historial as $m)
                             <tr data-row>
-                                <td>{{ $m->ocurrio_en->locale('es')->isoFormat('D MMM YYYY') }}</td>
+                                <td>{{ Formato::enPalabras($m->ocurrio_en, 'D MMM YYYY') }}</td>
                                 <td><b>{{ $m->etiqueta() }}</b></td>
                                 <td>{{ $m->planDespues?->nombre ?? '—' }}</td>
                                 <td class="{{ $m->suma() ? 'mfic__mas' : 'mfic__menos' }}">

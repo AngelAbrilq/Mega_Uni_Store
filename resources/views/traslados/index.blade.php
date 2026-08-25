@@ -57,7 +57,7 @@
                                 </td>
                                 <td>{{ Formato::moneda($t->valor()) }}</td>
                                 <td><span style="color:var(--muted-2)">{{ $t->user->name ?? '—' }}</span></td>
-                                <td><span style="color:var(--muted-2)">{{ $t->created_at?->locale('es')->isoFormat('D MMM YYYY, h:mm a') }}</span></td>
+                                <td><span style="color:var(--muted-2)">{{ Formato::enPalabras($t->created_at, 'D MMM YYYY, h:mm a') }}</span></td>
                             </tr>
                         @endforeach
                     </tbody>

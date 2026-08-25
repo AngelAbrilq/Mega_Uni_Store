@@ -1,3 +1,5 @@
+@php use App\Support\Formato; @endphp
+
 <x-mus.page title="Mi perfil" subtitle="Tus datos, tu contraseña y tu cuenta" icon="user">
 
     <div class="mprof">
@@ -20,7 +22,7 @@
                 <dl class="mdl" style="margin-top:16px">
                     <div>
                         <dt>Miembro desde</dt>
-                        <dd>{{ auth()->user()->created_at?->locale('es')->isoFormat('MMMM YYYY') ?? '—' }}</dd>
+                        <dd>{{ Formato::enPalabras(auth()->user()->created_at, 'MMMM YYYY', '—') }}</dd>
                     </div>
                     <div>
                         <dt>Correo verificado</dt>

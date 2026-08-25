@@ -45,7 +45,8 @@ class ConsecutivoService
         'compras'      => 'C-',
         'devoluciones' => 'D-',
         'pedidos'      => 'P-',
-            'traslados'    => 'T-',
+        'traslados'    => 'T-',
+        'citas'        => 'A-',
     ];
 
     /** Código de cada tienda, resuelto una sola vez por petición. */

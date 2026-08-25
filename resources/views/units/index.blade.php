@@ -1,3 +1,5 @@
+@php use App\Support\Formato; @endphp
+
 <x-mus.page title="Unidades" subtitle="Medidas con las que vendes tus productos" icon="ruler">
     <x-slot name="actions">
         @can('unidades.crear')
@@ -35,7 +37,7 @@
                                 <td class="num">
                                     <x-mus.badge :tone="$unit->products_count ? 'info' : 'off'">{{ $unit->products_count }}</x-mus.badge>
                                 </td>
-                                <td><span style="color:var(--muted-2)">{{ $unit->created_at?->locale('es')->isoFormat('D MMM YYYY') ?? '—' }}</span></td>
+                                <td><span style="color:var(--muted-2)">{{ Formato::enPalabras($unit->created_at, 'D MMM YYYY', '—') }}</span></td>
                                 <td class="act">
                                     <span class="mt__acts">
                                         @can('unidades.ver')<x-mus.btn href="{{ route('units.show', $unit) }}"

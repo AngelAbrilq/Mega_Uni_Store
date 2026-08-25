@@ -1,3 +1,5 @@
+@php use App\Support\Formato; @endphp
+
 <x-mus.page title="{{ $paymentMethod->name }}" subtitle="Forma de cobro" icon="card"
             :crumbs="['Medios de pago' => route('payment_methods.index'), 'Detalle' => null]">
 
@@ -34,11 +36,11 @@
                 </div>
                 <div>
                     <dt>Creado</dt>
-                    <dd>{{ $paymentMethod->created_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') ?? '—' }}</dd>
+                    <dd>{{ Formato::enPalabras($paymentMethod->created_at, 'D MMM YYYY, HH:mm', '—') }}</dd>
                 </div>
                 <div>
                     <dt>Última edición</dt>
-                    <dd>{{ $paymentMethod->updated_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') ?? '—' }}</dd>
+                    <dd>{{ Formato::enPalabras($paymentMethod->updated_at, 'D MMM YYYY, HH:mm', '—') }}</dd>
                 </div>
             </dl>
 

@@ -1,30 +1,32 @@
-<x-mus.page title="Ventas" subtitle="Todo lo que ha pasado por la caja" icon="money">
+@php use App\Support\Formato; @endphp
+
+<x-mus.page :title="__('mus.ventas.titulo')" :subtitle="__('mus.ventas.subtitulo')" icon="money">
     <x-slot name="actions">
         @can('ventas.crear')
-            <x-mus.btn href="{{ route('pos.index') }}" variant="primary" icon="plus">Nueva venta</x-mus.btn>
+            <x-mus.btn href="{{ route('pos.index') }}" variant="primary" icon="plus">{{ __('mus.ventas.nueva') }}</x-mus.btn>
         @endcan
     </x-slot>
 
     <div class="skpi" data-reveal data-stagger>
         <div class="skpi__c">
-            <span>Ventas del periodo</span>
+            <span>{{ __('mus.ventas.del_periodo') }}</span>
             <b data-count="{{ $resumen['ventas'] }}">0</b>
         </div>
         <div class="skpi__c">
-            <span>Facturado</span>
+            <span>{{ __('mus.ventas.facturado') }}</span>
             <b><i class="moneda">$</i>{{ number_format($resumen['total'], 0, ',', '.') }}</b>
         </div>
         <div class="skpi__c">
-            <span>Utilidad</span>
+            <span>{{ __('mus.ventas.utilidad') }}</span>
             <b class="ok"><i class="moneda">$</i>{{ number_format($resumen['utilidad'], 0, ',', '.') }}</b>
-            <em>{{ $resumen['total'] > 0 ? number_format($resumen['utilidad'] / $resumen['total'] * 100, 1) : '0' }}% de margen</em>
+            <em>{{ $resumen['total'] > 0 ? number_format($resumen['utilidad'] / $resumen['total'] * 100, 1) : '0' }}{{ __('mus.ventas.margen_pct') }}</em>
         </div>
         <div class="skpi__c">
-            <span>Ticket promedio</span>
+            <span>{{ __('mus.ventas.ticket_promedio') }}</span>
             <b><i class="moneda">$</i>{{ number_format($resumen['ticket'], 0, ',', '.') }}</b>
         </div>
         <div class="skpi__c">
-            <span>Anuladas</span>
+            <span>{{ __('mus.ventas.anuladas') }}</span>
             <b class="{{ $resumen['anuladas'] ? 'bad' : '' }}">{{ $resumen['anuladas'] }}</b>
         </div>
     </div>
@@ -33,31 +35,31 @@
         <form method="GET" action="{{ route('sales.index') }}" class="sfil">
             <div class="sfil__s">
                 <x-mus.icon name="search" :w="15" stroke-width="2" />
-                <input type="text" name="q" value="{{ $filtros['q'] }}" placeholder="Número o cliente…">
+                <input type="text" name="q" value="{{ $filtros['q'] }}" placeholder="{{ __('mus.ventas.buscar_ph') }}">
             </div>
 
-            <label class="sfil__f">Desde
+            <label class="sfil__f">{{ __('mus.tiempo.desde') }}
                 <input type="date" name="desde" value="{{ $filtros['desde'] }}">
             </label>
-            <label class="sfil__f">Hasta
+            <label class="sfil__f">{{ __('mus.tiempo.hasta') }}
                 <input type="date" name="hasta" value="{{ $filtros['hasta'] }}">
             </label>
 
             <select name="estado" class="sfil__sel">
-                <option value="">Todas</option>
-                <option value="pagada" @selected($filtros['estado'] === 'pagada')>Pagadas</option>
-                <option value="anulada" @selected($filtros['estado'] === 'anulada')>Anuladas</option>
+                <option value="">{{ __('mus.ventas.todas') }}</option>
+                <option value="pagada" @selected($filtros['estado'] === 'pagada')>{{ __('mus.ventas.pagadas') }}</option>
+                <option value="anulada" @selected($filtros['estado'] === 'anulada')>{{ __('mus.ventas.anuladas') }}</option>
             </select>
 
             <select name="vendedor" class="sfil__sel">
-                <option value="">Todos los vendedores</option>
+                <option value="">{{ __('mus.ventas.todos_vendedores') }}</option>
                 @foreach ($vendedores as $v)
                     <option value="{{ $v->id }}" @selected($filtros['vendedor'] == $v->id)>{{ $v->name }}</option>
                 @endforeach
             </select>
 
-            <button type="submit" class="mb mb--primary mb--sm">Filtrar</button>
-            <a href="{{ route('sales.index') }}" class="mb mb--ghost mb--sm">Limpiar</a>
+            <button type="submit" class="mb mb--primary mb--sm">{{ __('mus.acciones.filtrar') }}</button>
+            <a href="{{ route('sales.index') }}" class="mb mb--ghost mb--sm">{{ __('mus.acciones.limpiar') }}</a>
         </form>
 
         @if ($sales->total())
@@ -65,14 +67,14 @@
                 <table class="mt">
                     <thead>
                         <tr>
-                            <th>Número</th>
-                            <th>Cliente</th>
-                            <th>Vendedor</th>
-                            <th class="num">Artículos</th>
-                            <th class="num">Total</th>
-                            <th class="num">Utilidad</th>
-                            <th>Estado</th>
-                            <th>Fecha</th>
+                            <th>{{ __('mus.ventas.numero') }}</th>
+                            <th>{{ __('mus.campos.cliente') }}</th>
+                            <th>{{ __('mus.ventas.vendedor') }}</th>
+                            <th class="num">{{ __('mus.ventas.articulos') }}</th>
+                            <th class="num">{{ __('mus.campos.total') }}</th>
+                            <th class="num">{{ __('mus.ventas.utilidad') }}</th>
+                            <th>{{ __('mus.campos.estado') }}</th>
+                            <th>{{ __('mus.campos.fecha') }}</th>
                             <th class="act"></th>
                         </tr>
                     </thead>
@@ -81,7 +83,7 @@
                             <tr data-row>
                                 <td><span class="mt__id">{{ $sale->number }}</span></td>
                                 <td>
-                                    <b>{{ $sale->customer?->full_name ?? 'Consumidor final' }}</b>
+                                    <b>{{ $sale->customer?->full_name ?? __('mus.vacio.consumidor_final') }}</b>
                                     @if ($sale->customer?->document_number)
                                         <span class="sub">{{ $sale->customer->document }}</span>
                                     @endif
@@ -96,22 +98,22 @@
                                 </td>
                                 <td>
                                     @if ($sale->anulada)
-                                        <x-mus.badge tone="bad" :dot="true">Anulada</x-mus.badge>
+                                        <x-mus.badge tone="bad" :dot="true">{{ __('mus.ventas.anulada') }}</x-mus.badge>
                                     @else
-                                        <x-mus.badge tone="ok" :dot="true">Pagada</x-mus.badge>
+                                        <x-mus.badge tone="ok" :dot="true">{{ __('mus.ventas.pagada') }}</x-mus.badge>
                                     @endif
                                 </td>
                                 <td>
-                                    {{ $sale->sold_at?->locale('es')->isoFormat('D MMM, HH:mm') ?? '—' }}
+                                    {{ Formato::enPalabras($sale->sold_at, 'D MMM, HH:mm', '—') }}
                                 </td>
                                 <td class="act">
                                     <span class="mt__acts">
                                         <x-mus.btn href="{{ route('sales.show', $sale) }}"
-                                                   variant="ghost" :sm="true" class="mb--icon" title="Ver">
+                                                   variant="ghost" :sm="true" class="mb--icon" :title="__('mus.acciones.ver')">
                                             <x-mus.icon name="eye" :w="15" />
                                         </x-mus.btn>
                                         <x-mus.btn href="{{ route('sales.recibo', $sale) }}"
-                                                   variant="ghost" :sm="true" class="mb--icon" title="Recibo"
+                                                   variant="ghost" :sm="true" class="mb--icon" :title="__('mus.ventas.recibo')"
                                                    target="_blank">
                                             <x-mus.icon name="id" :w="15" />
                                         </x-mus.btn>
@@ -123,14 +125,14 @@
                 </table>
             </div>
 
-            <x-mus.pagination :items="$sales" label="ventas" />
+            <x-mus.pagination :items="$sales" :label="__('mus.entidades.ventas')" />
         @else
-            <x-mus.empty icon="money" title="No hay ventas en este periodo"
-                         text="Cambia el rango de fechas o registra la primera venta desde el punto de venta.">
+            <x-mus.empty icon="money" :title="__('mus.ventas.vacio_titulo')"
+                         :text="__('mus.ventas.vacio_texto')">
                 <x-slot name="action">
                     @can('ventas.crear')
                         <x-mus.btn href="{{ route('pos.index') }}" variant="primary" icon="plus">
-                            Ir al punto de venta
+                            {{ __('mus.ventas.ir_al_pos') }}
                         </x-mus.btn>
                     @endcan
                 </x-slot>

@@ -32,6 +32,9 @@ class Product extends Model
         'empresa_id', 'name', 'slug', 'sku', 'description', 'barcode', 'image_url',
         'category_id', 'unit_id', 'tax_id', 'supplier_id',
         'price', 'cost', 'is_active', 'is_public',
+        // En nulo = no es un servicio que se agenda. Con un número, aparece
+        // en la agenda y ese número es lo que dura la cita por omisión.
+        'duracion_minutos',
         'created_by', 'updated_by',
     ];
 
@@ -51,7 +54,22 @@ class Product extends Model
             'min_stock_total' => 'decimal:3',
             'is_active' => 'boolean',
             'is_public' => 'boolean',
+            // Entero o nulo, nunca "0": un servicio de cero minutos no
+            // existe, y "0" desde un formulario vacío lo volvería agendable.
+            'duracion_minutos' => 'integer',
         ];
+    }
+
+    /** ¿Es un servicio que se agenda, o una cosa que se vende y ya? */
+    public function esServicio(): bool
+    {
+        return $this->duracion_minutos !== null && $this->duracion_minutos > 0;
+    }
+
+    /** Solo los que la agenda puede ofrecer. */
+    public function scopeServicios(Builder $q): Builder
+    {
+        return $q->whereNotNull('duracion_minutos')->where('duracion_minutos', '>', 0);
     }
 
     /* ─────────────────────────── Relaciones ─────────────────────────── */

@@ -6,6 +6,27 @@
 (function () {
     'use strict';
 
+    /* Los textos del mostrador, traídos de lang/. Sin esto el guion
+       imprimía «producto» y «Guardando…» en español encima de un panel
+       en inglés — y son justo los que más se leen. */
+    var T = @json([
+        'producto'    => __('mus.pos.js_producto'),
+        'productos'   => __('mus.pos.js_productos'),
+        'unidad'      => __('mus.pos.js_unidad'),
+        'unidades'    => __('mus.pos.js_unidades'),
+        'sinStock'    => __('mus.pos.js_sin_stock'),
+        'soloQuedan'  => __('mus.pos.js_solo_quedan'),
+        'guardando'   => __('mus.pos.js_guardando'),
+        'sinProductos'=> __('mus.pos.sin_productos'),
+    ]);
+
+    /** Reemplaza :clave dentro de un texto de lang/, como hace __() en PHP. */
+    function t(plantilla, repl) {
+        return Object.keys(repl || {}).reduce(function (txt, k) {
+            return txt.split(':' + k).join(repl[k]);
+        }, plantilla);
+    }
+
     // Blade puede entregar la lista como objeto si las claves no son
     // consecutivas; se normaliza a array para poder filtrarla.
     var CRUDO = window.POS_PRODUCTOS || [];
@@ -54,7 +75,7 @@
 
         grid.innerHTML = '';
         vacio.hidden = lista.length > 0;
-        cuenta.textContent = lista.length + (lista.length === 1 ? ' producto' : ' productos');
+        cuenta.textContent = lista.length + ' ' + (lista.length === 1 ? T.producto : T.productos);
 
         lista.slice(0, 240).forEach(function (p) {
             var enCarro = carrito.find(function (l) { return l.id === p.id; });
@@ -104,7 +125,7 @@
 
     function avisar(nombre, stock) {
         if (window.musToast) {
-            window.musToast('bad', 'Sin existencias', 'De «' + nombre + '» solo quedan ' + stock + '.');
+            window.musToast('bad', T.sinStock, t(T.soloQuedan, { que: nombre, n: stock }));
         }
     }
 
@@ -173,8 +194,9 @@
 
         var n = carrito.reduce(function (a, l) { return a + l.cant; }, 0);
         resumen.textContent = carrito.length
-            ? carrito.length + (carrito.length === 1 ? ' producto' : ' productos') + ' · ' + n + ' unidades'
-            : 'Sin productos';
+            ? carrito.length + ' ' + (carrito.length === 1 ? T.producto : T.productos)
+              + ' · ' + n + ' ' + (n === 1 ? T.unidad : T.unidades)
+            : T.sinProductos;
 
         var btn = $('posCobrar');
         btn.disabled = carrito.length === 0;
@@ -197,8 +219,8 @@
         if (!hay) return;
 
         $('posMovilN').textContent = carrito.length
-            + (carrito.length === 1 ? ' producto · ' : ' productos · ')
-            + unidades + (unidades === 1 ? ' unidad' : ' unidades');
+            + ' ' + (carrito.length === 1 ? T.producto : T.productos) + ' · '
+            + unidades + ' ' + (unidades === 1 ? T.unidad : T.unidades);
         $('posMovilTot').textContent = pesos(t.total);
     }
 
@@ -341,7 +363,7 @@
         });
 
         $('posConfirmar').disabled = true;
-        $('posConfirmar').textContent = 'Guardando…';
+        $('posConfirmar').textContent = T.guardando;
     });
 
     /* ---------- atajos ---------- */

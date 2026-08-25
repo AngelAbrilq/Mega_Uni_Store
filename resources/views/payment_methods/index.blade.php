@@ -1,3 +1,5 @@
+@php use App\Support\Formato; @endphp
+
 <x-mus.page title="Medios de pago" subtitle="Formas en que tus clientes pueden pagar" icon="card">
     <x-slot name="actions">
         @can('medios_pago.crear')
@@ -36,7 +38,7 @@
                                     @else
                                         <x-mus.badge tone="off" :dot="true">Inactivo</x-mus.badge>
                                     @endif</td>
-                                <td><span style="color:var(--muted-2)">{{ $paymentMethod->created_at?->locale('es')->isoFormat('D MMM YYYY') ?? '—' }}</span></td>
+                                <td><span style="color:var(--muted-2)">{{ Formato::enPalabras($paymentMethod->created_at, 'D MMM YYYY', '—') }}</span></td>
                                 <td class="act">
                                     <span class="mt__acts">
                                         @can('medios_pago.ver')<x-mus.btn href="{{ route('payment_methods.show', $paymentMethod) }}"

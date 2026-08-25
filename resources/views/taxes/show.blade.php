@@ -1,3 +1,5 @@
+@php use App\Support\Formato; @endphp
+
 <x-mus.page title="{{ $tax->name }}" subtitle="Tarifa aplicable" icon="percent"
             :crumbs="['Impuestos' => route('taxes.index'), 'Detalle' => null]">
 
@@ -42,11 +44,11 @@
                 </div>
                 <div>
                     <dt>Creado</dt>
-                    <dd>{{ $tax->created_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') ?? '—' }}</dd>
+                    <dd>{{ Formato::enPalabras($tax->created_at, 'D MMM YYYY, HH:mm', '—') }}</dd>
                 </div>
                 <div>
                     <dt>Última edición</dt>
-                    <dd>{{ $tax->updated_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') ?? '—' }}</dd>
+                    <dd>{{ Formato::enPalabras($tax->updated_at, 'D MMM YYYY, HH:mm', '—') }}</dd>
                 </div>
             </dl>
 

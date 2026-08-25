@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\CashSessionController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\PlanController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\RecursoController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RolController;
 use App\Http\Controllers\ProfileController;
@@ -115,6 +117,20 @@ Route::middleware('auth')->group(function () {
     Route::resource('customers', CustomerController::class);
     Route::resource('suppliers', SupplierController::class);
     Route::resource('payment_methods', PaymentMethodController::class);
+
+    /* ─────────── Agenda ─────────── */
+    Route::get('/agenda', [AgendaController::class, 'index'])->name('agenda.index');
+    Route::post('/agenda', [AgendaController::class, 'store'])->name('agenda.store');
+    Route::get('/agenda/citas/{cita}', [AgendaController::class, 'show'])->name('agenda.cita');
+    Route::post('/agenda/citas/{cita}/mover', [AgendaController::class, 'mover'])->name('agenda.mover');
+    Route::post('/agenda/citas/{cita}/estado', [AgendaController::class, 'estado'])->name('agenda.estado');
+    Route::post('/agenda/citas/{cita}/cobrar', [AgendaController::class, 'cobrar'])->name('agenda.cobrar');
+
+    /* Quién atiende, sus horarios y sus bloqueos. */
+    Route::resource('recursos', RecursoController::class)->except(['show']);
+    Route::post('/recursos/{recurso}/bloquear', [RecursoController::class, 'bloquear'])->name('recursos.bloquear');
+    Route::delete('/recursos/{recurso}/bloqueos/{bloqueo}', [RecursoController::class, 'desbloquear'])
+        ->name('recursos.desbloquear');
 
     /* ─────────── Traslados entre locales ─────────── */
     Route::get('/traslados', [TrasladoController::class, 'index'])->name('traslados.index');

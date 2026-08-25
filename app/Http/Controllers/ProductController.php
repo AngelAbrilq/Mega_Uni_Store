@@ -108,6 +108,8 @@ class ProductController extends Controller implements HasMiddleware
         $data['is_public']  = $request->boolean('is_public');
         $data['created_by'] = $request->user()?->id;
         $data['image_url']  = $this->guardarImagen($request, 'productos');
+        // Un cero llegado de un campo vacío volvería agendable un martillo.
+        $data['duracion_minutos'] = ($data['duracion_minutos'] ?? null) ?: null;
 
         unset($data['imagen']);
 
@@ -169,6 +171,7 @@ class ProductController extends Controller implements HasMiddleware
         $data['is_active']  = $request->boolean('is_active');
         $data['is_public']  = $request->boolean('is_public');
         $data['updated_by'] = $request->user()?->id;
+        $data['duracion_minutos'] = ($data['duracion_minutos'] ?? null) ?: null;
 
         $nueva = $this->guardarImagen($request, 'productos', $product->image_url);
 
@@ -227,6 +230,9 @@ class ProductController extends Controller implements HasMiddleware
             // Numérico y no entero: hay productos que se venden por peso.
             'stock'       => ['required', 'numeric', 'min:0', 'max:999999'],
             'min_stock'   => ['required', 'numeric', 'min:0', 'max:999999'],
+            // Entero, y nulo cuando no es un servicio. El máximo son diez
+            // horas: más que eso no es una cita, es un proyecto.
+            'duracion_minutos' => ['nullable', 'integer', 'min:5', 'max:600'],
         ], [
             'name.required'      => 'El producto necesita un nombre.',
             'sku.unique'         => 'Ya existe otro producto con ese SKU.',
@@ -239,6 +245,8 @@ class ProductController extends Controller implements HasMiddleware
             'cost.lte'           => 'El costo no puede ser mayor que el precio de venta.',
             'stock.required'     => 'Indica cuántas unidades hay disponibles.',
             'min_stock.required' => 'Indica a partir de cuántas unidades hay que reponer.',
+            'duracion_minutos.min' => 'Un servicio de menos de cinco minutos no se alcanza a agendar.',
+            'duracion_minutos.max' => 'Diez horas es el tope de una cita. Si dura más, pártelo en dos.',
         ]);
     }
 

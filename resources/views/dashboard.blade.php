@@ -1,4 +1,6 @@
 @php
+    use App\Support\Formato;
+
     use Illuminate\Support\Str;
 
     /* ══════════════ Paleta por módulo ══════════════ */
@@ -109,7 +111,7 @@
                         <rect x="3.2" y="4.8" width="17.6" height="16" rx="2.6"/>
                         <path d="M3.2 9.6h17.6M8 3.2v3.2M16 3.2v3.2"/>
                     </svg>
-                    {{ now()->locale('es')->isoFormat('D [de] MMMM, YYYY') }}
+                    {{ Formato::enPalabras(now(), 'D [de] MMMM, YYYY') }}
                 </span>
             </div>
         </div>
@@ -122,7 +124,7 @@
         <div class="d-tira__enc">
             <div class="d-tira__t">
                 <h2>Resumen</h2>
-                <p>Lo que hay en el sistema hoy, {{ now()->locale('es')->isoFormat('D [de] MMMM') }}.</p>
+                <p>Lo que hay en el sistema hoy, {{ Formato::enPalabras(now(), 'D [de] MMMM') }}.</p>
             </div>
 
             <div class="d-tira__cta">
@@ -789,7 +791,7 @@
             <dl class="d-facts d-facts--tight">
                 <div>
                     <dt>Miembro desde</dt>
-                    <dd>{{ $usuario->created_at?->locale('es')->isoFormat('MMMM YYYY') ?? '—' }}</dd>
+                    <dd>{{ Formato::enPalabras($usuario->created_at, 'MMMM YYYY', '—') }}</dd>
                 </div>
                 <div>
                     <dt>Correo verificado</dt>

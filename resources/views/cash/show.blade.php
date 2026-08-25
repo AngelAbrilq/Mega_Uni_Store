@@ -1,76 +1,78 @@
 @php
+    use App\Support\Formato;
+
     $abierta = $cash->status === 'abierta';
     $dif     = (float) $cash->difference;
     $totalV  = $ventas->where('status', 'pagada')->sum('total');
 @endphp
 
-<x-mus.page title="Turno de caja #{{ $cash->id }}"
-            subtitle="{{ $cash->user->name ?? '' }} · abierto el {{ $cash->opened_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') }}"
+<x-mus.page :title="__('mus.caja.turno_num', ['n' => $cash->id])"
+            :subtitle="trim(($cash->user->name ?? '') . ' ' . __('mus.caja.abierto_el', ['fecha' => Formato::enPalabras($cash->opened_at, 'D MMM YYYY, HH:mm')]))"
             icon="money"
-            :crumbs="['Caja' => route('cash.index'), 'Turno' => null]">
+            :crumbs="[__('mus.caja.titulo') => route('cash.index'), __('mus.entidades.turno') => null]">
 
     <x-slot name="actions">
-        <x-mus.btn href="{{ route('cash.z', $cash) }}" icon="id" target="_blank">Cierre Z</x-mus.btn>
+        <x-mus.btn href="{{ route('cash.z', $cash) }}" icon="id" target="_blank">{{ __('mus.caja.cierre_z') }}</x-mus.btn>
         @if ($abierta)
             @can('ventas.crear')
-                <x-mus.btn href="{{ route('pos.index') }}" icon="plus">Vender</x-mus.btn>
+                <x-mus.btn href="{{ route('pos.index') }}" icon="plus">{{ __('menu.vender') }}</x-mus.btn>
             @endcan
             @can('caja.cerrar')
-                <x-mus.btn variant="primary" icon="check" id="btnCerrar">Cerrar y arquear</x-mus.btn>
+                <x-mus.btn variant="primary" icon="check" id="btnCerrar">{{ __('mus.caja.cerrar_arquear') }}</x-mus.btn>
             @endcan
         @endif
     </x-slot>
 
     <div class="ckpi" data-reveal data-stagger>
         <div class="ckpi__c">
-            <span>Base inicial</span>
+            <span>{{ __('mus.caja.base_inicial') }}</span>
             <b><i class="moneda">$</i>{{ number_format((float) $cash->opening_amount, 0, ',', '.') }}</b>
         </div>
         <div class="ckpi__c">
-            <span>Vendido en el turno</span>
+            <span>{{ __('mus.caja.vendido_turno') }}</span>
             <b><i class="moneda">$</i>{{ number_format((float) $totalV, 0, ',', '.') }}</b>
-            <em>{{ $ventas->where('status', 'pagada')->count() }} ventas</em>
+            <em>{{ $ventas->where('status', 'pagada')->count() }} {{ mb_strtolower(__('mus.entidades.ventas')) }}</em>
         </div>
         <div class="ckpi__c">
-            <span>Efectivo esperado</span>
+            <span>{{ __('mus.caja.efectivo_esperado') }}</span>
             <b><i class="moneda">$</i>{{ number_format($esperado, 0, ',', '.') }}</b>
-            <em>base + cobros en efectivo</em>
+            <em>{{ __('mus.caja.efectivo_esperado_sub') }}</em>
         </div>
         @if ($abierta)
             <div class="ckpi__c ckpi__c--on">
-                <span>Estado</span>
-                <b>Abierto</b>
-                <em>desde hace {{ $cash->opened_at?->locale('es')->diffForHumans(null, true) }}</em>
+                <span>{{ __('mus.campos.estado') }}</span>
+                <b>{{ __('mus.estados.abierto') }}</b>
+                <em>{{ __('mus.caja.desde_hace') }} {{ Formato::haceCuanto($cash->opened_at, true) }}</em>
             </div>
         @else
             <div class="ckpi__c">
-                <span>Contado</span>
+                <span>{{ __('mus.caja.contado') }}</span>
                 <b><i class="moneda">$</i>{{ number_format((float) $cash->counted_amount, 0, ',', '.') }}</b>
             </div>
             <div class="ckpi__c">
-                <span>Diferencia</span>
+                <span>{{ __('mus.caja.diferencia') }}</span>
                 <b class="{{ abs($dif) < 0.01 ? 'ok' : ($dif > 0 ? '' : 'bad') }}">
                     {{ $dif > 0 ? '+' : '' }}${{ number_format($dif, 0, ',', '.') }}
                 </b>
                 <em>
-                    {{ abs($dif) < 0.01 ? 'la caja cuadró' : ($dif > 0 ? 'sobrante' : 'faltante') }}
+                    {{ abs($dif) < 0.01 ? __('mus.caja.cuadro') : ($dif > 0 ? __('mus.caja.sobrante') : __('mus.caja.faltante')) }}
                 </em>
             </div>
         @endif
     </div>
 
     <div class="cgrid">
-        <x-mus.panel title="Ventas del turno" :pad="false" sub="{{ $ventas->count() }} registros">
+        <x-mus.panel :title="__('mus.caja.ventas_turno')" :pad="false" :sub="$ventas->count() . ' ' . __('mus.caja.registros')">
             @if ($ventas->count())
                 <div class="mt-wrap">
                     <table class="mt">
                         <thead>
                             <tr>
-                                <th>Número</th>
-                                <th>Cliente</th>
-                                <th>Hora</th>
-                                <th class="num">Total</th>
-                                <th>Estado</th>
+                                <th>{{ __('mus.ventas.numero') }}</th>
+                                <th>{{ __('mus.campos.cliente') }}</th>
+                                <th>{{ __('mus.campos.hora') }}</th>
+                                <th class="num">{{ __('mus.campos.total') }}</th>
+                                <th>{{ __('mus.campos.estado') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -79,14 +81,14 @@
                                     <td>
                                         <a href="{{ route('sales.show', $v) }}" class="mt__id">{{ $v->number }}</a>
                                     </td>
-                                    <td>{{ $v->customer?->full_name ?? 'Consumidor final' }}</td>
+                                    <td>{{ $v->customer?->full_name ?? __('mus.vacio.consumidor_final') }}</td>
                                     <td>{{ $v->sold_at?->format('H:i') }}</td>
                                     <td class="num"><b><i class="moneda">$</i>{{ number_format((float) $v->total, 0, ',', '.') }}</b></td>
                                     <td>
                                         @if ($v->status === 'anulada')
-                                            <x-mus.badge tone="bad" :dot="true">Anulada</x-mus.badge>
+                                            <x-mus.badge tone="bad" :dot="true">{{ __('mus.ventas.anulada') }}</x-mus.badge>
                                         @else
-                                            <x-mus.badge tone="ok" :dot="true">Pagada</x-mus.badge>
+                                            <x-mus.badge tone="ok" :dot="true">{{ __('mus.ventas.pagada') }}</x-mus.badge>
                                         @endif
                                     </td>
                                 </tr>
@@ -95,46 +97,46 @@
                     </table>
                 </div>
             @else
-                <x-mus.empty icon="money" title="Sin ventas todavía"
-                             text="Cuando registres la primera venta aparecerá aquí." />
+                <x-mus.empty icon="money" :title="__('mus.caja.sin_ventas')"
+                             :text="__('mus.caja.sin_ventas_texto')" />
             @endif
         </x-mus.panel>
 
         <div style="display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-content:start">
-            <x-mus.panel title="Por medio de pago" sub="Lo que hay que comparar al arquear">
+            <x-mus.panel :title="__('mus.caja.por_medio_pago')" :sub="__('mus.caja.por_medio_sub')">
                 @if ($porMedio->count())
                     <ul class="cmed">
                         @foreach ($porMedio as $m)
                             <li>
                                 <span>
                                     <b>{{ $m->method_name }}</b>
-                                    <i>{{ $m->veces }} {{ $m->veces === 1 ? 'movimiento' : 'movimientos' }}</i>
+                                    <i>{{ $m->veces }} {{ $m->veces === 1 ? __('mus.entidades.movimiento') : mb_strtolower(__('mus.entidades.movimientos')) }}</i>
                                 </span>
                                 <em><i class="moneda">$</i>{{ number_format((float) $m->total, 0, ',', '.') }}</em>
                             </li>
                         @endforeach
                     </ul>
                 @else
-                    <p class="cvacio">Todavía no se ha cobrado nada en este turno.</p>
+                    <p class="cvacio">{{ __('mus.caja.sin_cobros_turno') }}</p>
                 @endif
             </x-mus.panel>
 
-            <x-mus.panel title="Datos del turno">
+            <x-mus.panel :title="__('mus.caja.datos_turno')">
                 <dl class="mdl">
-                    <div><dt>Abrió</dt><dd>{{ $cash->user->name ?? '—' }}</dd></div>
-                    <div><dt>Apertura</dt><dd>{{ $cash->opened_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') }}</dd></div>
+                    <div><dt>{{ __('mus.caja.abrio') }}</dt><dd>{{ $cash->user->name ?? '—' }}</dd></div>
+                    <div><dt>{{ __('mus.caja.apertura') }}</dt><dd>{{ Formato::enPalabras($cash->opened_at, 'D MMM YYYY, HH:mm') }}</dd></div>
                     @if (! $abierta)
-                        <div><dt>Cerró</dt><dd>{{ $cash->closer->name ?? '—' }}</dd></div>
-                        <div><dt>Cierre</dt><dd>{{ $cash->closed_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') }}</dd></div>
+                        <div><dt>{{ __('mus.caja.cerro') }}</dt><dd>{{ $cash->closer->name ?? '—' }}</dd></div>
+                        <div><dt>{{ __('mus.caja.cierre') }}</dt><dd>{{ Formato::enPalabras($cash->closed_at, 'D MMM YYYY, HH:mm') }}</dd></div>
                     @endif
                     @if ($cash->notes)
-                        <div><dt>Notas</dt><dd style="white-space:pre-line">{{ $cash->notes }}</dd></div>
+                        <div><dt>{{ __('mus.campos.notas') }}</dt><dd style="white-space:pre-line">{{ $cash->notes }}</dd></div>
                     @endif
                 </dl>
 
                 <x-slot name="foot">
                     <x-mus.btn href="{{ route('cash.index') }}" icon="back" :block="true">
-                        Volver a los turnos
+                        {{ __('mus.caja.volver_turnos') }}
                     </x-mus.btn>
                 </x-slot>
             </x-mus.panel>
@@ -146,25 +148,24 @@
             <div class="vmodal" id="modalCerrar" role="dialog" aria-modal="true">
                 <form method="POST" action="{{ route('cash.cerrar', $cash) }}" class="vmodal__box">
                     @csrf
-                    <h3>Arqueo de caja</h3>
+                    <h3>{{ __('mus.caja.arqueo') }}</h3>
                     <p>
-                        Según el sistema debería haber
-                        <b><i class="moneda">$</i>{{ number_format($esperado, 0, ',', '.') }}</b> en efectivo
-                        (base de ${{ number_format((float) $cash->opening_amount, 0, ',', '.') }}
-                        más los cobros en efectivo). Cuenta el cajón y escribe lo que hay de verdad.
+                        {{ __('mus.caja.arqueo_segun') }}
+                        <b>{!! Formato::monedaHtml($esperado) !!}</b>
+                        {{ __('mus.caja.arqueo_detalle', ['base' => Formato::moneda($cash->opening_amount)]) }}
                     </p>
                     <label>
-                        Efectivo contado
+                        {{ __('mus.caja.efectivo_contado') }}
                         <input type="number" name="counted_amount" step="1" min="0" required
                                placeholder="0" autocomplete="off">
                     </label>
                     <label style="margin-top:11px">
-                        Observaciones
-                        <textarea name="notes" rows="2" placeholder="Opcional"></textarea>
+                        {{ __('mus.campos.observaciones') }}
+                        <textarea name="notes" rows="2" placeholder="{{ __('mus.ui.opcional') }}"></textarea>
                     </label>
                     <div class="vmodal__foot">
-                        <button type="button" class="mb mb--ghost" id="btnCancelarCerrar">Cancelar</button>
-                        <button type="submit" class="mb mb--primary">Cerrar turno</button>
+                        <button type="button" class="mb mb--ghost" id="btnCancelarCerrar">{{ __('mus.acciones.cancelar') }}</button>
+                        <button type="submit" class="mb mb--primary">{{ __('mus.caja.cerrar_turno') }}</button>
                     </div>
                 </form>
             </div>

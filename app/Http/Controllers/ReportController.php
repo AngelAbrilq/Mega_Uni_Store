@@ -343,18 +343,32 @@ class ReportController extends Controller implements HasMiddleware
         // Lo que está parado EN ESTE LOCAL. Un producto que no rota aquí
         // puede estar rotando muy bien en el otro, y mezclarlos escondería
         // justamente lo que este informe busca mostrar.
+        /**
+         * Nada de lista de columnas en el `get()`.
+         *
+         * `stock` dejó de ser columna de `products` cuando la existencia
+         * pasó a ser por local, e `inmovil` nunca lo fue: se calcula. Pedir
+         * las dos a la base daba «Unknown column». Y como `ordenPorExistencia`
+         * se une con `existencias`, cualquier columna sin calificar —`id`,
+         * la primera— sale ambigua: por eso van con `products.` delante.
+         *
+         * El `addSelect` trae la existencia del local en la misma consulta.
+         * Sin él, el accessor `stock` preguntaría la suya a la base por cada
+         * uno de los diez productos.
+         */
         return Product::query()
             ->whereHas('existencia', fn ($e) => $e->where('stock', '>', 0))
-            ->whereNotIn('id', $vendidos)
+            ->whereNotIn('products.id', $vendidos)
             ->ordenPorExistencia('desc')
+            ->addSelect('existencias.stock as stock')
             ->take(10)
-            ->get(['id', 'name', 'sku', 'cost'])
+            ->get()
             ->map(fn (Product $p) => [
                 'id'       => $p->id,
                 'nombre'   => $p->name,
                 'sku'      => $p->sku,
                 'stock'    => (float) $p->stock,
-                'inmovil'  => (float) $p->cost * (float) $p->stock,
+                'inmovil'  => $p->stock_value,
             ])
             ->all();
     }

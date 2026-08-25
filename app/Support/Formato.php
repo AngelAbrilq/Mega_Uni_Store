@@ -168,6 +168,41 @@ class Formato
         return $fecha ? self::aCarbon($fecha)->format('H:i') : '—';
     }
 
+    /**
+     * Una fecha escrita con palabras, en el idioma en que está el panel.
+     *
+     * ── Por qué hace falta ──
+     *
+     * Las vistas venían escribiendo `->locale('es')->isoFormat(...)` a mano,
+     * 53 veces. Mientras el sistema estuvo solo en español eso no se notaba;
+     * al traducirlo se vuelve un error que no falla: el panel en inglés
+     * imprime «24 ago» y «lunes» en mitad de una pantalla en inglés.
+     *
+     * Aquí el idioma sale de la aplicación y la zona horaria de la
+     * configuración del negocio. Una sola línea que cambiar el día que entre
+     * un tercer idioma.
+     *
+     * @param  string  $patron  patrón de isoFormat, no de date()
+     */
+    public static function enPalabras($fecha, string $patron = 'D MMM YYYY, HH:mm', string $siNo = '—'): string
+    {
+        if (! $fecha) {
+            return $siNo;
+        }
+
+        return self::aCarbon($fecha)->locale(app()->getLocale())->isoFormat($patron);
+    }
+
+    /** «hace 2 horas» / «2 hours ago», también en el idioma del panel. */
+    public static function haceCuanto($fecha, bool $corto = false, string $siNo = '—'): string
+    {
+        if (! $fecha) {
+            return $siNo;
+        }
+
+        return self::aCarbon($fecha)->locale(app()->getLocale())->diffForHumans(null, $corto);
+    }
+
     public static function patronFecha(): string
     {
         $clave = self::cfg()['regional.formato_fecha'] ?? 'dmy_slash';

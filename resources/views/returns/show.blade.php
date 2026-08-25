@@ -1,5 +1,7 @@
+@php use App\Support\Formato; @endphp
+
 <x-mus.page title="Devolución {{ $devolucion->number }}"
-            subtitle="Sobre la venta {{ $devolucion->sale->number ?? '' }} · {{ $devolucion->returned_at?->locale('es')->isoFormat('D [de] MMMM [de] YYYY, HH:mm') }}"
+            subtitle="Sobre la venta {{ $devolucion->sale->number ?? '' }} · {{ Formato::enPalabras($devolucion->returned_at, 'D [de] MMMM [de] YYYY, HH:mm') }}"
             icon="back"
             :crumbs="['Devoluciones' => route('returns.index'), 'Detalle' => null]">
 
@@ -83,7 +85,7 @@
                     <dd>{{ $devolucion->sale?->customer?->full_name ?? 'Consumidor final' }}</dd>
                 </div>
                 <div><dt>Recibió</dt><dd>{{ $devolucion->user->name ?? '—' }}</dd></div>
-                <div><dt>Fecha</dt><dd>{{ $devolucion->returned_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') }}</dd></div>
+                <div><dt>Fecha</dt><dd>{{ Formato::enPalabras($devolucion->returned_at, 'D MMM YYYY, HH:mm') }}</dd></div>
                 <div>
                     <dt>Reingresó a bodega</dt>
                     <dd>{{ $devolucion->restock ? 'Sí' : 'No' }}</dd>

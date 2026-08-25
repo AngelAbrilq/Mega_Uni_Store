@@ -1,4 +1,6 @@
 @php
+    use App\Support\Formato;
+
     $tonos = ['borrador' => 'warn', 'recibida' => 'ok', 'anulada' => 'bad'];
 @endphp
 
@@ -86,7 +88,7 @@
                                     </x-mus.badge>
                                 </td>
                                 <td>
-                                    {{ $c->ordered_at?->locale('es')->isoFormat('D MMM YYYY') }}
+                                    {{ Formato::enPalabras($c->ordered_at, 'D MMM YYYY') }}
                                     @if ($c->received_at)
                                         <span class="sub">recibida {{ $c->received_at->format('d/m') }}</span>
                                     @endif

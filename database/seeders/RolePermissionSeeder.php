@@ -33,6 +33,7 @@ class RolePermissionSeeder extends Seeder
         'usuarios'     => 'Usuarios',
         'ventas'       => 'Ventas',
         'compras'      => 'Compras',
+        'citas'        => 'Citas de la agenda',
     ];
 
     /**
@@ -57,6 +58,7 @@ class RolePermissionSeeder extends Seeder
         // El panel de superadministrador. Solo lo tiene ese rol, y por eso
         // se excluye a mano de todos los demás más abajo: es el único
         // permiso que no es «de un negocio» sino «de todos los negocios».
+        'agenda.recursos',      // quién atiende, sus horarios y bloqueos
         'sistema.superadmin',
     ];
 
@@ -128,6 +130,7 @@ class RolePermissionSeeder extends Seeder
                 $soloVer,
                 [
                     'panel.ver', 'reportes.ver', 'auditoria.ver',
+                    'citas.crear', 'citas.editar', 'agenda.recursos',
                     'inventario.ver', 'inventario.ajustar',
                     'caja.ver', 'ventas.anular', 'ventas.devolver',
                 ],
@@ -136,6 +139,7 @@ class RolePermissionSeeder extends Seeder
 
             'Cajero' => [
                 'panel.ver',
+                'citas.ver', 'citas.crear', 'citas.editar',
                 'ventas.ver', 'ventas.crear', 'ventas.devolver',
                 'caja.ver', 'caja.abrir', 'caja.cerrar',
                 'productos.ver', 'categorias.ver', 'medios_pago.ver', 'impuestos.ver',
@@ -145,6 +149,7 @@ class RolePermissionSeeder extends Seeder
             'Vendedor' => array_merge(
                 [
                     'panel.ver',
+                    'citas.ver', 'citas.crear', 'citas.editar',
                     'ventas.ver', 'ventas.crear', 'ventas.devolver',
                     'caja.ver', 'caja.abrir', 'caja.cerrar',
                     'productos.ver', 'categorias.ver', 'medios_pago.ver', 'impuestos.ver',

@@ -40,7 +40,7 @@
 
         @if ($empresa?->suscrita_desde)
             <p class="mplan__desde">
-                Cliente desde {{ $empresa->suscrita_desde->locale('es')->isoFormat('D [de] MMMM [de] YYYY') }}.
+                Cliente desde {{ Formato::enPalabras($empresa->suscrita_desde, 'D [de] MMMM [de] YYYY') }}.
             </p>
         @endif
     </x-mus.panel>
@@ -135,7 +135,7 @@
                     <tbody>
                         @foreach ($historial as $m)
                             <tr data-row>
-                                <td>{{ $m->ocurrio_en->locale('es')->isoFormat('D MMM YYYY') }}</td>
+                                <td>{{ Formato::enPalabras($m->ocurrio_en, 'D MMM YYYY') }}</td>
                                 <td><b>{{ $m->etiqueta() }}</b></td>
                                 <td>{{ $m->planDespues?->nombre ?? '—' }}</td>
                                 <td class="{{ $m->suma() ? 'mplan__mas' : 'mplan__menos' }}">

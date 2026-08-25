@@ -1,4 +1,6 @@
 @php
+    use App\Support\Formato;
+
     $tonoStock  = ['agotado' => 'bad', 'bajo' => 'warn', 'ok' => 'ok'];
     $textoStock = ['agotado' => 'Agotado', 'bajo' => 'Por debajo del mínimo', 'ok' => 'Disponible'];
 
@@ -109,7 +111,7 @@
                     </div>
                     <div>
                         <dt>Creado</dt>
-                        <dd>{{ $product->created_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') ?? '—' }}</dd>
+                        <dd>{{ Formato::enPalabras($product->created_at, 'D MMM YYYY, HH:mm', '—') }}</dd>
                     </div>
                     <div>
                         <dt>Última edición</dt>
@@ -117,7 +119,7 @@
                     </div>
                     <div>
                         <dt>Editado</dt>
-                        <dd>{{ $product->updated_at?->locale('es')->isoFormat('D MMM YYYY, HH:mm') ?? '—' }}</dd>
+                        <dd>{{ Formato::enPalabras($product->updated_at, 'D MMM YYYY, HH:mm', '—') }}</dd>
                     </div>
                 </dl>
 
