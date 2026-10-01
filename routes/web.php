@@ -16,6 +16,7 @@ use App\Http\Controllers\PlanController;
 use App\Http\Controllers\PosController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\PurchaseController;
+use App\Http\Controllers\SmartInventoryController;
 use App\Http\Controllers\RecursoController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RolController;
@@ -112,6 +113,13 @@ Route::middleware('auth')->group(function () {
     Route::resource('purchases', PurchaseController::class)->except(['destroy']);
     Route::post('/purchases/{purchase}/recibir', [PurchaseController::class, 'recibir'])->name('purchases.recibir');
     Route::post('/purchases/{purchase}/anular', [PurchaseController::class, 'anular'])->name('purchases.anular');
+
+    /* ─────────── Smart Inventory Entry (IA) ─────────── */
+    Route::prefix('smart-inventory')->name('smart-inventory.')->middleware('permission:compras.crear')->group(function () {
+        // Cada lectura cuesta dinero en la API de IA: límite por usuario.
+        Route::post('/analizar', [SmartInventoryController::class, 'analyze'])->middleware('throttle:10,1')->name('analyze');
+        Route::post('/confirmar', [SmartInventoryController::class, 'confirm'])->middleware('throttle:20,1')->name('confirm');
+    });
 
     /* ─────────── Comercial ─────────── */
     Route::resource('customers', CustomerController::class);
