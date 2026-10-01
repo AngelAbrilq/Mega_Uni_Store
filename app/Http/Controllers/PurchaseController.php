@@ -92,7 +92,7 @@ class PurchaseController extends Controller implements HasMiddleware
 
     public function show(Purchase $purchase)
     {
-        $purchase->load(['items.product:id,name,sku,stock', 'supplier', 'user:id,name', 'receiver:id,name']);
+        $purchase->load(['items.product:id,name,sku', 'supplier', 'user:id,name', 'receiver:id,name']);
 
         return view('purchases.show', compact('purchase'));
     }

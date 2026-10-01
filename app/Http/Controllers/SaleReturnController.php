@@ -105,7 +105,7 @@ class SaleReturnController extends Controller implements HasMiddleware
 
     public function show(SaleReturn $return)
     {
-        $return->load(['items.product:id,name,sku,stock', 'sale.customer', 'user:id,name']);
+        $return->load(['items.product:id,name,sku', 'sale.customer', 'user:id,name']);
 
         return view('returns.show', ['devolucion' => $return]);
     }
