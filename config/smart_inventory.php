@@ -38,8 +38,13 @@ return [
     'image' => [
         'max_kb'     => 8192,
         'mimes'      => ['jpeg', 'jpg', 'png', 'webp'],
-        'min_width'  => 600,   // por debajo, la letra pequeña de una factura no es legible
-        'min_height' => 600,
+        // Piso técnico, no juicio de calidad: por debajo de esto no hay
+        // texto legible posible y se ahorra la llamada a la IA. Si la foto
+        // es legible o no lo decide la IA (calidad_imagen.confianza), porque
+        // una captura de pantalla de 550 px de una factura digital se lee
+        // perfecto y una foto de 4000 px movida no.
+        'min_side'   => (int) env('SMART_INVENTORY_MIN_SIDE', 300),
+        'min_pixels' => (int) env('SMART_INVENTORY_MIN_PIXELS', 200_000), // ≈ 450×450
         'disk'       => 'local', // privado: storage/app/private
         'dir'        => 'smart-inventory',
     ],

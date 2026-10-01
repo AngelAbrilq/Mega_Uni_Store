@@ -87,10 +87,12 @@ class InvoiceAIReaderService
         }
 
         [$width, $height] = $size;
-        $minW = (int) config('smart_inventory.image.min_width');
-        $minH = (int) config('smart_inventory.image.min_height');
-        if (min($width, $height) < min($minW, $minH)) {
-            throw InvoiceReadingException::unreadable("resolución {$width}x{$height} insuficiente (mínimo {$minW}x{$minH}).");
+        $minSide   = (int) config('smart_inventory.image.min_side');
+        $minPixels = (int) config('smart_inventory.image.min_pixels');
+        if (min($width, $height) < $minSide || $width * $height < $minPixels) {
+            throw InvoiceReadingException::unreadable(
+                "la imagen mide {$width}x{$height} px y es demasiado pequeña para leer texto. Usa la foto original, no una miniatura."
+            );
         }
 
         return [$mime, base64_encode((string) file_get_contents($image->getRealPath()))];
