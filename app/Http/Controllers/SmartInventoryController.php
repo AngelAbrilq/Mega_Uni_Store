@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Exceptions\InvoiceReadingException;
 use App\Http\Requests\SmartInventory\AnalyzeInvoiceRequest;
 use App\Http\Requests\SmartInventory\ConfirmSmartEntryRequest;
+use App\Models\Product;
+use App\Models\Supplier;
 use App\Services\SmartInventoryService;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -18,6 +21,30 @@ use Illuminate\Validation\ValidationException;
 class SmartInventoryController extends Controller
 {
     public function __construct(private SmartInventoryService $smartInventory) {}
+
+    /**
+     * GET /smart-inventory
+     * Pantalla de captura + tabla de validación. Los catálogos viajan una
+     * sola vez para armar los selectores de proveedor y producto.
+     */
+    public function create(): View
+    {
+        return view('smart-inventory.create', [
+            'proveedores' => Supplier::active()->orderBy('name')->get(['id', 'name', 'tax_id']),
+            // without('existencia'): aquí no se muestra stock, sobra la relación del $with.
+            'productos'   => Product::without('existencia')->where('is_active', true)->orderBy('name')
+                ->get(['id', 'name', 'sku', 'barcode', 'price', 'cost'])
+                ->map(fn (Product $p) => [
+                    'id'     => $p->id,
+                    'nombre' => $p->name,
+                    'sku'    => $p->sku,
+                    'precio' => (float) $p->price,
+                    'costo'  => (float) $p->cost,
+                ])->values(),
+            'markup'      => (float) config('smart_inventory.default_markup_percent'),
+            'puedePrecio' => (bool) auth()->user()?->can('productos.editar'),
+        ]);
+    }
 
     /**
      * POST /smart-inventory/analizar

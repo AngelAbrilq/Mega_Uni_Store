@@ -7,6 +7,7 @@
 <x-mus.page title="Compras" subtitle="Pedidos a proveedores y entrada de mercancía" icon="truck">
     <x-slot name="actions">
         @can('compras.crear')
+            <x-mus.btn href="{{ route('smart-inventory.create') }}" icon="receipt">Leer factura con IA</x-mus.btn>
             <x-mus.btn href="{{ route('purchases.create') }}" variant="primary" icon="plus">Nueva compra</x-mus.btn>
         @endcan
     </x-slot>
