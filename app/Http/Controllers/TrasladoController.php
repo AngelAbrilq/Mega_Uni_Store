@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Inventario\RegistrarTrasladoRequest;
 use App\Models\Existencia;
 use App\Models\Product;
 use App\Models\Tienda;
@@ -11,7 +12,6 @@ use App\Support\Contexto;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -73,25 +73,9 @@ class TrasladoController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function store(Request $request)
+    public function store(RegistrarTrasladoRequest $request)
     {
-        $locales = $this->locales()->pluck('id')->all();
-
-        $datos = $request->validate([
-            'product_id' => ['required', 'integer', Rule::exists('products', 'id')],
-            'desde'      => ['required', 'integer', Rule::in($locales)],
-            'hacia'      => ['required', 'integer', Rule::in($locales), 'different:desde'],
-            'cantidad'   => ['required', 'numeric', 'gt:0'],
-            'notas'      => ['nullable', 'string', 'max:255'],
-        ], [
-            'product_id.required' => 'Escoge qué producto se va a mover.',
-            'desde.required'      => 'Di de qué local sale.',
-            'hacia.required'      => 'Di a qué local llega.',
-            'hacia.different'     => 'El origen y el destino no pueden ser el mismo local.',
-            'hacia.in'            => 'Ese local no es de este negocio.',
-            'desde.in'            => 'Ese local no es de este negocio.',
-            'cantidad.gt'         => 'La cantidad tiene que ser mayor que cero.',
-        ]);
+        $datos = $request->validated();
 
         $producto = Product::findOrFail($datos['product_id']);
 
@@ -146,8 +130,7 @@ class TrasladoController extends Controller implements HasMiddleware
     /** Los locales de esta empresa. El filtro global ya los acota. */
     private function locales()
     {
-        return Tienda::where('activa', true)
-            ->whereIn('id', Contexto::tiendaIds() ?? [])
+        return Tienda::activasDelNegocio()
             ->orderByDesc('es_principal')
             ->orderBy('nombre')
             ->get(['id', 'nombre', 'codigo']);

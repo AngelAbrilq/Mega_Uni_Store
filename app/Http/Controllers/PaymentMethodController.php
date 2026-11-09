@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Catalogo\GuardarPaymentMethodRequest;
 use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 
 class PaymentMethodController extends Controller implements HasMiddleware
 {
@@ -39,10 +39,11 @@ class PaymentMethodController extends Controller implements HasMiddleware
         return view('payment_methods.create');
     }
 
-    public function store(Request $request)
+    public function store(GuardarPaymentMethodRequest $request)
     {
-        $data = $this->validar($request);
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
+        $data['requires_verification'] = $request->boolean('requires_verification');
 
         $medio = PaymentMethod::create($data);
 
@@ -60,10 +61,11 @@ class PaymentMethodController extends Controller implements HasMiddleware
         return view('payment_methods.edit', compact('paymentMethod'));
     }
 
-    public function update(Request $request, PaymentMethod $paymentMethod)
+    public function update(GuardarPaymentMethodRequest $request, PaymentMethod $paymentMethod)
     {
-        $data = $this->validar($request, $paymentMethod);
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
+        $data['requires_verification'] = $request->boolean('requires_verification');
 
         $paymentMethod->update($data);
 
@@ -78,17 +80,5 @@ class PaymentMethodController extends Controller implements HasMiddleware
 
         return redirect()->route('payment_methods.index')
             ->with('success', 'Medio de pago «' . $nombre . '» eliminado.');
-    }
-
-    /** @return array<string, mixed> */
-    private function validar(Request $request, ?PaymentMethod $medio = null): array
-    {
-        return $request->validate([
-            'name'        => ['required', 'string', 'max:100', Rule::unique('payment_methods', 'name')->ignore($medio?->id)],
-            'description' => ['nullable', 'string', 'max:1000'],
-        ], [
-            'name.required' => 'El medio de pago necesita un nombre.',
-            'name.unique'   => 'Ya existe un medio de pago con ese nombre.',
-        ]);
     }
 }

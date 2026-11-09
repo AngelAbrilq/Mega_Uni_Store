@@ -11,17 +11,17 @@
 
     <x-slot name="actions">
         @can('compras.editar')
-            @if ($purchase->editable)
+            @if ($purchase->editable && auth()->user()->can('update', $purchase))
                 <x-mus.btn href="{{ route('purchases.edit', $purchase) }}" icon="pencil">Editar</x-mus.btn>
             @endif
         @endcan
         @can('compras.recibir')
-            @if ($purchase->status === 'borrador')
+            @if ($purchase->status === 'borrador' && auth()->user()->can('recibir', $purchase))
                 <x-mus.btn variant="primary" icon="check" id="btnRecibir">Dar entrada a la mercancía</x-mus.btn>
             @endif
         @endcan
         @can('compras.eliminar')
-            @if ($purchase->status !== 'anulada')
+            @if ($purchase->status !== 'anulada' && auth()->user()->can('anular', $purchase))
                 <x-mus.btn variant="danger" icon="alert" id="btnAnularC">Anular</x-mus.btn>
             @endif
         @endcan
@@ -144,7 +144,7 @@
     </div>
 
     @can('compras.recibir')
-        @if ($purchase->status === 'borrador')
+        @if ($purchase->status === 'borrador' && auth()->user()->can('recibir', $purchase))
             <div class="vmodal" id="modalRecibir" role="dialog" aria-modal="true">
                 <form method="POST" action="{{ route('purchases.recibir', $purchase) }}" class="vmodal__box">
                     @csrf
@@ -164,7 +164,7 @@
     @endcan
 
     @can('compras.eliminar')
-        @if ($purchase->status !== 'anulada')
+        @if ($purchase->status !== 'anulada' && auth()->user()->can('anular', $purchase))
             <div class="vmodal" id="modalAnularC" role="dialog" aria-modal="true">
                 <form method="POST" action="{{ route('purchases.anular', $purchase) }}" class="vmodal__box">
                     @csrf

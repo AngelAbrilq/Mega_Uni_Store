@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Jerarquia;
+use App\Http\Requests\Admin\GuardarUsuarioRequest;
 use App\Http\Controllers\Concerns\GuardaImagen;
+use App\Models\Tienda;
 use App\Models\User;
+use App\Support\Contexto;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 use App\Models\Rol as Role;
 
 /**
@@ -42,7 +45,11 @@ class UserController extends Controller implements HasMiddleware
             ->with('roles:id,name')
             ->when($q !== '', fn ($c) => $c->where(fn ($s) => $s
                 ->where('name', 'like', "%{$q}%")
-                ->orWhere('email', 'like', "%{$q}%")))
+                ->orWhere('last_name', 'like', "%{$q}%")
+                ->orWhere('email', 'like', "%{$q}%")
+                ->orWhere('phone', 'like', "%{$q}%")))
+            ->when($request->query('estado') === 'activos', fn ($c) => $c->where('is_active', true))
+            ->when($request->query('estado') === 'inactivos', fn ($c) => $c->where('is_active', false))
             ->when($request->query('rol'), fn ($c, $rol) => $c->role($rol))
             ->orderBy('name')
             ->paginate(12)
@@ -53,6 +60,7 @@ class UserController extends Controller implements HasMiddleware
             'roles' => Role::visibles()->orderBy('name')->pluck('name'),
             'q'     => $q,
             'rol'   => (string) $request->query('rol', ''),
+            'estado' => (string) $request->query('estado', ''),
         ]);
     }
 
@@ -61,27 +69,28 @@ class UserController extends Controller implements HasMiddleware
         return view('users.create', $this->listas());
     }
 
-    public function store(Request $request)
+    public function store(GuardarUsuarioRequest $request)
     {
-        app(\App\Services\LimiteService::class)->exigir('usuarios');
+        // Tope del plan y jerarquía (H-F06): GuardarUsuarioRequest, antes de validar.
+        $data = $request->validated();
 
-        $data = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'email', 'lowercase', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::defaults()],
-            'roles'    => ['required', 'array', 'min:1'],
-            'roles.*'  => [Rule::in($this->rolesAsignables())],
-        ] + $this->reglasImagen('foto'), $this->mensajes() + $this->mensajesImagen('foto'));
+        $usuario = DB::transaction(function () use ($request, $data) {
+            $usuario = new User();
+            $usuario->name              = $data['name'];
+            $usuario->last_name         = $data['last_name'] ?? null;
+            $usuario->email             = $data['email'];
+            $usuario->phone             = $data['phone'] ?? null;
+            $usuario->is_active         = $data['is_active'] ?? true;
+            $usuario->password          = Hash::make($data['password']);
+            $usuario->email_verified_at = now();
+            $usuario->avatar_url        = $this->guardarImagen($request, 'usuarios', null, 'foto');
+            $usuario->save();
 
-        $usuario = new User();
-        $usuario->name              = $data['name'];
-        $usuario->email             = $data['email'];
-        $usuario->password          = Hash::make($data['password']);
-        $usuario->email_verified_at = now();
-        $usuario->avatar_url        = $this->guardarImagen($request, 'usuarios', null, 'foto');
-        $usuario->save();
+            $usuario->syncRoles($data['roles']);
+            $this->sincronizarTiendas($usuario, $data);
 
-        $usuario->syncRoles($data['roles']);
+            return $usuario;
+        });
 
         return redirect()->route('users.index')
             ->with('success', 'Usuario «' . $usuario->name . '» creado.');
@@ -89,27 +98,27 @@ class UserController extends Controller implements HasMiddleware
 
     public function show(User $user)
     {
-        $user->load('roles.permissions');
+        $user->load('roles.permissions', 'tiendas');
 
-        return view('users.show', compact('user'));
+        // TBL-SES-001: dónde está conectado ahora mismo.
+        $sesiones = \App\Models\UserSession::query()->vigentes()
+            ->where('user_id', $user->id)->orderByDesc('last_activity_at')->get();
+
+        return view('users.show', compact('user', 'sesiones'));
     }
 
     public function edit(User $user)
     {
-        $user->load('roles:id,name');
+        $this->exigirQueNoSeaSuperior($user);
+
+        $user->load('roles:id,name', 'tiendas');
 
         return view('users.edit', array_merge($this->listas(), ['user' => $user]));
     }
 
-    public function update(Request $request, User $user)
+    public function update(GuardarUsuarioRequest $request, User $user)
     {
-        $data = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'email', 'lowercase', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'password' => ['nullable', 'confirmed', Password::defaults()],
-            'roles'    => ['required', 'array', 'min:1'],
-            'roles.*'  => [Rule::in($this->rolesAsignables())],
-        ] + $this->reglasImagen('foto'), $this->mensajes() + $this->mensajesImagen('foto'));
+        $data = $request->validated();
 
         // Nadie puede quitarse a sí mismo el rol con el que administra:
         // si lo hiciera, quedaría sin acceso y sin forma de recuperarlo.
@@ -121,8 +130,22 @@ class UserController extends Controller implements HasMiddleware
                 ->with('error', 'No puedes quitarte a ti mismo el rol de Superadministrador.');
         }
 
-        $user->name  = $data['name'];
-        $user->email = $data['email'];
+        $activo = $data['is_active'] ?? $user->is_active;
+
+        // Desactivarse a uno mismo es cerrarse la puerta sin llave para volver.
+        if ($user->id === $request->user()->id && ! $activo) {
+            return back()->withInput()->with('error', 'No puedes desactivar tu propia cuenta mientras la estás usando.');
+        }
+
+        if (! $activo && $user->is_active && $this->esElUltimoSuperadministrador($user)) {
+            return back()->withInput()->with('error', 'Es el único superadministrador activo: el negocio quedaría sin dueño.');
+        }
+
+        $user->name      = $data['name'];
+        $user->last_name = $data['last_name'] ?? null;
+        $user->email     = $data['email'];
+        $user->phone     = $data['phone'] ?? null;
+        $user->is_active = $activo;
 
         if (! empty($data['password'])) {
             $user->password = Hash::make($data['password']);
@@ -134,8 +157,11 @@ class UserController extends Controller implements HasMiddleware
             $user->avatar_url = $foto;
         }
 
-        $user->save();
-        $user->syncRoles($data['roles']);
+        DB::transaction(function () use ($user, $data) {
+            $user->save();
+            $user->syncRoles($data['roles']);
+            $this->sincronizarTiendas($user, $data);
+        });
 
         return redirect()->route('users.index')
             ->with('success', 'Usuario «' . $user->name . '» actualizado.');
@@ -143,6 +169,8 @@ class UserController extends Controller implements HasMiddleware
 
     public function destroy(Request $request, User $user)
     {
+        $this->exigirQueNoSeaSuperior($user);
+
         if ($user->id === $request->user()->id) {
             return back()->with('error', 'No puedes eliminar tu propia cuenta mientras la estás usando.');
         }
@@ -151,66 +179,93 @@ class UserController extends Controller implements HasMiddleware
         // `deLaEmpresa`: lo que importa es que ESTE negocio no se quede
         // sin dueño. Que el vecino tenga tres superadministradores no
         // salva a este de quedarse sin ninguno.
-        if ($user->hasRole('Superadministrador')
-            && User::role('Superadministrador')->deLaEmpresa()->count() <= 1) {
+        if ($this->esElUltimoSuperadministrador($user)) {
             return back()->with('error', 'Este es el único superadministrador: el sistema quedaría sin dueño.');
         }
 
-        $nombre = $user->name;
-        $user->delete();
+        // H-F04: baja lógica. Sus ventas, compras, turnos y devoluciones
+        // siguen diciendo quién las hizo; él ya no puede entrar.
+        $nombre = $user->nombre_completo;
+
+        DB::transaction(function () use ($user) {
+            $user->forceFill(['is_active' => false])->save();
+            $user->delete();
+        });
 
         return redirect()->route('users.index')
-            ->with('success', 'Usuario «' . $nombre . '» eliminado.');
+            ->with('success', 'Usuario «' . $nombre . '» dado de baja. Su historial se conserva.');
     }
 
     /* ───────────────────────── Apoyo ───────────────────────── */
 
     /**
-     * Los nombres de rol que este negocio puede asignar.
-     *
-     * Antes la regla era `exists:roles,name`, que solo comprobaba que el
-     * rol existiera EN ALGÚN LADO. Bastaba con mandar a mano el nombre del
-     * rol de otro cliente —«Estilista»— para asignárselo a un usuario
-     * propio. Con la lista cerrada, un nombre que no sea de este negocio
-     * simplemente no pasa la validación.
-     *
-     * @return array<int, string>
+     * Tampoco se edita ni se borra a alguien con más permisos que uno:
+     * sería la forma indirecta de quitarle el acceso o cambiarle la clave.
      */
-    private function rolesAsignables(): array
+    private function exigirQueNoSeaSuperior(User $objetivo): void
     {
-        return Role::visibles()->pluck('name')->all();
+        abort_if(
+            Jerarquia::esSuperior(auth()->user(), $objetivo),
+            403,
+            'No puedes modificar a un usuario con más permisos que tú.'
+        );
+    }
+
+    /**
+     * ¿Quitarle el acceso a este usuario dejaría al negocio sin superadministrador activo?
+     *
+     * `deLaEmpresa`: lo que importa es que ESTE negocio no se quede sin
+     * dueño. Que el vecino tenga tres no salva a este de quedarse sin ninguno.
+     */
+    private function esElUltimoSuperadministrador(User $user): bool
+    {
+        return $user->hasRole('Superadministrador')
+            && User::role('Superadministrador')->deLaEmpresa()->activos()->count() <= 1;
+    }
+
+    /**
+     * SA-USR-002 · Locales de ESTE negocio donde trabaja el usuario.
+     *
+     * Solo toca los locales del negocio activo: quien pertenece a dos
+     * negocios no pierde los del otro porque lo editaron desde este.
+     * Sin locales marcados = puede trabajar en todos (ver User::tiendasEn).
+     *
+     * @param array<string, mixed> $data
+     */
+    private function sincronizarTiendas(User $user, array $data): void
+    {
+        if (! array_key_exists('tiendas', $data) && empty($data['tiendas_presentes'])) {
+            return;
+        }
+
+        $empresaId = Contexto::empresaId();
+
+        if (! $empresaId) {
+            return;
+        }
+
+        $deEsteNegocio = Tienda::where('empresa_id', $empresaId)->pluck('id');
+
+        $user->tiendas()->detach($deEsteNegocio);
+        $user->tiendas()->attach(array_map('intval', $data['tiendas'] ?? []));
     }
 
     /** @return array<string, mixed> */
     private function listas(): array
     {
         return [
+            'tiendas' => Tienda::where('empresa_id', Contexto::empresaId())
+                ->orderByDesc('es_principal')
+                ->orderBy('nombre')
+                ->get(['id', 'nombre', 'activa']),
             // Se traen los permisos, no solo el conteo: la tarjeta del rol
             // los muestra al pasar el mouse por encima.
             // `visibles`: los del sistema más los de este negocio. Sin
             // esto, el desplegable de roles le ofrecería al cajero de la
             // ferretería el «Estilista» que creó una peluquería.
-            'roles' => Role::visibles()
-                ->with('permissions:id,name')
-                ->withCount('permissions')
-                ->orderBy('name')
-                ->get(),
-        ];
-    }
-
-    /** @return array<string, string> */
-    private function mensajes(): array
-    {
-        return [
-            'name.required'      => 'Escribe el nombre completo.',
-            'email.required'     => 'El correo es obligatorio.',
-            'email.email'        => 'Escribe un correo electrónico válido.',
-            'email.lowercase'    => 'El correo debe ir en minúsculas.',
-            'email.unique'       => 'Ese correo ya tiene una cuenta.',
-            'password.required'  => 'Define una contraseña.',
-            'password.confirmed' => 'Las contraseñas no coinciden.',
-            'roles.required'     => 'Un usuario debe tener al menos un rol.',
-            'roles.min'          => 'Un usuario debe tener al menos un rol.',
+            // H-F06: solo los roles que este usuario puede repartir.
+            'roles' => Jerarquia::rolesAlAlcance(auth()->user())
+                ->each(fn (Role $rol) => $rol->permissions_count = $rol->permissions->count()),
         ];
     }
 }

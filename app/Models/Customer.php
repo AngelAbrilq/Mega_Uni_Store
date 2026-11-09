@@ -54,6 +54,26 @@ class Customer extends Authenticatable
     }
 
     /** Compras que ha hecho este cliente. */
+    /** CL-TDC-001 · Su cuenta en cada local (puntos, gastado, compras). */
+    public function tiendas(): HasMany
+    {
+        return $this->hasMany(CustomerTienda::class)->withoutGlobalScopes();
+    }
+
+    /** CL-PUN-001 · Movimientos de puntos, del más reciente al más viejo. */
+    public function loyaltyTransactions(): HasMany
+    {
+        return $this->hasMany(LoyaltyTransaction::class)->latest('id');
+    }
+
+    /** La cuenta del cliente en un local (por defecto, el activo). */
+    public function cuentaEn(?int $tiendaId = null): ?CustomerTienda
+    {
+        $tiendaId ??= \App\Support\Contexto::tiendaId();
+
+        return $this->tiendas->firstWhere('tienda_id', $tiendaId);
+    }
+
     public function sales(): HasMany
     {
         return $this->hasMany(Sale::class)->latest('sold_at');

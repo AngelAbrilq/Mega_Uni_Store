@@ -47,12 +47,32 @@ class ContextoDeTrabajo
 
     public function handle(Request $request, Closure $next): Response
     {
+        // El portal público tiene su propio contexto (ContextoDeTienda): el
+        // negocio sale del slug de la URL. Si este middleware corriera ahí,
+        // un empleado logueado en el mismo navegador pisaría ese contexto
+        // con el de SU empresa y la tienda pintaría el catálogo equivocado.
+        if ($request->routeIs('tienda.*')) {
+            return $next($request);
+        }
+
         $usuario = $request->user();
 
         // Sin sesión iniciada no hay contexto que resolver: la pantalla de
         // ingreso y el portal público pasan de largo.
         if (! $usuario) {
             return $next($request);
+        }
+
+        // SA-USR-003: si lo desactivaron con la sesión abierta, sale ya,
+        // no cuando expire la cookie. (A los dados de baja el guardián ni
+        // los encuentra: SoftDeletes los saca de la consulta.)
+        if (! $usuario->is_active) {
+            \Illuminate\Support\Facades\Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Tu usuario fue desactivado. Habla con el administrador del negocio.']);
         }
 
         $empresa = $this->resolverEmpresa($request, $usuario);

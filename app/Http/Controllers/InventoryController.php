@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Inventario\AjustarInventarioRequest;
 use App\Support\Contexto;
 use App\Models\Existencia;
 use App\Models\Product;
@@ -97,17 +98,9 @@ class InventoryController extends Controller implements HasMiddleware
         return view('inventory.ajustar', compact('product'));
     }
 
-    public function guardarAjuste(Request $request, Product $product)
+    public function guardarAjuste(AjustarInventarioRequest $request, Product $product)
     {
-        $datos = $request->validate([
-            'modo'     => ['required', 'in:conteo,entrada,salida'],
-            'cantidad' => ['required', 'numeric', 'min:0', 'max:999999'],
-            'motivo'   => ['required', 'string', 'min:5', 'max:255'],
-        ], [
-            'cantidad.required' => 'Indica la cantidad.',
-            'motivo.required'   => 'Explica por qué se ajusta el inventario.',
-            'motivo.min'        => 'El motivo debe tener al menos 5 caracteres.',
-        ]);
+        $datos = $request->validated();
 
         $cantidad = (float) $datos['cantidad'];
         $usuario  = $request->user()->id;

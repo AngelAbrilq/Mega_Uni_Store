@@ -24,7 +24,7 @@
 
             <div class="si-cap__side">
                 <div>
-                    <label class="mfld__lab" for="siMarkup">Margen sugerido sobre el costo (%)</label>
+                    <label class="mfld__lab" for="siMarkup">Ganancia sugerida sobre el costo (%)</label>
                     <input type="number" id="siMarkup" min="0" max="1000" step="0.5" value="{{ $markup }}" class="si-in">
                     <small class="si-hint">Solo se usa cuando ni la factura ni el producto traen precio de venta.</small>
                 </div>
@@ -57,6 +57,11 @@
                     <label class="mfld__lab" for="siFecha">Fecha</label>
                     <input type="date" id="siFecha" max="{{ now()->format('Y-m-d') }}" class="si-in">
                 </div>
+                <div id="siTrmBox" hidden>
+                    <label class="mfld__lab" for="siTrm">TRM (pesos por <span id="siMonedaCod">USD</span>) <span class="mfld__req">*</span></label>
+                    <input type="number" id="siTrm" min="0" step="0.01" inputmode="decimal" class="si-in" placeholder="Ej. 3950">
+                    <small class="si-hint">Los costos de la factura se convierten a pesos con este valor. Queda registrado en la compra.</small>
+                </div>
             </div></div>
             <div id="siAvisos" class="si-avisos"></div>
         </x-mus.panel>
@@ -74,13 +79,14 @@
                             <th>Producto</th>
                             <th class="num">Cajas</th>
                             <th class="num">Und/caja</th>
-                            <th class="num">Costo total</th>
+                            <th class="num" id="siThCosto">Costo total</th>
                             <th class="num">Costo und</th>
                             <th class="num">Venta und</th>
                             <th class="num">Venta caja</th>
                             <th class="num">Ganancia caja</th>
                             <th class="num">Ganancia und</th>
-                            <th class="num">Margen</th>
+                            <th class="num" title="Ganancia de todas las unidades del renglón">Ganancia total</th>
+                            <th class="num" title="Ganancia ÷ precio de venta">Margen s/venta</th>
                             <th class="num">IVA %</th>
                             <th>Act. precio</th>
                             <th class="act"></th>
@@ -99,12 +105,35 @@
         </x-mus.panel>
     </div>
 
+    {{-- Alta rápida de producto (renglones que no están en el catálogo). --}}
+    <dialog id="siDlg" class="si-dlg" aria-labelledby="siDlgTit">
+        <form method="dialog" id="siDlgForm" novalidate>
+            <h3 id="siDlgTit">Crear producto</h3>
+            <p class="si-hint">Nace con stock 0: sus unidades entran al recibir la compra.</p>
+            <label class="mfld__lab" for="siNpNombre">Nombre <span class="mfld__req">*</span></label>
+            <input id="siNpNombre" class="si-in" maxlength="200" required>
+            <div class="si-dlg__row">
+                <div><label class="mfld__lab" for="siNpSku">SKU</label><input id="siNpSku" class="si-in" maxlength="50"></div>
+                <div><label class="mfld__lab" for="siNpBarra">Código de barras</label><input id="siNpBarra" class="si-in" maxlength="50"></div>
+            </div>
+            <div class="si-dlg__row">
+                <div><label class="mfld__lab" for="siNpPrecio">Precio de venta (COP) <span class="mfld__req">*</span></label><input id="siNpPrecio" class="si-in" type="number" min="0" step="0.01" required></div>
+                <div><label class="mfld__lab" for="siNpCosto">Costo unitario (COP)</label><input id="siNpCosto" class="si-in" type="number" min="0" step="0.01"></div>
+            </div>
+            <p class="si-dlg__err" id="siNpErr" role="alert"></p>
+            <div class="si-dlg__foot">
+                <x-mus.btn value="cancel" type="submit" formnovalidate>Cancelar</x-mus.btn>
+                <x-mus.btn variant="primary" icon="plus" id="siNpCrear">Crear y asociar</x-mus.btn>
+            </div>
+        </form>
+    </dialog>
+
     {{-- Plantilla del selector de producto: se clona por renglón. --}}
     <template id="siProdTpl">
         <select class="si-in si-prod" aria-label="Producto del catálogo">
             <option value="">— Asociar a un producto —</option>
             @foreach ($productos as $p)
-                <option value="{{ $p['id'] }}" data-precio="{{ $p['precio'] }}">{{ $p['sku'] ? $p['sku'] . ' · ' : '' }}{{ $p['nombre'] }}</option>
+                <option value="{{ $p['id'] }}" data-precio="{{ $p['precio'] }}" data-costo="{{ $p['costo'] }}">{{ $p['sku'] ? $p['sku'] . ' · ' : '' }}{{ $p['nombre'] }}</option>
             @endforeach
         </select>
     </template>
@@ -162,7 +191,19 @@
     .si-tot span{ font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--muted-2); }
     .si-tot b{ font-size:18px; font-variant-numeric:tabular-nums; color:var(--ink); }
 
+    .si-crear{ margin-top:6px; border:1px dashed var(--a-400); background:transparent; color:var(--a-600); border-radius:7px;
+               padding:5px 9px; font:inherit; font-size:12px; cursor:pointer; }
+    .si-crear:hover{ background:var(--paper); }
+    .si-dlg{ border:0; border-radius:14px; padding:22px; width:min(520px, calc(100vw - 32px)); box-shadow:0 20px 60px rgba(0,0,0,.25); }
+    .si-dlg::backdrop{ background:rgba(15,23,42,.45); }
+    .si-dlg h3{ margin:0 0 4px; font-size:16px; }
+    .si-dlg form{ display:grid; gap:8px; }
+    .si-dlg__row{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .si-dlg__err{ margin:0; color:var(--bad); font-size:12.5px; min-height:16px; }
+    .si-dlg__foot{ display:flex; justify-content:flex-end; gap:8px; margin-top:6px; }
+
     @media (max-width:760px){
+        .si-dlg__row{ grid-template-columns:1fr; }
         .si-cap{ grid-template-columns:1fr; }
         .si-drop{ min-height:200px; }
         .si-in{ height:42px; font-size:16px; }
@@ -176,6 +217,8 @@
 window.SI_CFG = {
     analizar:    @json(route('smart-inventory.analyze')),
     confirmar:   @json(route('smart-inventory.confirm')),
+    crear:       @json(route('smart-inventory.products.store')),
+    puedeCrear:  @json($puedeCrear),
     puedePrecio: @json($puedePrecio),
     hoy:         @json(now()->format('Y-m-d')),
 };
@@ -204,11 +247,14 @@ window.SI_CFG = {
         LECTURA_INCONSISTENTE:   ['Costo de caja × cajas no da el total leído', true],
         VENTA_BAJO_COSTO:        ['El precio de venta es menor que el costo', true],
         DATOS_INCOMPLETOS:       ['Faltan datos legibles: complétalos a mano', true],
+        CANTIDAD_DEDUCIDA:       ['Cantidad deducida (no venía impresa): verifícala contra la mercancía', true],
+        FALTA_TRM:               ['Falta la TRM para convertir el costo a pesos', true],
+        COSTO_ATIPICO:           ['Costo muy distinto al del catálogo: revisa unidades por caja y valores', true],
         REDONDEO_COSTO_UNITARIO: ['El costo unitario se redondeó a centavos', false],
         CANTIDAD_FRACCIONARIA:   ['Cantidad con decimales', false],
         PRECIO_SUGERIDO:         ['Precio sugerido por margen (no venía en la factura)', false],
     };
-    var INFORMATIVAS = ['REDONDEO_COSTO_UNITARIO', 'CANTIDAD_FRACCIONARIA', 'PRECIO_SUGERIDO'];
+    var INFORMATIVAS = ['CANTIDAD_FRACCIONARIA', 'PRECIO_SUGERIDO'];
     var ESTADOS = {
         ok:         ['ok', 'OK'],
         corregido:  ['info', 'Corregido'],
@@ -219,6 +265,8 @@ window.SI_CFG = {
 
     var archivo = null;      // File listo para enviar
     var imagenRef = null;    // ruta del soporte guardado por /analizar
+    var moneda = { codigo: 'COP', extranjera: false };
+    function tasa() { return moneda.extranjera ? num($('siTrm').value) : 1; }
     var filas = [];          // estado de cada renglón
 
     // ───────────────────────── utilidades ─────────────────────────
@@ -382,9 +430,37 @@ window.SI_CFG = {
         $('siFactura').value = leido.numero_factura || '';
         $('siFecha').value = /^\d{4}-\d{2}-\d{2}$/.test(leido.fecha || '') && leido.fecha <= CFG.hoy ? leido.fecha : CFG.hoy;
 
+        // Moneda: si no es COP, se exige TRM y los costos se convierten.
+        moneda = d.moneda || { codigo: 'COP', extranjera: false };
+        $('siTrmBox').hidden = !moneda.extranjera;
+        $('siMonedaCod').textContent = moneda.codigo;
+        $('siTrm').value = '';
+        $('siThCosto').textContent = 'Costo total' + (moneda.extranjera ? ' (' + moneda.codigo + ')' : '');
+
         // Avisos generales
         var av = $('siAvisos');
         av.textContent = '';
+        if (moneda.extranjera) {
+            // La IA puede equivocarse (p. ej. una plantilla con «€» por defecto):
+            // el usuario corrige con un clic y la factura vuelve a pesos.
+            var avMon = el('div', 'si-aviso si-aviso--bad', 'La factura parece estar en ' + moneda.codigo +
+                (moneda.evidencia ? ' (' + moneda.evidencia + ')' : '') + '. Indica la TRM para convertir los costos a pesos. ');
+            var btnCop = el('button', 'si-crear', 'No, está en pesos (COP)');
+            btnCop.type = 'button';
+            btnCop.addEventListener('click', function () {
+                moneda = { codigo: 'COP', extranjera: false };
+                $('siTrmBox').hidden = true;
+                $('siThCosto').textContent = 'Costo total';
+                avMon.remove();
+                filas.forEach(refrescarFila);
+                refrescarResumen();
+            });
+            avMon.appendChild(btnCop);
+            av.appendChild(avMon);
+        }
+        if (d.fecha_alerta) av.appendChild(el('div', 'si-aviso si-aviso--warn', d.fecha_alerta));
+        var cargos = d.cargos_no_mercancia || {};
+        if (cargos.total > 0) av.appendChild(el('div', 'si-aviso si-aviso--info', 'Cargos que no son mercancía (no entran al inventario, sí al cuadre): ' + fmt.format(cargos.total) + (cargos.detalle ? ' — ' + cargos.detalle : '') + '.'));
         if (d.proveedor.duplicada) av.appendChild(el('div', 'si-aviso si-aviso--bad', 'Esta factura ya está registrada para este proveedor. Confirmarla duplicaría la compra.'));
         var cu = d.cuadre_factura || {};
         if (cu.cuadra === true)  av.appendChild(el('div', 'si-aviso si-aviso--ok', 'La suma de los renglones cuadra con el pie de la factura (' + pesos(cents(cu.suma_renglones)) + ').'));
@@ -408,11 +484,15 @@ window.SI_CFG = {
                 discrepancias: linea.discrepancias || [],
                 productId: sugerido ? String(sugerido.id) : '',
                 precioActual: sugerido ? Number(sugerido.price) : null,
+                costoCatalogo: sugerido ? Number(sugerido.cost) : null,
+                costoRevisado: false,
                 cajas: num(primero(c.cantidad_cajas, ia.cantidad_cajas)),
                 upc:   num(primero(c.cantidad_unidades, ia.cantidad_unidades)),
                 total: num(primero(c.costo_total_compra, ia.costo_total_compra)),
-                venta: num(primero(c.precio_venta_unitario, ia.precio_venta_unitario)),
+                venta: num(primero(c.precio_venta_unitario, primero(linea.precio_venta_sugerido, ia.precio_venta_unitario))),
                 iva:   num(primero(linea.iva_porcentaje, ia.iva_porcentaje)),
+                origenPrecio: linea.origen_precio_venta,
+                ventaManual: false,
                 error: null,
             };
             // Proponer actualizar el precio solo si difiere del que tiene el catálogo.
@@ -443,7 +523,12 @@ window.SI_CFG = {
         inp.inputMode = 'decimal';
         inp.setAttribute('aria-label', etiqueta);
         inp.value = f[campo] === null ? '' : f[campo];
-        inp.addEventListener('input', function () { f[campo] = num(inp.value); alEditar(f); });
+        inp.addEventListener('input', function () {
+            f[campo] = num(inp.value);
+            if (campo === 'venta') f.ventaManual = true;
+            alEditar(f);
+        });
+        f['in_' + campo] = inp;
         return inp;
     }
 
@@ -469,9 +554,16 @@ window.SI_CFG = {
             f.productId = f.sel.value;
             var opt = f.sel.selectedOptions[0];
             f.precioActual = opt && opt.dataset.precio ? Number(opt.dataset.precio) : null;
+            f.costoCatalogo = opt && opt.dataset.costo ? Number(opt.dataset.costo) : null;
             alEditar(f);
         });
         tdProd.appendChild(f.sel);
+        if (CFG.puedeCrear) {
+            f.btnCrear = el('button', 'si-crear', '+ Crear producto');
+            f.btnCrear.type = 'button';
+            f.btnCrear.addEventListener('click', function () { abrirAlta(f, nombre, codigo); });
+            tdProd.appendChild(f.btnCrear);
+        }
         f.celAlertas = el('div', 'si-alertas');
         tdProd.appendChild(f.celAlertas);
         tr.appendChild(tdProd);
@@ -484,6 +576,7 @@ window.SI_CFG = {
         f.celVentaCaja = celda('num si-calc'); tr.appendChild(f.celVentaCaja);
         f.celGanCaja   = celda('num si-calc'); tr.appendChild(f.celGanCaja);
         f.celGanUnd    = celda('num si-calc'); tr.appendChild(f.celGanUnd);
+        f.celGanTot    = celda('num si-calc'); tr.appendChild(f.celGanTot);
         f.celMargen    = celda('num si-calc'); tr.appendChild(f.celMargen);
         tr.appendChild(celda('num', entrada(f, 'iva', '1', 'IVA %')));
 
@@ -515,28 +608,57 @@ window.SI_CFG = {
 
     /** Recalcula y repinta un renglón. */
     function refrescarFila(f) {
-        var r = f.calc = calcular(f.cajas, f.upc, f.total, f.venta);
+        var t = tasa();
+        // En moneda extranjera sin precio propio: sugerir en pesos cuando ya hay TRM.
+        if (t && !f.ventaManual && f.origenPrecio === 'pendiente_trm' && f.total !== null && f.cajas > 0 && f.upc > 0) {
+            var cu = f.total * t / (f.cajas * f.upc);
+            f.venta = Math.round(cu * (1 + (num($('siMarkup').value) || 0) / 100) * 100) / 100;
+            if (f.in_venta) f.in_venta.value = f.venta;
+        }
+        var totalPesos = f.total === null || !t ? null : Math.round(f.total * t * 100) / 100;
+        var r = f.calc = calcular(f.cajas, f.upc, totalPesos, f.venta);
         var negativo = !!(r && r.ganUnd !== null && r.ganUnd < 0);
 
         f.celCostoUnd.textContent  = r ? pesos(r.costoUnd) : '—';
-        f.celVentaCaja.textContent = r ? pesos(r.ventaCaja) : '—';
-        f.celGanCaja.textContent   = r ? pesos(r.ganCaja) : '—';
+        // Producto que viene por unidad (1 und/caja): la «caja» es todo lo
+        // comprado en el renglón (ej. 2 teclados → venta y ganancia de los 2).
+        var porUnidad = r && f.upc === 1;
+        f.celVentaCaja.textContent = r ? pesos(porUnidad ? r.ventaTotal : r.ventaCaja) : '—';
+        f.celGanCaja.textContent   = r ? pesos(porUnidad && r.ventaTotal !== null ? r.ventaTotal - r.costoTotal : r.ganCaja) : '—';
         f.celGanUnd.textContent    = r ? pesos(r.ganUnd) : '—';
+        f.celGanTot.textContent    = r && r.ventaTotal !== null ? pesos(r.ventaTotal - r.costoTotal) : '—';
         f.celMargen.textContent    = r && r.margen !== null ? fmt.format(r.margen) + ' %' : '—';
-        [f.celGanCaja, f.celGanUnd, f.celMargen].forEach(function (c) { c.classList.toggle('si-neg', negativo); });
+        [f.celGanCaja, f.celGanUnd, f.celGanTot, f.celMargen].forEach(function (c) { c.classList.toggle('si-neg', negativo); });
 
         // Alertas vivas: al editar, las de lectura de la IA se dan por revisadas.
         var alertas = f.editado
             ? f.alertas.filter(function (a) { return INFORMATIVAS.indexOf(a) !== -1; })
             : f.alertas.filter(function (a) { return a !== 'PRODUCTO_NO_ENCONTRADO' && a !== 'DATOS_INCOMPLETOS' && a !== 'VENTA_BAJO_COSTO'; });
         if (!f.productId) alertas.push('PRODUCTO_NO_ENCONTRADO');
-        if (!r) alertas.push('DATOS_INCOMPLETOS');
+        if (moneda.extranjera && !t) alertas.push('FALTA_TRM');
+        else if (!r) alertas.push('DATOS_INCOMPLETOS');
         if (negativo) alertas.push('VENTA_BAJO_COSTO');
+        // Redondeo y costo atípico se recalculan en vivo (el usuario pudo corregir la cantidad).
+        alertas = alertas.filter(function (a) { return a !== 'COSTO_ATIPICO' && a !== 'REDONDEO_COSTO_UNITARIO'; });
+        if (r && Math.round(r.costoUnd * f.cajas * f.upc) !== r.costoTotal) alertas.push('REDONDEO_COSTO_UNITARIO');
+        var ratio = r && f.costoCatalogo > 0 ? (r.costoUnd / 100) / f.costoCatalogo : null;
+        var atipico = ratio !== null && (ratio < 0.5 || ratio > 2);
+        if (atipico) alertas.push('COSTO_ATIPICO');
 
         f.celAlertas.textContent = '';
         alertas.forEach(function (a) {
             var def = ALERTAS[a] || [a, false];
-            f.celAlertas.appendChild(el('span', def[1] ? 'is-bad' : '', '• ' + def[0]));
+            var txt = '• ' + def[0];
+            if (a === 'COSTO_ATIPICO') txt += ' (leído ' + pesos(r.costoUnd) + ' vs. catálogo ' + pesos(cents(f.costoCatalogo)) + ')';
+            var linea = el('span', def[1] && !(a === 'COSTO_ATIPICO' && f.costoRevisado) ? 'is-bad' : '', txt);
+            if (a === 'COSTO_ATIPICO' && !f.costoRevisado) {
+                var ok = el('button', 'si-crear', 'El costo es correcto');
+                ok.type = 'button';
+                ok.style.marginLeft = '6px';
+                ok.addEventListener('click', function () { f.costoRevisado = true; refrescarFila(f); refrescarResumen(); });
+                linea.appendChild(ok);
+            }
+            f.celAlertas.appendChild(linea);
         });
         if (!f.editado) {
             f.discrepancias.forEach(function (d) {
@@ -548,14 +670,16 @@ window.SI_CFG = {
         if (f.error) f.celAlertas.appendChild(el('span', 'is-bad', '• ' + f.error));
 
         // Bloquean: datos inválidos o sin producto. Lo demás es advertencia.
-        f.valida = !!r && !!f.productId;
+        var bloqueaCosto = atipico && !f.costoRevisado;
+        f.valida = !!r && !!f.productId && !bloqueaCosto;
         var estado = !r ? 'incompleto'
-            : (!f.productId || negativo) ? 'revisar'
+            : (!f.productId || negativo || bloqueaCosto) ? 'revisar'
             : f.editado ? 'editado'
             : f.estadoIA;
         f.celEstado.textContent = '';
         f.celEstado.appendChild(badge(estado));
         f.sel.setAttribute('aria-invalid', f.productId ? 'false' : 'true');
+        if (f.btnCrear) f.btnCrear.hidden = !!f.productId;
     }
 
     /** Totales, duplicados, contadores y habilitación del botón Confirmar. */
@@ -598,10 +722,77 @@ window.SI_CFG = {
         kpi.appendChild(el('span', 'mbg mbg--soft', activas.length + ' renglón(es)'));
         kpi.appendChild(el('span', 'mbg mbg--' + (pendientes ? 'warn' : 'ok'), pendientes ? pendientes + ' por resolver' : 'Todo listo'));
 
-        $('siConfirmar').disabled = !activas.length || pendientes > 0 || !$('siProveedor').value;
+        $('siConfirmar').disabled = !activas.length || pendientes > 0 || !$('siProveedor').value || (moneda.extranjera && !tasa());
     }
 
     $('siProveedor').addEventListener('change', refrescarResumen);
+    $('siTrm').addEventListener('input', function () { filas.forEach(refrescarFila); refrescarResumen(); });
+
+    // ───────────────────────── alta rápida de producto ─────────────────────────
+
+    var filaAlta = null;
+
+    function abrirAlta(f, nombre, codigo) {
+        filaAlta = f;
+        $('siNpNombre').value = nombre || '';
+        // Un código numérico largo (EAN/UPC) es código de barras; si no, SKU del proveedor.
+        var esBarras = /^\d{8,14}$/.test(codigo || '');
+        $('siNpBarra').value = esBarras ? codigo : '';
+        $('siNpSku').value = !esBarras && codigo ? codigo : '';
+        $('siNpPrecio').value = f.venta !== null ? f.venta : '';
+        $('siNpCosto').value = f.calc ? f.calc.costoUnd / 100 : '';
+        $('siNpErr').textContent = '';
+        $('siDlg').showModal();
+        $('siNpNombre').focus();
+    }
+
+    $('siNpCrear').addEventListener('click', function (ev) {
+        ev.preventDefault();
+        var btn = this;
+        var datos = {
+            name: $('siNpNombre').value.trim(),
+            sku: $('siNpSku').value.trim() || null,
+            barcode: $('siNpBarra').value.trim() || null,
+            price: num($('siNpPrecio').value),
+            cost: num($('siNpCosto').value),
+        };
+        if (!datos.name || datos.price === null) { $('siNpErr').textContent = 'Nombre y precio de venta son obligatorios.'; return; }
+
+        btn.disabled = true;
+        fetch(CFG.crear, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify(datos),
+        })
+        .then(leerJson)
+        .then(function (res) {
+            if (res.status !== 201 || !res.json.success) {
+                var e = res.json.errors ? Object.values(res.json.errors).flat().join(' ') : '';
+                throw new Error(e || res.json.message || 'No se pudo crear el producto.');
+            }
+            var p = res.json.data;
+            var texto = (p.sku ? p.sku + ' · ' : '') + p.name;
+            // Disponible en la plantilla y en todos los selectores abiertos.
+            [$('siProdTpl').content.firstElementChild].concat(filas.map(function (x) { return x.sel; })).forEach(function (sel) {
+                var o = document.createElement('option');
+                o.value = String(p.id);
+                o.dataset.precio = p.price;
+                o.dataset.costo = p.cost;
+                o.textContent = texto;
+                sel.appendChild(o);
+            });
+            filaAlta.sel.value = String(p.id);
+            filaAlta.productId = String(p.id);
+            filaAlta.precioActual = Number(p.price);
+            filaAlta.costoCatalogo = Number(p.cost);
+            if (filaAlta.venta === null) { filaAlta.venta = Number(p.price); if (filaAlta.in_venta) filaAlta.in_venta.value = p.price; }
+            alEditar(filaAlta);
+            $('siDlg').close();
+            estadoMsg(res.json.message);
+        })
+        .catch(function (e) { $('siNpErr').textContent = e.message; })
+        .finally(function () { btn.disabled = false; });
+    });
 
     // ───────────────────────── paso 3: confirmar ─────────────────────────
 
@@ -614,6 +805,8 @@ window.SI_CFG = {
             numero_factura: $('siFactura').value.trim() || null,
             fecha: $('siFecha').value || null,
             imagen_ref: imagenRef,
+            moneda: moneda.codigo,
+            trm: moneda.extranjera ? tasa() : null,
             items: activas.map(function (f) {
                 return {
                     product_id: Number(f.productId),

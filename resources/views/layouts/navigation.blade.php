@@ -10,8 +10,11 @@
             ['dashboard',       __('menu.panel'),        'grid',    'panel.ver'],
             ['pos.index',       __('menu.vender'),       'money',   'ventas.crear'],
             ['sales.index',     __('menu.ventas'),       'receipt', 'ventas.ver'],
+            ['sales.monitor',   __('menu.en_vivo'),      'pulso',   'reportes.ver'], // SV-VTA-001
             ['cash.index',      __('menu.caja'),         'wallet',  'caja.ver'],
             ['returns.index',   __('menu.devoluciones'), 'back',    'ventas.ver'],
+            ['payments.index',  __('menu.pagos'),        'card',    'ventas.verificar_pagos'],
+            ['void_requests.index', __('menu.anulaciones'), 'anular', 'ventas.anular'], // VD-VTA-002
             ['agenda.index',    __('menu.agenda'),       'clock',   'citas.ver'],
             ['reports.index',   __('menu.reportes'),     'trend',   'reportes.ver'],
         ],
@@ -25,18 +28,28 @@
             ['customers.index', __('menu.clientes'),    'users', 'clientes.ver'],
             ['suppliers.index', __('menu.proveedores'), 'truck', 'proveedores.ver'],
             ['purchases.index', __('menu.compras'),     'cart',  'compras.ver'],
+            ['coupons.index',   __('menu.cupones'),     'tag',   'cupones.ver'],
         ],
         __('menu.grupos.configuracion') => [
             ['units.index',           __('menu.unidades'),    'ruler',   'unidades.ver'],
             ['taxes.index',           __('menu.impuestos'),   'percent', 'impuestos.ver'],
             ['payment_methods.index', __('menu.medios_pago'), 'card',    'medios_pago.ver'],
+            ['cash_registers.index',  __('menu.cajas'),       'money',   'caja.gestionar_cajas'],
             ['attributes.index',      __('menu.atributos'),   'tag',     'atributos.ver'],
+        ],
+        __('menu.grupos.equipo') => [ // RRHH operativo (RN-44)
+            ['employees.index',      __('menu.empleados'), 'users',  'empleados.ver'],
+            ['departments.index',    __('menu.areas'),     'layers', 'rrhh.configurar'],
+            ['positions.index',      __('menu.cargos'),    'shield', 'rrhh.configurar'],
+            ['work_schedules.index', __('menu.horarios'),  'reloj',  'rrhh.configurar'],
         ],
         __('menu.grupos.administracion') => [
             ['recursos.index', __('menu.recursos'),  'users',  'agenda.recursos'],
+            ['tiendas.index',  __('menu.locales'),   'branch', 'tiendas.ver'],
             ['users.index',    __('menu.usuarios'),  'shield', 'usuarios.ver'],
             ['roles.index',    __('menu.roles'),     'roles',  'roles.gestionar'],
             ['audit.index',    __('menu.auditoria'), 'key',    'auditoria.ver'],
+            ['notifications.create', __('menu.avisos'), 'globo', 'notificaciones.enviar'],
             ['plan.index',     __('menu.plan'),      'card',   'configuracion.editar'],
             ['sistema.index',  __('menu.sistema'),   'globo',  'sistema.superadmin'],
             ['settings.edit',  __('menu.ajustes'),   'gear',   'configuracion.editar'],
@@ -44,6 +57,9 @@
     ];
 
     $iconos = [
+        'anular' => '<circle cx="12" cy="12" r="8.6"/><path d="m6 6 12 12"/>',
+        'reloj'  => '<circle cx="12" cy="12" r="9"/><path d="M12 7.2V12l3.2 2"/>',
+        'pulso'  => '<path d="M3 12h4l2.5-6 4 12 2.5-6H21"/>',
         'grid'   => '<rect x="3.2" y="3.2" width="7.2" height="7.2" rx="2"/><rect x="13.6" y="3.2" width="7.2" height="7.2" rx="2"/><rect x="3.2" y="13.6" width="7.2" height="7.2" rx="2"/><rect x="13.6" y="13.6" width="7.2" height="7.2" rx="2"/>',
         'box'    => '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
         'layers' => '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
@@ -199,7 +215,13 @@
                 @foreach ($visibles as [$ruta, $texto, $icono, $permiso])
                     @php
                         $base   = \Illuminate\Support\Str::before($ruta, '.');
-                        $activo = request()->routeIs($ruta) || request()->routeIs($base . '.*');
+                        // Si otra entrada nombra exactamente esta pantalla (p. ej. «Ventas en vivo»),
+                        // la del mismo módulo («Ventas») no se marca también.
+                        $exacta = collect($grupos)->flatten(1)->contains(fn ($e) => $e[0] !== $ruta
+                            && ! str_ends_with($e[0], '.index') && request()->routeIs($e[0], $e[0] . '.*'));
+                        // Solo la entrada «principal» del módulo (…index) se enciende por el módulo entero.
+                        $activo = request()->routeIs($ruta, $ruta . '.*')
+                            || (str_ends_with($ruta, '.index') && ! $exacta && request()->routeIs($base . '.*'));
                     @endphp
                     <a href="{{ route($ruta) }}"
                        class="mus-item {{ $activo ? 'is-active' : '' }}"

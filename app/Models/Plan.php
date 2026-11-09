@@ -33,7 +33,7 @@ class Plan extends Model
         'nombre', 'slug', 'descripcion',
         'precio_mensual', 'precio_anual', 'precio_tienda_extra',
         'max_tiendas', 'max_usuarios', 'max_productos', 'max_ventas_mes',
-        'funciones', 'dias_prueba', 'es_demo', 'visible', 'orden',
+        'funciones', 'dias_prueba', 'es_demo', 'visible', 'is_active', 'orden',
     ];
 
     protected function casts(): array
@@ -45,8 +45,29 @@ class Plan extends Model
             'funciones'           => 'array',
             'es_demo'             => 'boolean',
             'visible'             => 'boolean',
+            'is_active'           => 'boolean',
         ];
     }
+
+    protected $attributes = ['is_active' => true, 'visible' => true, 'es_demo' => false];
+
+    /**
+     * Las funciones que un plan puede habilitar (SA-PLN-001). La clave es lo
+     * que guarda `funciones` y lo que pregunta `Empresa::incluye()`.
+     */
+    public const FUNCIONES = [
+        'pos'                 => 'Punto de venta',
+        'inventario'          => 'Inventario',
+        'caja'                => 'Caja y arqueo',
+        'reportes'            => 'Reportes',
+        'compras'             => 'Compras',
+        'traslados'           => 'Traslados entre locales',
+        'consolidado'         => 'Vista consolidada',
+        'auditoria'           => 'Auditoría',
+        'agenda'              => 'Agenda de servicios',
+        'portal'              => 'Portal de clientes',
+        'soporte_prioritario' => 'Soporte prioritario',
+    ];
 
     /** Los recursos que un plan puede limitar. */
     public const RECURSOS = ['tiendas', 'usuarios', 'productos', 'ventas_mes'];
@@ -60,7 +81,20 @@ class Plan extends Model
 
     public function scopeVendibles(Builder $q): Builder
     {
-        return $q->where('visible', true)->where('es_demo', false)->orderBy('orden');
+        return $q->where('visible', true)->where('is_active', true)->where('es_demo', false)->orderBy('orden');
+    }
+
+    /** Los que se pueden asignar a un negocio hoy (SA-PLN-001: el inactivo no). */
+    public function scopeActivos(Builder $q): Builder
+    {
+        return $q->where('is_active', true);
+    }
+
+    /** ¿Alguien lo tiene o lo tuvo? Entonces no se borra: se desactiva. */
+    public function enUso(): bool
+    {
+        return $this->empresas()->exists()
+            || MrrMovimiento::where('plan_antes_id', $this->id)->orWhere('plan_despues_id', $this->id)->exists();
     }
 
     /* ─────────────── Precio ─────────────── */

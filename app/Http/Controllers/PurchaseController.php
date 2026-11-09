@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Gate;
+use App\Http\Requests\Compras\GuardarCompraRequest;
+use App\Http\Requests\AnularDocumentoRequest;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\Supplier;
@@ -68,9 +71,9 @@ class PurchaseController extends Controller implements HasMiddleware
         return view('purchases.create', $this->listas());
     }
 
-    public function store(Request $request)
+    public function store(GuardarCompraRequest $request)
     {
-        $datos = $this->validar($request);
+        $datos = $request->validated();
 
         try {
             $compra = $this->compras->registrar(
@@ -99,6 +102,8 @@ class PurchaseController extends Controller implements HasMiddleware
 
     public function edit(Purchase $purchase)
     {
+        Gate::authorize('update', $purchase); // H-04
+
         if (! $purchase->editable) {
             return redirect()
                 ->route('purchases.show', $purchase)
@@ -110,9 +115,9 @@ class PurchaseController extends Controller implements HasMiddleware
         return view('purchases.edit', array_merge($this->listas(), ['purchase' => $purchase]));
     }
 
-    public function update(Request $request, Purchase $purchase)
+    public function update(GuardarCompraRequest $request, Purchase $purchase)
     {
-        $datos = $this->validar($request);
+        $datos = $request->validated();
 
         try {
             $this->compras->actualizar(
@@ -135,6 +140,8 @@ class PurchaseController extends Controller implements HasMiddleware
     /** Da entrada a la mercancía: aquí es donde sube el inventario. */
     public function recibir(Request $request, Purchase $purchase)
     {
+        Gate::authorize('recibir', $purchase); // H-04 · H-F12
+
         try {
             $this->compras->recibir($purchase, $request->user()->id);
         } catch (ValidationException $e) {
@@ -146,13 +153,9 @@ class PurchaseController extends Controller implements HasMiddleware
             ->with('success', 'Mercancía recibida. El inventario y los costos quedaron actualizados.');
     }
 
-    public function anular(Request $request, Purchase $purchase)
+    public function anular(AnularDocumentoRequest $request, Purchase $purchase)
     {
-        $datos = $request->validate([
-            'motivo' => ['required', 'string', 'min:5', 'max:255'],
-        ], [
-            'motivo.required' => 'Explica por qué se anula la compra.',
-        ]);
+        $datos = $request->validated();
 
         try {
             $this->compras->anular($purchase, $request->user()->id, $datos['motivo']);
@@ -168,32 +171,12 @@ class PurchaseController extends Controller implements HasMiddleware
     /* ───────────────────────── Apoyo ───────────────────────── */
 
     /** @return array<string, mixed> */
-    private function validar(Request $request): array
-    {
-        return $request->validate([
-            'supplier_id'         => ['required', 'exists:suppliers,id'],
-            'invoice_number'      => ['nullable', 'string', 'max:50'],
-            'ordered_at'          => ['nullable', 'date'],
-            'notes'               => ['nullable', 'string', 'max:500'],
-            'items'               => ['required', 'array', 'min:1'],
-            'items.*.product_id'  => ['required', 'exists:products,id'],
-            'items.*.quantity'    => ['required', 'numeric', 'min:0.001', 'max:999999'],
-            'items.*.unit_cost'   => ['required', 'numeric', 'min:0', 'max:99999999'],
-            'items.*.tax_rate'    => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'items.*.update_cost' => ['nullable', 'boolean'],
-        ], [
-            'supplier_id.required' => 'Elige el proveedor.',
-            'items.required'       => 'Agrega al menos un producto a la compra.',
-            'items.min'            => 'Agrega al menos un producto a la compra.',
-        ]);
-    }
-
-    /** @return array<string, mixed> */
     private function listas(): array
     {
         return [
             'proveedores' => Supplier::active()->orderBy('name')->get(['id', 'name']),
             'productos'   => Product::orderBy('name')
+                ->with('suppliers:id')
                 ->get(['id', 'name', 'sku', 'cost'])
                 ->map(fn (Product $p) => [
                     'id'     => $p->id,
@@ -201,6 +184,11 @@ class PurchaseController extends Controller implements HasMiddleware
                     'sku'    => $p->sku,
                     'costo'  => (float) $p->cost,
                     'stock'  => (float) $p->stock,
+                    // TBL-TPL-001: lo que cobra cada proveedor por este producto.
+                    'precios' => $p->suppliers
+                        ->filter(fn ($s) => $s->pivot->supplier_price !== null)
+                        ->mapWithKeys(fn ($s) => [$s->id => (float) $s->pivot->supplier_price])
+                        ->all(),
                 ])
                 ->values(),
         ];

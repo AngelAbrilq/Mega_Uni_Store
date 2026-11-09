@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Plataforma\ExtenderPruebaRequest;
+use App\Http\Requests\Plataforma\ReactivarNegocioRequest;
+use App\Http\Requests\Plataforma\SuscribirNegocioRequest;
+use App\Http\Requests\Plataforma\CrearNegocioRequest;
 use App\Models\Empresa;
 use App\Models\MrrMovimiento;
 use App\Models\Plan;
+use App\Services\DemoService;
 use App\Services\MrrService;
 use App\Support\Contexto;
+use App\Support\Rubros;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 
 /**
  * El panel de Angel: todos los clientes de un vistazo.
@@ -62,13 +67,75 @@ class SistemaController extends Controller implements HasMiddleware
         ]);
     }
 
+    /* ═══════════════ Dar de alta un cliente ═══════════════ */
+
+    /**
+     * El formulario de alta.
+     *
+     * ── Por qué hacía falta ──
+     *
+     * Hasta ahora la única puerta para que naciera un negocio era /probar,
+     * la demostración pública. Si el cliente llamaba por teléfono, tocaba
+     * hacerle la demostración uno mismo con su correo y suscribirla
+     * después — y el negocio nacía con los productos y la gente de ejemplo
+     * del rubro adentro, que él tenía que borrar uno por uno.
+     */
+    public function nuevo()
+    {
+        return view('sistema.nuevo', Contexto::sinFiltro(fn () => [
+            'rubros' => Rubros::paraEscoger(),
+            'planes' => Plan::activos()->where('es_demo', false)->orderBy('orden')->get(),
+        ]));
+    }
+
+    /**
+     * Crea el negocio, su primer local y la cuenta del dueño.
+     *
+     * Reutiliza `DemoService` a propósito: es el mismo montaje que el de
+     * la demostración, con otro plan, sin fecha de vencimiento y —si así
+     * se pide— sin los productos de ejemplo. Dos caminos distintos para lo
+     * mismo terminan siempre igual: uno de los dos se queda sin algo.
+     */
+    public function crear(CrearNegocioRequest $request, DemoService $montaje)
+    {
+        $datos = $request->validated();
+
+        $plan = isset($datos['plan_id']) ? Plan::find($datos['plan_id']) : null;
+
+        /**
+         * Aquí NO se levanta el aislamiento, y es la única acción de este
+         * controlador donde no se hace.
+         *
+         * `montar()` se mete en la empresa nueva con `Contexto::comoEmpresa`
+         * y escribe todo el catálogo ahí adentro. Si además corriera sin
+         * filtro, las consultas de ese montaje —«¿ya existe este ajuste?»,
+         * «¿ya existe esta unidad?»— verían las de TODOS los clientes y
+         * podrían encontrar la de otro y escribirle encima. Levantar el
+         * filtro sirve para leer de todos; para escribir en uno, estorba.
+         */
+        $usuario = $montaje->montar(
+            $datos,
+            $plan,
+            esDemo: false,
+            conMuestra: $request->boolean('con_muestra'),
+        );
+
+        $empresa = $usuario->empresas()->first();
+
+        return redirect()->route('sistema.empresa', $empresa)
+            ->with('success', '«' . $empresa->nombre . '» quedó creado. '
+                . 'El dueño entra con ' . $usuario->email . ' y la contraseña que definiste.');
+    }
+
     /* ═══════════════ La ficha de un cliente ═══════════════ */
 
     public function empresa(Empresa $empresa, MrrService $mrr)
     {
         return view('sistema.empresa', Contexto::sinFiltro(fn () => [
             'empresa'    => $empresa->load('plan', 'tiendas'),
-            'planes'     => Plan::orderBy('orden')->get(),
+            'planes'     => Plan::query()
+                ->where(fn ($q) => $q->where('is_active', true)->orWhere('id', $empresa->plan_id))
+                ->orderBy('orden')->get(),
             'dueno'      => $empresa->dueno(),
             'usuarios'   => $empresa->usuarios()->orderBy('name')->get(),
             'historial'  => $empresa->movimientosMrr()->with('planDespues')->limit(20)->get(),
@@ -120,17 +187,9 @@ class SistemaController extends Controller implements HasMiddleware
 
     /* ═══════════════ Acciones comerciales ═══════════════ */
 
-    public function suscribir(Request $request, Empresa $empresa, MrrService $mrr)
+    public function suscribir(SuscribirNegocioRequest $request, Empresa $empresa, MrrService $mrr)
     {
-        $datos = $request->validate([
-            'plan_id'        => ['nullable', 'integer', Rule::exists('planes', 'id')],
-            'periodo'        => ['required', Rule::in(['mensual', 'anual'])],
-            'precio_pactado' => ['nullable', 'numeric', 'min:0'],
-            'tiendas'        => ['nullable', 'integer', 'min:1', 'max:99'],
-            'motivo'         => ['nullable', 'string', 'max:200'],
-        ], [
-            'periodo.required' => 'Di si paga mes a mes o el año.',
-        ]);
+        $datos = $request->validated();
 
         /**
          * `??` en todos, y no solo en algunos.
@@ -170,13 +229,9 @@ class SistemaController extends Controller implements HasMiddleware
         return back()->with('success', '«' . $empresa->nombre . '» quedó suspendida. Sus datos siguen ahí.');
     }
 
-    public function reactivar(Request $request, Empresa $empresa, MrrService $mrr)
+    public function reactivar(ReactivarNegocioRequest $request, Empresa $empresa, MrrService $mrr)
     {
-        $datos = $request->validate([
-            'plan_id' => ['required', 'integer', Rule::exists('planes', 'id')],
-            'periodo' => ['required', Rule::in(['mensual', 'anual'])],
-            'motivo'  => ['nullable', 'string', 'max:200'],
-        ]);
+        $datos = $request->validated();
 
         Contexto::sinFiltro(fn () => $mrr->reactivar(
             $empresa,
@@ -196,11 +251,9 @@ class SistemaController extends Controller implements HasMiddleware
      * llama. Tener que crearle otra desde cero le borraría lo que ya
      * alcanzó a montar, que es justo lo que lo tenía interesado.
      */
-    public function extender(Request $request, Empresa $empresa)
+    public function extender(ExtenderPruebaRequest $request, Empresa $empresa)
     {
-        $datos = $request->validate([
-            'minutos' => ['required', 'integer', 'min:15', 'max:10080'],
-        ]);
+        $datos = $request->validated();
 
         // Desde AHORA y no desde el vencimiento anterior: si venció ayer,
         // sumarle minutos a una fecha pasada la deja vencida igual.

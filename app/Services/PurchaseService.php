@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Existencia;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\PurchaseItem;
@@ -17,7 +18,7 @@ use Illuminate\Validation\ValidationException;
  */
 class PurchaseService
 {
-    public function __construct(private StockService $stock) {}
+    public function __construct(private StockService $stock, private InventoryMathService $math) {}
 
     /**
      * @param  array<int, array{product_id:int, quantity:float, unit_cost:float, tax_rate?:float, update_cost?:bool}>  $lineas
@@ -87,24 +88,38 @@ class PurchaseService
      */
     public function recibir(Purchase $compra, int $userId): Purchase
     {
-        if ($compra->status === Purchase::RECIBIDA) {
-            throw ValidationException::withMessages([
-                'compra' => 'Esta compra ya había sido recibida.',
-            ]);
-        }
-
-        if ($compra->status === Purchase::ANULADA) {
-            throw ValidationException::withMessages([
-                'compra' => 'No se puede recibir una compra anulada.',
-            ]);
-        }
-
         return DB::transaction(function () use ($compra, $userId) {
+
+            // H-F09 · Releer con bloqueo: dos clics no dan doble entrada.
+            $compra = $this->bloquear($compra);
+
+            if ($compra->status === Purchase::RECIBIDA) {
+                throw ValidationException::withMessages([
+                    'compra' => 'Esta compra ya había sido recibida.',
+                ]);
+            }
+
+            if ($compra->status === Purchase::ANULADA) {
+                throw ValidationException::withMessages([
+                    'compra' => 'No se puede recibir una compra anulada.',
+                ]);
+            }
 
             foreach ($compra->items()->with('product')->get() as $item) {
                 if (! $item->product) {
                     continue;
                 }
+
+                // Saldo de TODA la empresa antes de la entrada (el costo es por
+                // producto, no por local). Se suma desde `existencias`, que es la
+                // fuente de verdad: `products.stock_total` es un resumen que los
+                // seeders no mantienen y puede estar en 0. Sin el filtro de tienda
+                // para sumar todos los locales; el producto ya es de esta empresa.
+                $stockAntes = (float) Existencia::withoutGlobalScopes()
+                    ->where('product_id', $item->product_id)
+                    ->lockForUpdate()
+                    ->sum('stock');
+                $costoAntes = (float) Product::whereKey($item->product_id)->value('cost');
 
                 $this->stock->ingresar(
                     $item->product,
@@ -114,11 +129,19 @@ class PurchaseService
                     $userId,
                     'Compra ' . $compra->number . ' · ' . ($compra->supplier->name ?? ''),
                     (float) $item->unit_cost,
+                    tiendaId: $compra->tienda_id, // H-F12: al local de la compra
                 );
 
-                // El costo del producto se actualiza al de la última compra.
+                // H-F02 · Configuración › Inventario › «Método de costeo»:
+                // 'promedio' = promedio ponderado · 'ultimo' = costo de esta compra.
                 if ($item->update_cost) {
-                    $item->product->forceFill(['cost' => (float) $item->unit_cost])->save();
+                    $nuevoCosto = \App\Models\Setting::obtener('inventario.costo_metodo', 'promedio') === 'ultimo'
+                        ? (float) $item->unit_cost
+                        : $this->math->weightedAverageCost(
+                            $stockAntes, $costoAntes, (float) $item->quantity, (float) $item->unit_cost,
+                        );
+
+                    $item->product->forceFill(['cost' => $nuevoCosto])->save();
                 }
             }
 
@@ -137,13 +160,15 @@ class PurchaseService
     /** Anula una compra. Si ya se había recibido, saca la mercancía. */
     public function anular(Purchase $compra, int $userId, string $motivo): Purchase
     {
-        if ($compra->status === Purchase::ANULADA) {
-            throw ValidationException::withMessages([
-                'compra' => 'Esta compra ya estaba anulada.',
-            ]);
-        }
-
         return DB::transaction(function () use ($compra, $userId, $motivo) {
+
+            $compra = $this->bloquear($compra); // H-F09
+
+            if ($compra->status === Purchase::ANULADA) {
+                throw ValidationException::withMessages([
+                    'compra' => 'Esta compra ya estaba anulada.',
+                ]);
+            }
 
             if ($compra->status === Purchase::RECIBIDA) {
                 foreach ($compra->items()->with('product')->get() as $item) {
@@ -155,6 +180,7 @@ class PurchaseService
                             $compra,
                             $userId,
                             'Anulación de la compra ' . $compra->number,
+                            tiendaId: $compra->tienda_id, // H-F12
                         );
                     }
                 }
@@ -167,6 +193,12 @@ class PurchaseService
 
             return $compra->fresh();
         });
+    }
+
+    /** Relee la compra con bloqueo de fila; solo dentro de una transacción. */
+    private function bloquear(Purchase $compra): Purchase
+    {
+        return Purchase::whereKey($compra->getKey())->lockForUpdate()->firstOrFail();
     }
 
     /**

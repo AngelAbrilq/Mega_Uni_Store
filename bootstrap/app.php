@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
+        api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
@@ -21,7 +22,53 @@ return Application::configure(basePath: dirname(__DIR__))
             'role'               => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission'         => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            // Honeypot + tiempo mínimo en formularios públicos (/probar, registro).
+            'antispam'           => \App\Http\Middleware\ProtegeFormulario::class,
+            // Contexto del portal público: el negocio sale del slug.
+            'tienda'             => \App\Http\Middleware\ContextoDeTienda::class,
         ]);
+
+        /**
+         * El contexto de la tienda tiene que existir ANTES de autenticar.
+         *
+         * Laravel reordena por prioridad: sin esto, `auth:cliente` correría
+         * antes que `tienda`, buscaría al cliente sin filtro de empresa y un
+         * cliente de un negocio quedaría autenticado en la tienda de otro.
+         */
+        $middleware->prependToPriorityList(
+            before: \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+            prepend: \App\Http\Middleware\ContextoDeTienda::class,
+        );
+
+        /**
+         * A dónde mandar al que no ha iniciado sesión / al que ya la inició.
+         * El portal tiene su propio ingreso; el resto sigue igual que antes.
+         */
+        $middleware->redirectGuestsTo(function (Request $request) {
+            if ($request->routeIs('tienda.*') && $request->route('empresa')) {
+                return route('tienda.ingresar', $request->route('empresa'));
+            }
+
+            return route('login');
+        });
+
+        $middleware->redirectUsersTo(function (Request $request) {
+            if ($request->routeIs('tienda.*') && $request->route('empresa')) {
+                return route('tienda.cuenta', $request->route('empresa'));
+            }
+
+            return route('dashboard');
+        });
+
+        /**
+         * HTTPS obligatorio en producción + HSTS y cabeceras básicas.
+         *
+         * Global (append) y no en el grupo `web`: también cubre /up, la API
+         * y cualquier respuesta que no pase por sesión. Va DESPUÉS de
+         * TrustProxies (que es global de fábrica) para que `secure()` sea
+         * fiable detrás de un balanceador.
+         */
+        $middleware->append(\App\Http\Middleware\ForzarHttps::class);
 
         /**
          * Idioma y zona horaria de cada petición.
@@ -54,6 +101,13 @@ return Application::configure(basePath: dirname(__DIR__))
          * viven en la sesión.
          */
         $middleware->appendToGroup('web', \App\Http\Middleware\ContextoDeTrabajo::class);
+
+        /**
+         * TBL-SES-001 · ¿Sigue viva esta sesión? (RN-41). Después del
+         * contexto: si al usuario lo desactivaron, ContextoDeTrabajo ya lo
+         * sacó y aquí no queda nada que validar.
+         */
+        $middleware->appendToGroup('web', \App\Http\Middleware\ControlDeSesion::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

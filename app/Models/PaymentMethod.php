@@ -11,11 +11,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class PaymentMethod extends Model
 {
     use Auditable, PerteneceAEmpresa;
-    protected $fillable = ['empresa_id', 'name', 'description', 'is_active'];
+    protected $fillable = ['empresa_id', 'name', 'description', 'is_active', 'requires_verification'];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return ['is_active' => 'boolean', 'requires_verification' => 'boolean'];
     }
 
     public function payments(): HasMany

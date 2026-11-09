@@ -64,10 +64,41 @@ class DemoService
      */
     public function crear(array $datos): User
     {
-        return DB::transaction(function () use ($datos) {
+        return $this->montar(
+            $datos,
+            Plan::where('es_demo', true)->first(),
+            esDemo: true,
+            conMuestra: true,
+        );
+    }
+
+    /**
+     * El mismo montaje, para un cliente de verdad.
+     *
+     * ── Por qué es el mismo y no otro ──
+     *
+     * Porque dar de alta a un cliente y montar una demostración son la
+     * misma operación con tres decisiones distintas: qué plan lleva, si
+     * vence, y si arranca con productos de ejemplo o en blanco. Todo lo
+     * demás —la empresa, su primer local, el dueño, los roles del rubro,
+     * las unidades, los impuestos, los medios de pago— es idéntico, y
+     * escribirlo dos veces garantiza que dentro de tres meses uno de los
+     * dos caminos se quede sin algo que el otro sí hace.
+     *
+     * `conMuestra` en falso NO significa vacío: siguen entrando las
+     * unidades, los impuestos y los medios de pago, porque sin un medio de
+     * pago el punto de venta no puede cobrar y el negocio nace roto. Lo
+     * que no entra son los productos de ejemplo, que un cliente real no
+     * quiere borrar uno por uno.
+     *
+     * @param  array{negocio:string, nombre:string, email:string, rubro:string, telefono?:string, password?:string}  $datos
+     */
+    public function montar(array $datos, ?Plan $plan, bool $esDemo, bool $conMuestra): User
+    {
+        return DB::transaction(function () use ($datos, $plan, $esDemo, $conMuestra) {
             $rubro = Rubros::uno($datos['rubro']);
 
-            $empresa = $this->montarEmpresa($datos, $rubro);
+            $empresa = $this->montarEmpresa($datos, $plan, $esDemo);
             $tienda  = $this->montarTienda($empresa);
             $usuario = $this->montarUsuario($datos, $empresa, $tienda);
 
@@ -75,11 +106,11 @@ class DemoService
             // esto, los ganchos de los modelos pondrían `empresa_id` según
             // el contexto de quien está navegando —que en la página pública
             // no hay ninguno— y el catálogo quedaría sin dueño.
-            Contexto::comoEmpresa($empresa->id, $tienda->id, function () use ($rubro, $empresa, $datos, $usuario) {
+            Contexto::comoEmpresa($empresa->id, $tienda->id, function () use ($rubro, $empresa, $datos, $usuario, $conMuestra) {
                 $this->ajustes($datos);
                 $this->rolesDelRubro($rubro, $empresa);
-                $this->catalogo($rubro, $usuario);
-                $this->gentePrimera($datos);
+                $this->catalogo($rubro, $usuario, $conMuestra);
+                $this->gentePrimera($datos, $conMuestra);
             });
 
             return $usuario;
@@ -94,7 +125,7 @@ class DemoService
 
     /* ═══════════════ Las piezas ═══════════════ */
 
-    private function montarEmpresa(array $datos, array $rubro): Empresa
+    private function montarEmpresa(array $datos, ?Plan $plan, bool $esDemo): Empresa
     {
         $nombre = trim($datos['negocio']);
 
@@ -105,12 +136,16 @@ class DemoService
             'slug'         => Str::slug($nombre) . '-' . Str::lower(Str::random(5)),
             'rubro'        => $datos['rubro'],
             'razon_social' => $nombre,
+            'nit'          => $datos['nit'] ?? null,
             'correo'       => $datos['email'],
             'telefono'     => $datos['telefono'] ?? null,
             'estado'       => 'activa',
-            'es_demo'      => true,
-            'expira_en'    => now()->addMinutes(self::MINUTOS),
-            'plan_id'      => Plan::where('es_demo', true)->value('id'),
+            'es_demo'      => $esDemo,
+            // Solo las demostraciones vencen. A un cliente que paga no se
+            // le apaga la cuenta a las dos horas y media.
+            'expira_en'    => $esDemo ? now()->addMinutes(self::MINUTOS) : null,
+            'plan_id'      => $plan?->id,
+            'suscrita_desde' => $esDemo || $plan === null ? null : now()->toDateString(),
         ]);
     }
 
@@ -189,7 +224,7 @@ class DemoService
      * unidad. Un kardex que no cuadra en una demostración es peor que no
      * tener kardex.
      */
-    private function catalogo(array $rubro, User $usuario): void
+    private function catalogo(array $rubro, User $usuario, bool $conMuestra = true): void
     {
         /* ── Unidades ── */
         $unidades = [];
@@ -215,6 +250,18 @@ class DemoService
         /* ── Medios de pago ── */
         foreach (['Efectivo', 'Tarjeta débito', 'Tarjeta crédito', 'Nequi', 'Daviplata', 'Transferencia'] as $medio) {
             PaymentMethod::create(['name' => $medio, 'is_active' => true]);
+        }
+
+        /**
+         * Aquí se separa el cliente de la demostración.
+         *
+         * Lo de arriba —unidades, categorías, impuestos, medios de pago—
+         * lo necesita cualquier negocio para poder cobrar. Lo de abajo son
+         * los productos de ejemplo, que en una demostración son el
+         * argumento de venta y en un cliente real son tarea de borrado.
+         */
+        if (! $conMuestra) {
+            return;
         }
 
         /* ── Productos ── */
@@ -306,7 +353,7 @@ class DemoService
     }
 
     /** Un cliente de mostrador y un proveedor, para no arrancar en cero. */
-    private function gentePrimera(array $datos): void
+    private function gentePrimera(array $datos, bool $conMuestra = true): void
     {
         Customer::create([
             'first_name' => 'Cliente',
@@ -320,10 +367,14 @@ class DemoService
             'phone'      => $datos['telefono'] ?? null,
         ]);
 
-        Supplier::create([
-            'name'         => 'Proveedor de ejemplo',
-            'contact_name' => 'Cámbialo por el tuyo',
-            'is_active'    => true,
-        ]);
+        // El cliente de mostrador y la ficha del dueño sirven siempre.
+        // El proveedor inventado no: a un negocio real le toca borrarlo.
+        if ($conMuestra) {
+            Supplier::create([
+                'name'         => 'Proveedor de ejemplo',
+                'contact_name' => 'Cámbialo por el tuyo',
+                'is_active'    => true,
+            ]);
+        }
     }
 }

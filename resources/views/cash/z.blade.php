@@ -148,8 +148,20 @@
             <div class="caja">
                 <div class="fila"><span>{{ __('mus.caja.base_inicial') }}</span>
                     <b>${{ number_format((float) $cash->opening_amount, 0, ',', '.') }}</b></div>
+                @php
+                    $ingresosZ = (float) $cash->movements->where('type', 'ingreso')->sum('amount');
+                    $retirosZ  = (float) $cash->movements->where('type', 'retiro')->sum('amount');
+                @endphp
                 <div class="fila"><span>{{ __('mus.caja.z_cobros_efectivo') }}</span>
-                    <b>${{ number_format($esperado - (float) $cash->opening_amount, 0, ',', '.') }}</b></div>
+                    <b>${{ number_format($esperado - (float) $cash->opening_amount - $ingresosZ + $retirosZ, 0, ',', '.') }}</b></div>
+                @if ($ingresosZ > 0)
+                    <div class="fila"><span>{{ __('mus.caja.z_ingresos') }}</span>
+                        <b>+${{ number_format($ingresosZ, 0, ',', '.') }}</b></div>
+                @endif
+                @if ($retirosZ > 0)
+                    <div class="fila"><span>{{ __('mus.caja.z_retiros') }}</span>
+                        <b>−${{ number_format($retirosZ, 0, ',', '.') }}</b></div>
+                @endif
                 <div class="fila tot"><span>{{ __('mus.caja.z_esperado') }}</span>
                     <b>${{ number_format($esperado, 0, ',', '.') }}</b></div>
 

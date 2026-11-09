@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Catalogo\GuardarCategoryRequest;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller implements HasMiddleware
 {
@@ -43,9 +43,9 @@ class CategoryController extends Controller implements HasMiddleware
         return view('categories.create', compact('categories'));
     }
 
-    public function store(Request $request)
+    public function store(GuardarCategoryRequest $request)
     {
-        $data = $this->validar($request);
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
         $data['image_url'] = $this->guardarImagen($request);
 
@@ -76,9 +76,9 @@ class CategoryController extends Controller implements HasMiddleware
         return view('categories.edit', compact('category', 'categories'));
     }
 
-    public function update(Request $request, Category $category)
+    public function update(GuardarCategoryRequest $request, Category $category)
     {
-        $data = $this->validar($request, $category);
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
 
         $nueva = $this->guardarImagen($request, $category->image_url);
@@ -143,23 +143,5 @@ class CategoryController extends Controller implements HasMiddleware
         if ($ruta && ! str_starts_with($ruta, 'http') && Storage::disk('public')->exists($ruta)) {
             Storage::disk('public')->delete($ruta);
         }
-    }
-
-    /** @return array<string, mixed> */
-    private function validar(Request $request, ?Category $category = null): array
-    {
-        return $request->validate([
-            'name'        => ['required', 'string', 'max:100', Rule::unique('categories', 'name')->ignore($category?->id)],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'parent_id'   => ['nullable', 'exists:categories,id', Rule::notIn([$category?->id])],
-            'imagen'      => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
-        ], [
-            'name.required'  => 'La categoría necesita un nombre.',
-            'name.unique'    => 'Ya existe una categoría con ese nombre.',
-            'parent_id.not_in' => 'Una categoría no puede ser su propia categoría padre.',
-            'imagen.image'   => 'El archivo debe ser una imagen.',
-            'imagen.mimes'   => 'La imagen debe ser JPG, PNG o WEBP.',
-            'imagen.max'     => 'La imagen no puede pesar más de 2 MB.',
-        ]);
     }
 }

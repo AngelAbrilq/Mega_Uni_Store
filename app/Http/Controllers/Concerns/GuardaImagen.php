@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Http\Requests\Concerns\ReglasDeImagen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\Storage;
  */
 trait GuardaImagen
 {
+    use ReglasDeImagen;
+
     /**
      * Devuelve qué hay que escribir en la columna:
      *
@@ -58,29 +61,5 @@ trait GuardaImagen
         if ($ruta && ! str_starts_with($ruta, 'http') && Storage::disk('public')->exists($ruta)) {
             Storage::disk('public')->delete($ruta);
         }
-    }
-
-    /**
-     * Reglas de validación de una foto. 2 MB es de sobra para una foto de
-     * perfil y evita que alguien suba una imagen de cámara de 12 MP.
-     *
-     * @return array<string, mixed>
-     */
-    protected function reglasImagen(string $campo = 'imagen'): array
-    {
-        return [
-            $campo              => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
-            $campo . '_eliminar' => ['nullable', 'boolean'],
-        ];
-    }
-
-    /** @return array<string, string> */
-    protected function mensajesImagen(string $campo = 'imagen'): array
-    {
-        return [
-            $campo . '.image' => 'El archivo debe ser una imagen.',
-            $campo . '.mimes' => 'La imagen debe ser JPG, PNG o WEBP.',
-            $campo . '.max'   => 'La imagen no puede pesar más de 2 MB.',
-        ];
     }
 }

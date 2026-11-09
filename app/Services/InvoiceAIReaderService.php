@@ -25,6 +25,12 @@ use Illuminate\Support\Facades\Log;
  */
 class InvoiceAIReaderService
 {
+    /** Instante (microtime) en que se agota el presupuesto de la lectura. */
+    private float $deadline = INF;
+
+    /** Tope por llamada mientras quedan modelos de respaldo (reparte el presupuesto). */
+    private float $callCap = INF;
+
     private const PROMPT_PATH = 'prompts/smart_inventory_invoice.txt';
     private const TOOL_NAME   = 'registrar_factura';
 
@@ -41,6 +47,11 @@ class InvoiceAIReaderService
     public function read(UploadedFile $image): array
     {
         [$mime, $base64] = $this->prepareImage($image);
+
+        // Presupuesto total de la lectura (todos los modelos y reintentos).
+        // Debe ser menor que la espera del navegador (90 s): así el usuario
+        // siempre recibe una respuesta del servidor y no un «tardó demasiado».
+        $this->deadline = microtime(true) + (int) config('smart_inventory.http.deadline', 75);
 
         $driver  = (string) config('smart_inventory.driver');
         $started = microtime(true);
@@ -114,16 +125,19 @@ class InvoiceAIReaderService
                     ['text' => 'Extrae esta factura según las instrucciones y el esquema.'],
                 ],
             ]],
+            // Sin temperature: Gemini 3.x recomienda dejarla en su valor por
+            // omisión (bajarla puede hacer que el modelo se repita). La salida
+            // ya queda acotada por responseSchema.
             'generationConfig' => [
-                'temperature'      => 0,
                 'responseMimeType' => 'application/json',
                 'responseSchema'   => $this->toGeminiSchema($this->schema()),
             ],
         ];
 
-        $response = $this->send(
-            fn () => $this->http()->withHeaders(['x-goog-api-key' => $cfg['key']])
-                ->post("{$cfg['endpoint']}/{$cfg['model']}:generateContent", $payload),
+        $response = $this->sendWithFallback(
+            $this->modelChain($cfg),
+            fn (string $model) => $this->http()->withHeaders(['x-goog-api-key' => $cfg['key']])
+                ->post("{$cfg['endpoint']}/{$model}:generateContent", $payload),
             'gemini',
         );
 
@@ -201,9 +215,9 @@ class InvoiceAIReaderService
      * Ejecuta la petición con reintentos solo ante fallas transitorias
      * (red, 429, 5xx). Un 4xx de validación no se reintenta.
      */
-    private function send(callable $request, string $driver): Response
+    private function send(callable $request, string $driver, ?int $retries = null): Response
     {
-        $retries = (int) config('smart_inventory.http.retries');
+        $retries ??= (int) config('smart_inventory.http.retries');
         $sleepMs = (int) config('smart_inventory.http.retry_ms');
 
         try {
@@ -218,8 +232,13 @@ class InvoiceAIReaderService
 
                     return $r;
                 },
-                fn (int $attempt) => $sleepMs * $attempt, // backoff lineal
-                fn (\Throwable $e) => $e instanceof ConnectionException || $e instanceof RequestException,
+                // Exponencial con jitter: 1.5 s, 3 s, 6 s… ± 30 %. Evita que todos
+                // los reintentos del mundo golpeen al proveedor en el mismo instante.
+                fn (int $attempt) => (int) ($sleepMs * (2 ** ($attempt - 1)) * (0.7 + mt_rand(0, 60) / 100)),
+                // Solo se reintenta si queda presupuesto para otra llamada completa.
+                // Un timeout no se reintenta con el mismo modelo (volvería a tardar
+                // lo mismo): se pasa al de respaldo. Solo 429/5xx rápidos se reintentan.
+                fn (\Throwable $e) => $e instanceof RequestException && $this->remaining() > 15,
             );
         } catch (ConnectionException $e) {
             Log::warning('smart_inventory.timeout', ['driver' => $driver, 'error' => $e->getMessage()]);
@@ -236,11 +255,84 @@ class InvoiceAIReaderService
         return $response;
     }
 
+    /**
+     * Modelo principal seguido de los de respaldo (GEMINI_FALLBACK_MODELS,
+     * separados por coma), sin repetidos.
+     *
+     * @param  array<string, mixed>  $cfg
+     * @return list<string>
+     */
+    private function modelChain(array $cfg): array
+    {
+        $fallbacks = array_filter(array_map('trim', explode(',', (string) ($cfg['fallback_models'] ?? ''))));
+
+        return array_values(array_unique([$cfg['model'], ...$fallbacks]));
+    }
+
+    /**
+     * Prueba cada modelo en orden. Solo pasa al siguiente si el actual está
+     * saturado (429/503) o retirado (404); cualquier otro error se propaga,
+     * porque cambiar de modelo no arregla una key inválida ni una imagen mala.
+     *
+     * @param  list<string>  $models
+     */
+    private function sendWithFallback(array $models, callable $request, string $driver): Response
+    {
+        $busy = null;   // la saturación del principal explica mejor el fallo que un 404 de un respaldo mal escrito
+
+        foreach ($models as $i => $model) {
+            $isLast = $i === count($models) - 1;
+
+            if ($i > 0 && $this->remaining() < 10) {
+                throw $busy ?? new InvoiceReadingException(InvoiceReadingException::PROVIDER_TIMEOUT,
+                    'El servicio de IA no respondió a tiempo. Inténtalo en un minuto.');
+            }
+
+            // Reparte el tiempo restante entre los modelos que faltan: un modelo
+            // lento no puede consumirse todo el presupuesto de los respaldos.
+            $left = count($models) - $i;
+            $this->callCap = $isLast ? INF : max(15, $this->remaining() / $left);
+
+            try {
+                // Con respaldos disponibles conviene saltar rápido al siguiente
+                // modelo (1 reintento) en vez de insistir con uno saturado.
+                return $this->send(fn () => $request($model), $driver, $isLast ? null : min(1, (int) config('smart_inventory.http.retries')));
+            } catch (InvoiceReadingException $e) {
+                $status = $e->context['status'] ?? null;
+                if ($e->errorCode === InvoiceReadingException::PROVIDER_BUSY) {
+                    $busy ??= $e;
+                }
+                // Saturado, retirado o sin respuesta a tiempo → probar el siguiente modelo.
+                $retryable = in_array($e->errorCode, [InvoiceReadingException::PROVIDER_BUSY, InvoiceReadingException::PROVIDER_TIMEOUT], true)
+                    || $status === 404;
+
+                if (! $retryable) {
+                    throw $e;
+                }
+                if ($isLast) {
+                    throw $busy ?? $e;
+                }
+
+                Log::warning('smart_inventory.fallback', ['driver' => $driver, 'from' => $model, 'to' => $models[$i + 1], 'status' => $status]);
+            }
+        }
+
+        throw new InvoiceReadingException(InvoiceReadingException::NOT_CONFIGURED, 'No hay modelos de IA configurados.');
+    }
+
     private function http(): PendingRequest
     {
+        $timeout = (int) min((int) config('smart_inventory.http.timeout'), $this->callCap, max(5, floor($this->remaining())));
+
         return Http::acceptJson()
-            ->timeout((int) config('smart_inventory.http.timeout'))
-            ->connectTimeout(10);
+            ->timeout($timeout)
+            ->connectTimeout(min(10, $timeout));
+    }
+
+    /** Segundos que quedan del presupuesto de la lectura actual. */
+    private function remaining(): float
+    {
+        return $this->deadline - microtime(true);
     }
 
     private function failProvider(Response $response, string $driver, ?\Throwable $previous = null): never
@@ -252,10 +344,18 @@ class InvoiceAIReaderService
             'error'  => mb_substr((string) $response->body(), 0, 500),
         ]);
 
+        if (in_array($response->status(), [429, 503], true)) {
+            throw new InvoiceReadingException(InvoiceReadingException::PROVIDER_BUSY,
+                $response->status() === 429
+                    ? 'Se alcanzó el límite de uso del servicio de IA. Inténtalo en unos minutos.'
+                    : 'El servicio de IA está saturado en este momento. Vuelve a intentarlo en un minuto; tu foto sigue cargada.',
+                ['status' => $response->status()], $previous);
+        }
+
         $message = match (true) {
-            $response->status() === 429                          => 'Se alcanzó el límite de uso del servicio de IA. Inténtalo en unos minutos.',
             in_array($response->status(), [401, 403], true)      => 'La credencial del servicio de IA no es válida. Contacta al administrador.',
             $response->status() === 413                          => 'La imagen es demasiado pesada para el servicio de IA.',
+            $response->status() === 404                          => 'El modelo de IA configurado ya no está disponible. El administrador debe actualizar el modelo en .env.',
             default                                              => 'El servicio de IA falló al procesar la factura.',
         };
 
@@ -380,10 +480,11 @@ class InvoiceAIReaderService
                     ],
                     'required' => ['ganancia_neta_caja', 'ganancia_unitaria', 'ganancia_total', 'margen_porcentaje', 'markup_porcentaje'],
                 ],
+                'cantidad_inferida' => ['type' => 'boolean'],
                 'confianza' => $conf,
             ],
             'required' => [
-                'producto', 'codigo', 'presentacion_caja', 'cantidad_cajas', 'cantidad_unidades',
+                'cantidad_inferida', 'producto', 'codigo', 'presentacion_caja', 'cantidad_cajas', 'cantidad_unidades',
                 'unidades_totales', 'costo_total_compra', 'costo_caja', 'costo_unitario', 'iva_porcentaje',
                 'precio_venta_unitario', 'precio_venta_caja', 'precio_venta_total', 'margen_ganancia', 'confianza',
             ],
@@ -418,9 +519,19 @@ class InvoiceAIReaderService
                     'properties' => ['subtotal' => $num, 'descuento' => $num, 'iva' => $num, 'total' => $num],
                     'required'   => ['subtotal', 'descuento', 'iva', 'total'],
                 ],
+                'moneda' => $str,
+                'moneda_evidencia' => $str,
+                'cargos_no_mercancia' => [
+                    'type'       => 'object',
+                    'properties' => [
+                        'total'   => $num,
+                        'detalle' => $str,
+                    ],
+                    'required' => ['total', 'detalle'],
+                ],
                 'observaciones' => $str,
             ],
-            'required' => ['es_factura', 'calidad_imagen', 'proveedor', 'items', 'totales_factura', 'observaciones'],
+            'required' => ['es_factura', 'calidad_imagen', 'proveedor', 'items', 'totales_factura', 'moneda', 'moneda_evidencia', 'cargos_no_mercancia', 'observaciones'],
         ];
     }
 

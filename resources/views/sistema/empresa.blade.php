@@ -86,7 +86,7 @@
                     <option value="">Sin plan (sin topes)</option>
                     @foreach ($planes as $p)
                         <option value="{{ $p->id }}" @selected($empresa->plan_id === $p->id)>
-                            {{ $p->nombre }} · {{ Formato::moneda($p->precio_mensual) }}/mes
+                            {{ $p->nombre }} · {{ Formato::moneda($p->precio_mensual) }}/mes{{ $p->is_active ? '' : ' · retirado' }}
                         </option>
                     @endforeach
                 </select>

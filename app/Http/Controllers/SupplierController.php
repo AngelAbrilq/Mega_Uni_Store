@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Catalogo\GuardarSupplierRequest;
 use App\Http\Controllers\Concerns\GuardaImagen;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 
 class SupplierController extends Controller implements HasMiddleware
 {
@@ -42,9 +42,9 @@ class SupplierController extends Controller implements HasMiddleware
         return view('suppliers.create');
     }
 
-    public function store(Request $request)
+    public function store(GuardarSupplierRequest $request)
     {
-        $data = $this->validar($request);
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
         $data['image_url'] = $this->guardarImagen($request, 'proveedores');
 
@@ -69,9 +69,9 @@ class SupplierController extends Controller implements HasMiddleware
         return view('suppliers.edit', compact('supplier'));
     }
 
-    public function update(Request $request, Supplier $supplier)
+    public function update(GuardarSupplierRequest $request, Supplier $supplier)
     {
-        $data = $this->validar($request, $supplier);
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
 
         $nueva = $this->guardarImagen($request, 'proveedores', $supplier->image_url);
@@ -95,23 +95,5 @@ class SupplierController extends Controller implements HasMiddleware
 
         return redirect()->route('suppliers.index')
             ->with('success', 'Proveedor «' . $nombre . '» eliminado.');
-    }
-
-    /** @return array<string, mixed> */
-    private function validar(Request $request, ?Supplier $supplier = null): array
-    {
-        return $request->validate([
-            'name'         => ['required', 'string', 'max:150'],
-            'tax_id'       => ['nullable', 'string', 'max:30', Rule::unique('suppliers', 'tax_id')->ignore($supplier?->id)],
-            'phone'        => ['nullable', 'string', 'max:20', 'regex:/^[0-9+()\s-]+$/'],
-            'email'        => ['nullable', 'email', 'max:150'],
-            'address'      => ['nullable', 'string', 'max:255'],
-            'contact_name' => ['nullable', 'string', 'max:100'],
-        ] + $this->reglasImagen(), [
-            'name.required' => 'El proveedor necesita un nombre o razón social.',
-            'tax_id.unique' => 'Ese NIT ya está registrado en otro proveedor.',
-            'email.email'   => 'Escribe un correo electrónico válido.',
-            'phone.regex'   => 'El teléfono solo admite números, espacios y los signos + ( ) -',
-        ] + $this->mensajesImagen());
     }
 }

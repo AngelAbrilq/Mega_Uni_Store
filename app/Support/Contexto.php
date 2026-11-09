@@ -131,6 +131,26 @@ class Contexto
         self::$resuelto  = true;
     }
 
+    /**
+     * Fija el negocio SOLO para esta petición, sin tocar la sesión.
+     *
+     * Es la puerta del portal público (`/tienda/{slug}`): ahí el negocio lo
+     * decide la dirección, no el usuario. Si se usara `usar()`, un empleado
+     * que abre la tienda de otro cliente en el mismo navegador quedaría con
+     * la sesión del panel apuntando a ese negocio.
+     *
+     * Quien llama es responsable de haber comprobado que la empresa existe
+     * y está activa.
+     */
+    public static function fijar(int $empresaId, ?int $tiendaId = null): void
+    {
+        self::olvidar();
+
+        self::$empresaId = $empresaId;
+        self::$tiendaId  = $tiendaId;
+        self::$resuelto  = true;
+    }
+
     /** Lo que va escondido en cada formulario, para detectar las pestañas. */
     public static function firma(): string
     {

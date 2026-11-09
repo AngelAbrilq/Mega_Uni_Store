@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Catalogo\GuardarCustomerRequest;
 use App\Http\Controllers\Concerns\GuardaImagen;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 
 class CustomerController extends Controller implements HasMiddleware
 {
@@ -50,9 +50,9 @@ class CustomerController extends Controller implements HasMiddleware
         return view('customers.create', ['documentos' => self::DOCUMENTOS]);
     }
 
-    public function store(Request $request)
+    public function store(GuardarCustomerRequest $request)
     {
-        $data = $this->validar($request);
+        $data = $request->validated();
         $data['image_url'] = $this->guardarImagen($request, 'clientes');
 
         unset($data['imagen']);
@@ -63,9 +63,26 @@ class CustomerController extends Controller implements HasMiddleware
             ->with('success', 'Cliente «' . $cliente->full_name . '» registrado.');
     }
 
-    public function show(Customer $customer)
+    public function show(Request $request, Customer $customer)
     {
-        return view('customers.show', compact('customer'));
+        $customer->load(['tiendas' => fn ($q) => $q->orderByDesc('points_balance')]);
+
+        $locales     = \App\Models\Tienda::where('empresa_id', \App\Support\Contexto::empresaId())->pluck('nombre', 'id');
+        $misLocales  = $request->user()->tiendasEn((int) \App\Support\Contexto::empresaId())->pluck('nombre', 'id');
+        $asociados   = $customer->tiendas->where('is_active', true)->pluck('tienda_id')->all();
+        $movimientos = \App\Models\LoyaltyTransaction::withoutGlobalScopes()
+            ->with('sale:id,number')
+            ->where('customer_id', $customer->id)
+            ->latest('id')->limit(10)->get();
+
+        return view('customers.show', [
+            'customer'    => $customer,
+            'locales'     => $locales,
+            'porAsociar'  => $misLocales->except($asociados),
+            'misLocales'  => $misLocales->keys()->all(),
+            'movimientos' => $movimientos,
+            'puntosActivos' => \App\Services\FidelizacionService::activa(),
+        ]);
     }
 
     public function edit(Customer $customer)
@@ -76,9 +93,9 @@ class CustomerController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function update(Request $request, Customer $customer)
+    public function update(GuardarCustomerRequest $request, Customer $customer)
     {
-        $data  = $this->validar($request, $customer);
+        $data  = $request->validated();
         $nueva = $this->guardarImagen($request, 'clientes', $customer->image_url);
 
         if ($nueva !== false) {
@@ -100,25 +117,5 @@ class CustomerController extends Controller implements HasMiddleware
 
         return redirect()->route('customers.index')
             ->with('success', 'Cliente «' . $nombre . '» eliminado.');
-    }
-
-    /** @return array<string, mixed> */
-    private function validar(Request $request, ?Customer $customer = null): array
-    {
-        return $request->validate([
-            'first_name'      => ['required', 'string', 'max:100'],
-            'last_name'       => ['nullable', 'string', 'max:100'],
-            'email'           => ['nullable', 'email', 'max:150', Rule::unique('customers', 'email')->ignore($customer?->id)],
-            'phone'           => ['nullable', 'string', 'max:20', 'regex:/^[0-9+()\s-]+$/'],
-            'document_type'   => ['nullable', Rule::in(array_keys(self::DOCUMENTOS))],
-            'document_number' => ['nullable', 'string', 'max:30', Rule::unique('customers', 'document_number')->ignore($customer?->id)],
-            'address'         => ['nullable', 'string', 'max:255'],
-        ] + $this->reglasImagen(), [
-            'first_name.required'      => 'El nombre es obligatorio.',
-            'email.email'              => 'Escribe un correo electrónico válido.',
-            'email.unique'             => 'Ese correo ya está registrado en otro cliente.',
-            'phone.regex'              => 'El teléfono solo admite números, espacios y los signos + ( ) -',
-            'document_number.unique'   => 'Ese número de documento ya está registrado.',
-        ] + $this->mensajesImagen());
     }
 }

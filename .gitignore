@@ -41,3 +41,12 @@ Thumbs.db
 
 # El texto del commit, no es parte del sistema.
 /_commit.txt
+
+# Generadores de documentación (Python)
+__pycache__/
+
+# Secretos locales
+env
+env.json
+.postman/
+postman/

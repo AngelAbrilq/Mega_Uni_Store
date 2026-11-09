@@ -13,14 +13,26 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'avatar_url', 'locale'])]
+#[Fillable(['name', 'last_name', 'email', 'phone', 'is_active', 'password', 'avatar_url', 'locale'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use Auditable, ConImagen, HasFactory, Notifiable, HasRoles;
+    use Auditable, ConImagen, HasFactory, Notifiable, HasRoles, SoftDeletes;
+
+    /**
+     * Igual al DEFAULT de la columna. Sin esto, un usuario recién creado en
+     * memoria (factory, actingAs) tendría `is_active = null` y el guardián
+     * de contexto lo sacaría de la sesión.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'is_active' => true,
+    ];
 
     /** La foto del usuario vive en avatar_url, no en image_url. */
     public function campoImagen(): string
@@ -178,6 +190,18 @@ class User extends Authenticatable
         return $usuario->perteneceA($empresaId) ? $usuario : null;
     }
 
+    /** Nombre y apellido juntos, tal como se muestra en listados y fichas. */
+    public function getNombreCompletoAttribute(): string
+    {
+        return trim($this->name . ' ' . ($this->last_name ?? ''));
+    }
+
+    /** Solo quienes pueden iniciar sesión (VW-USR-001). */
+    public function scopeActivos($consulta)
+    {
+        return $consulta->where('is_active', true);
+    }
+
     /** Ventas registradas por este usuario. */
     public function sales(): HasMany
     {
@@ -206,6 +230,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 }

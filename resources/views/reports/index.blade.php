@@ -71,6 +71,10 @@
 <x-mus.page title="Reportes" subtitle="Cómo va el negocio" icon="trend">
     <x-slot name="actions">
         <x-mus.btn onclick="window.print()" icon="id">Imprimir</x-mus.btn>
+        @can('reportes.exportar')
+            {{-- RP-EXP-001 --}}
+            <x-mus.btn href="{{ route('reports.exports.index', $rango) }}" variant="primary" icon="share">Exportar y enviar</x-mus.btn>
+        @endcan
     </x-slot>
 
     {{-- ══════════ Rango ══════════ --}}
@@ -411,7 +415,7 @@
             </div>
 
             @if (count($sinRotacion))
-                <h4 class="rsub">Plata quieta: no se vendió en el periodo</h4>
+                <h4 class="rsub">Plata quieta: no se vendió en los últimos {{ $diasRotacion }} días</h4>
                 <ul class="rquieto">
                     @foreach ($sinRotacion as $p)
                         <li>

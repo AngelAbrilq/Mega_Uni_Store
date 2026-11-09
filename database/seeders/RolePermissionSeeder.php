@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
+use App\Models\Permiso as Permission;
 use App\Models\Rol as Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -31,9 +31,12 @@ class RolePermissionSeeder extends Seeder
         'medios_pago'  => 'Medios de pago',
         'atributos'    => 'Atributos',
         'usuarios'     => 'Usuarios',
+        'tiendas'      => 'Locales',
         'ventas'       => 'Ventas',
         'compras'      => 'Compras',
         'citas'        => 'Citas de la agenda',
+        'cupones'      => 'Cupones de descuento', // AT-CUP-001
+        'empleados'    => 'Empleados',            // AT-EMP-001 (RN-44)
     ];
 
     /**
@@ -44,11 +47,20 @@ class RolePermissionSeeder extends Seeder
     private array $sueltos = [
         'panel.ver',            // entrar al dashboard
         'reportes.ver',         // informes y gráficas
+        'reportes.exportar',    // exportar a PDF/Excel y enviar por email/WhatsApp (RP-EXP-001)
+        'notificaciones.enviar',// enviar avisos a los usuarios del negocio (SA-NOT-001)
         'ventas.anular',        // deshacer una venta ya cobrada
+        'ventas.solicitar_anulacion', // pedir la anulación para que un supervisor la apruebe (VD-VTA-002, RN-43)
         'ventas.devolver',      // recibir una devolución parcial
+        'ventas.aprobar_devolucion', // aprobar o rechazar devoluciones pendientes (RN-30)
+        'ventas.verificar_pagos', // aprobar o rechazar pagos pendientes de verificación (RN-32)
+        'ventas.cambiar_precio',// cobrar a un precio distinto al del local (H-F01)
         'caja.ver',             // consultar turnos de caja
         'caja.abrir',
         'caja.cerrar',          // hacer el arqueo
+        'caja.cerrar_ajena',    // arquear el turno que abrió OTRA persona (H-04)
+        'caja.movimientos',     // ingresos y retiros de efectivo en el turno (AT-CAJ-001)
+        'caja.gestionar_cajas', // crear y editar las cajas registradoras del local (AT-CAJ-001)
         'inventario.ver',       // consultar el kardex
         'inventario.ajustar',   // mover existencias a mano
         'compras.recibir',      // dar entrada a la mercancía
@@ -59,6 +71,15 @@ class RolePermissionSeeder extends Seeder
         // se excluye a mano de todos los demás más abajo: es el único
         // permiso que no es «de un negocio» sino «de todos los negocios».
         'agenda.recursos',      // quién atiende, sus horarios y bloqueos
+        'rrhh.configurar',      // áreas, cargos y horarios del local (AT-ARE/CGO/HOR-001)
+        // Nómina (RN-45). Fuera de $modulos a propósito: los salarios son
+        // reservados, así que Supervisor y Reportero no heredan «nomina.ver».
+        'nomina.ver',               // nóminas, desprendibles y reportes del local
+        'nomina.gestionar',         // contratos, conceptos, liquidar, prestaciones (NR-NOM-001/002/003/007)
+        'nomina.aprobar',           // aprobar y registrar el pago de la nómina (NR-NOM-003 E6)
+        'nomina.novedades',         // registrar horas extra y ausencias (NR-NOM-005/006)
+        'nomina.aprobar_novedades', // aprobar o rechazar horas extra y vacaciones
+        'nomina.consolidado',       // consolidado de todas las tiendas (NR-NOM-009, Superadministrador)
         'sistema.superadmin',
     ];
 
@@ -105,7 +126,11 @@ class RolePermissionSeeder extends Seeder
         $todos = array_merge($todos, $this->sueltos);
 
         foreach ($todos as $nombre) {
-            Permission::findOrCreate($nombre, $guard);
+            // SA-PER-001: los del seeder son «del sistema» (el código los usa).
+            [$modulo, $accion] = explode('.', $nombre, 2);
+            Permission::findOrCreate($nombre, $guard)
+                ->forceFill(['module' => $modulo, 'action' => $accion, 'is_system' => true])
+                ->save();
         }
 
         /* ─────────── 2. Roles ─────────── */
@@ -119,20 +144,24 @@ class RolePermissionSeeder extends Seeder
         $definicion = [
             'Superadministrador' => $todos,
 
+            // H-F07: el dueño configura su propio negocio (moneda, recibo, reglas de venta).
+            // Solo el panel de plataforma queda reservado al Superadministrador.
             'Administrador' => array_values(array_diff($todos, [
-                // El administrador de tienda no toca los parámetros globales.
-                'configuracion.editar',
                 // Y muchísimo menos ve los negocios de los demás clientes.
                 'sistema.superadmin',
+                // NR-NOM-009: el consolidado multitienda es del Superadministrador.
+                'nomina.consolidado',
             ])),
 
             'Supervisor' => array_merge(
                 $soloVer,
                 [
-                    'panel.ver', 'reportes.ver', 'auditoria.ver',
+                    'panel.ver', 'reportes.ver', 'reportes.exportar', 'auditoria.ver',
                     'citas.crear', 'citas.editar', 'agenda.recursos',
                     'inventario.ver', 'inventario.ajustar',
-                    'caja.ver', 'ventas.anular', 'ventas.devolver',
+                    'caja.ver', 'caja.cerrar_ajena', 'caja.movimientos', 'ventas.anular', 'ventas.devolver', 'ventas.cambiar_precio',
+                    'ventas.aprobar_devolucion', 'ventas.verificar_pagos',
+                    'nomina.novedades', // NR-NOM-005 E1: «El Admin o Supervisor registra horas extras»
                 ],
                 $this->permisosDe(['productos', 'categorias'], ['crear', 'editar'])
             ),
@@ -140,8 +169,8 @@ class RolePermissionSeeder extends Seeder
             'Cajero' => [
                 'panel.ver',
                 'citas.ver', 'citas.crear', 'citas.editar',
-                'ventas.ver', 'ventas.crear', 'ventas.devolver',
-                'caja.ver', 'caja.abrir', 'caja.cerrar',
+                'ventas.ver', 'ventas.crear', 'ventas.devolver', 'ventas.solicitar_anulacion',
+                'caja.ver', 'caja.abrir', 'caja.cerrar', 'caja.movimientos',
                 'productos.ver', 'categorias.ver', 'medios_pago.ver', 'impuestos.ver',
                 'clientes.ver', 'clientes.crear',
             ],
@@ -150,8 +179,8 @@ class RolePermissionSeeder extends Seeder
                 [
                     'panel.ver',
                     'citas.ver', 'citas.crear', 'citas.editar',
-                    'ventas.ver', 'ventas.crear', 'ventas.devolver',
-                    'caja.ver', 'caja.abrir', 'caja.cerrar',
+                    'ventas.ver', 'ventas.crear', 'ventas.devolver', 'ventas.solicitar_anulacion',
+                    'caja.ver', 'caja.abrir', 'caja.cerrar', 'caja.movimientos',
                     'productos.ver', 'categorias.ver', 'medios_pago.ver', 'impuestos.ver',
                     'inventario.ver',
                 ],
@@ -165,12 +194,15 @@ class RolePermissionSeeder extends Seeder
                     'proveedores.ver', 'categorias.ver', 'unidades.ver',
                     'productos.ver', 'productos.crear', 'productos.editar',
                     'compras.recibir',
+                    // BD-DEV-001: recibe la mercancía devuelta; queda pendiente
+                    // hasta que un supervisor la apruebe (RN-30).
+                    'ventas.ver', 'ventas.devolver',
                 ],
                 $this->permisosDe(['compras'], ['ver', 'crear', 'editar'])
             ),
 
             'Reportero' => array_merge($soloVer, [
-                'panel.ver', 'reportes.ver', 'inventario.ver', 'caja.ver',
+                'panel.ver', 'reportes.ver', 'reportes.exportar', 'inventario.ver', 'caja.ver',
             ]),
         ];
 

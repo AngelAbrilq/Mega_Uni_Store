@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Agenda\CobrarCitaRequest;
+use App\Http\Requests\Agenda\CambiarEstadoCitaRequest;
+use App\Http\Requests\Agenda\MoverCitaRequest;
+use App\Http\Requests\Agenda\AgendarCitaRequest;
 use App\Models\Cita;
 use App\Models\Customer;
 use App\Models\PaymentMethod;
@@ -12,7 +16,6 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Carbon;
-use Illuminate\Validation\Rule;
 
 /**
  * La agenda del día.
@@ -94,22 +97,9 @@ class AgendaController extends Controller implements HasMiddleware
 
     /* ═══════════════ Acciones ═══════════════ */
 
-    public function store(Request $request)
+    public function store(AgendarCitaRequest $request)
     {
-        $datos = $request->validate([
-            'recurso_id'  => ['required', 'integer'],
-            'inicio'      => ['required', 'date'],
-            'customer_id' => ['nullable', 'integer', Rule::exists('customers', 'id')],
-            'product_id'  => ['nullable', 'integer', Rule::exists('products', 'id')],
-            'titulo'      => ['nullable', 'string', 'max:150'],
-            'minutos'     => ['nullable', 'integer', 'min:5', 'max:600'],
-            'precio'      => ['nullable', 'numeric', 'min:0'],
-            'notas'       => ['nullable', 'string', 'max:500'],
-        ], [
-            'recurso_id.required' => '¿Quién la atiende?',
-            'inicio.required'     => '¿A qué hora?',
-            'minutos.min'         => 'Una cita de menos de cinco minutos no es una cita.',
-        ]);
+        $datos = $request->validated();
 
         $cita = $this->agenda->agendar($datos, $request->user()?->id);
 
@@ -118,13 +108,9 @@ class AgendaController extends Controller implements HasMiddleware
             ->with('success', 'Cita ' . $cita->numero . ' agendada para ' . $cita->horas() . '.');
     }
 
-    public function mover(Request $request, Cita $cita)
+    public function mover(MoverCitaRequest $request, Cita $cita)
     {
-        $datos = $request->validate([
-            'inicio'     => ['required', 'date'],
-            'recurso_id' => ['nullable', 'integer'],
-            'minutos'    => ['nullable', 'integer', 'min:5', 'max:600'],
-        ]);
+        $datos = $request->validated();
 
         $this->agenda->mover(
             $cita,
@@ -136,23 +122,18 @@ class AgendaController extends Controller implements HasMiddleware
         return back()->with('success', 'Cita ' . $cita->numero . ' movida.');
     }
 
-    public function estado(Request $request, Cita $cita)
+    public function estado(CambiarEstadoCitaRequest $request, Cita $cita)
     {
-        $datos = $request->validate([
-            'estado' => ['required', Rule::in(array_keys(Cita::ESTADOS))],
-            'notas'  => ['nullable', 'string', 'max:500'],
-        ]);
+        $datos = $request->validated();
 
         $this->agenda->cambiarEstado($cita, $datos['estado'], $datos['notas'] ?? null);
 
         return back()->with('success', 'Cita ' . $cita->numero . ': ' . Cita::ESTADOS[$datos['estado']] . '.');
     }
 
-    public function cobrar(Request $request, Cita $cita)
+    public function cobrar(CobrarCitaRequest $request, Cita $cita)
     {
-        $datos = $request->validate([
-            'payment_method_id' => ['nullable', 'integer', Rule::exists('payment_methods', 'id')],
-        ]);
+        $datos = $request->validated();
 
         $venta = $this->agenda->aVenta($cita, $request->user()->id, $datos['payment_method_id'] ?? null);
 

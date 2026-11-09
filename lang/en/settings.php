@@ -116,6 +116,10 @@ return [
 
         'redondeo' => 'Round the total',
         'redondeo_hint' => 'Useful where small coins are no longer in circulation.',
+        'pesos_por_punto' => 'Pesos per loyalty point',
+        'pesos_por_punto_hint' => 'Customers earn 1 point every time they spend this amount at the store.',
+        'puntos_activos' => 'Earn loyalty points',
+        'puntos_activos_hint' => 'Sales with an identified customer add points at the store where they bought.',
         'r_no'     => 'No rounding',
         'r_50'     => 'To the nearest 50',
         'r_100'    => 'To the nearest 100',

@@ -103,6 +103,24 @@
     .pos-l__u{ font-size:11.2px; color:var(--muted); }
 
     /* ══════════ Totales ══════════ */
+    /* VD-CUP-001 · cupón */
+    .pos-cup{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:center;
+              padding:11px 16px; border-top:1px solid var(--line-2); }
+    .pos-cup__in{ display:flex; align-items:center; gap:7px; height:36px; padding:0 11px; min-width:0;
+                  border:1px solid var(--line); border-radius:9px; background:#fff; color:var(--muted); }
+    .pos-cup__in:focus-within{ border-color:var(--a-400); box-shadow:0 0 0 3px rgba(46,110,168,.12); }
+    .pos-cup__in input{ flex:1; min-width:0; border:0; outline:0; background:transparent; font:inherit;
+                        font-size:13px; color:var(--ink); text-transform:uppercase; letter-spacing:.04em; }
+    .pos-cup__in input::placeholder{ text-transform:none; letter-spacing:0; }
+    .pos-cup__ok{ grid-column:1 / -1; display:flex; align-items:center; justify-content:space-between; gap:8px;
+                  padding:7px 10px; border-radius:9px; background:rgba(62,125,92,.1); color:var(--ok); font-size:12.6px; }
+    .pos-cup__ok span{ display:inline-flex; align-items:center; gap:6px; }
+    .pos-cup__ok button{ border:0; background:transparent; color:inherit; font-size:18px; line-height:1; cursor:pointer; }
+    .pos-cup__msg{ grid-column:1 / -1; margin:0; font-size:12px; color:var(--bad); }
+    .pos-cup__msg:empty{ display:none; }
+    .pos-cup.is-on .pos-cup__in, .pos-cup.is-on #posCuponAplicar{ display:none; }
+    @media (max-width:760px){ .pos-cup__in{ height:42px; } .pos-cup__in input{ font-size:16px; } }
+
     .pos-tot{ padding:13px 16px; border-top:1px solid var(--line-2); background:var(--paper); }
     .pos-tot > div{ display:flex; justify-content:space-between; align-items:baseline;
                     font-size:12.6px; color:var(--muted); padding:3px 0; }
@@ -243,4 +261,27 @@
         .pos-modal__box footer{ position:sticky; bottom:0; }
         .pos-modal__box footer .mb{ flex:1; }
     }
+    /* ══════════ Semáforo del cajón monedero ══════════
+       El cajero no lee etiquetas mientras atiende: mira el color. Verde =
+       el destino responde; ámbar = el cajón quedó abierto; rojo = no hay
+       nadie al otro lado y el pulso se está perdiendo. El título del botón
+       lleva el texto largo para quien sí quiera leerlo. */
+    .cajon-luz{ display:inline-block; width:8px; height:8px; margin-left:2px;
+                border-radius:50%; flex:none; background:#9aa0a6;
+                box-shadow:0 0 0 2px rgba(154,160,166,.18);
+                transition:background .2s ease, box-shadow .2s ease; }
+    .cajon-luz[data-nivel="ok"]     { background:#2e9e5b; box-shadow:0 0 0 2px rgba(46,158,91,.2); }
+    .cajon-luz[data-nivel="abierto"]{ background:#d99a2b; box-shadow:0 0 0 2px rgba(217,154,43,.22); }
+    .cajon-luz[data-nivel="caido"]  { background:#c8483c; box-shadow:0 0 0 2px rgba(200,72,60,.22); }
+    .cajon-luz[data-nivel="probando"]{ animation:cajonLatido 1s ease-in-out infinite; }
+
+    @keyframes cajonLatido{ 0%,100%{ opacity:1 } 50%{ opacity:.35 } }
+
+    /* Quien tenga activado "reducir movimiento" no necesita un punto
+       parpadeando en la barra superior toda la jornada. */
+    @media (prefers-reduced-motion: reduce){
+        .cajon-luz[data-nivel="probando"]{ animation:none; opacity:.5; }
+    }
+
+    #posCajon[disabled]{ opacity:.6; cursor:progress; }
 </style>

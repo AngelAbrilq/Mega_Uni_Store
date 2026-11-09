@@ -164,6 +164,69 @@ class PanelSistemaTest extends TestCase
         $this->assertEqualsWithDelta(79_000, (float) $mov->delta, 0.01);
     }
 
+    /**
+     * El día que un interesado de /probar decide comprar.
+     *
+     * Esta prueba existe por un fallo real: suscribir escribía el plan pero
+     * dejaba `es_demo` en verdadero y `expira_en` con la hora de la prueba.
+     * La empresa quedaba pagando y marcada como demostración a la vez, y
+     * `mus:limpiar-demos` —que borra por esos dos campos— se la llevaba esa
+     * misma noche. El cliente pagando y el cron barriéndolo.
+     */
+    public function test_suscribir_a_un_plan_de_pago_apaga_la_demostracion(): void
+    {
+        $demo    = Plan::where('es_demo', true)->firstOrFail();
+        $basico  = Plan::where('slug', 'basico')->firstOrFail();
+
+        $this->ajena->update([
+            'es_demo'   => true,
+            'expira_en' => now()->addMinutes(150),
+            'plan_id'   => $demo->id,
+            'estado'    => 'activa',
+        ]);
+
+        $this->actingAs($this->angel)
+            ->from('/sistema/empresas/' . $this->ajena->id)
+            ->post('/sistema/empresas/' . $this->ajena->id . '/suscribir', [
+                'plan_id' => $basico->id,
+                'periodo' => 'mensual',
+            ]);
+
+        $empresa = $this->ajena->fresh();
+
+        $this->assertSame($basico->id, $empresa->plan_id);
+        $this->assertFalse($empresa->es_demo, 'Sigue marcada como demostración después de pagar.');
+        $this->assertNull($empresa->expira_en, 'A un cliente que paga no se le vence la cuenta a las dos horas.');
+        $this->assertSame('activa', $empresa->estado);
+        $this->assertNotNull($empresa->suscrita_desde);
+    }
+
+    /**
+     * La segunda cerradura: aunque `es_demo` quedara mal puesto, el
+     * comando que borra tiene que mirar también si esa empresa pagó.
+     */
+    public function test_el_limpiador_no_toca_a_una_empresa_que_pago(): void
+    {
+        $basico = Plan::where('slug', 'basico')->firstOrFail();
+
+        // El peor caso a propósito: marcada como demo, vencida hace una
+        // semana, y con plan de pago y fecha de suscripción.
+        $this->ajena->update([
+            'es_demo'        => true,
+            'expira_en'      => now()->subWeek(),
+            'plan_id'        => $basico->id,
+            'suscrita_desde' => now()->subMonth()->toDateString(),
+        ]);
+
+        $this->artisan('mus:limpiar-demos', ['--hacerlo' => true, '--horas' => 1])
+            ->assertSuccessful();
+
+        $this->assertNotNull(
+            Empresa::find($this->ajena->id),
+            'Se borró el negocio de un cliente que estaba pagando.'
+        );
+    }
+
     public function test_suspender_no_le_borra_los_datos_al_cliente(): void
     {
         $basico = Plan::where('slug', 'basico')->firstOrFail();

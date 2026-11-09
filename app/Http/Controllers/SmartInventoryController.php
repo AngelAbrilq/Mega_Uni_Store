@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exceptions\InvoiceReadingException;
 use App\Http\Requests\SmartInventory\AnalyzeInvoiceRequest;
 use App\Http\Requests\SmartInventory\ConfirmSmartEntryRequest;
+use App\Http\Requests\SmartInventory\QuickProductRequest;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Services\SmartInventoryService;
@@ -43,6 +44,7 @@ class SmartInventoryController extends Controller
                 ])->values(),
             'markup'      => (float) config('smart_inventory.default_markup_percent'),
             'puedePrecio' => (bool) auth()->user()?->can('productos.editar'),
+            'puedeCrear'  => (bool) auth()->user()?->can('productos.crear'),
         ]);
     }
 
@@ -52,6 +54,10 @@ class SmartInventoryController extends Controller
      */
     public function analyze(AnalyzeInvoiceRequest $request): JsonResponse
     {
+        // Lectura + reintentos ante saturación pueden pasar de los 30 s del
+        // max_execution_time por omisión de PHP.
+        set_time_limit(150);
+
         try {
             $data = $this->smartInventory->analyze(
                 $request->file('imagen'),
@@ -77,6 +83,21 @@ class SmartInventoryController extends Controller
                 ? "Factura leída. {$pending} renglón(es) requieren tu revisión antes de confirmar."
                 : 'Factura leída. Verifica los valores y confirma.',
         ]);
+    }
+
+    /**
+     * POST /smart-inventory/productos
+     * Alta rápida de un producto que llegó en la factura y no está en el catálogo.
+     */
+    public function storeProduct(QuickProductRequest $request): JsonResponse
+    {
+        $product = $this->smartInventory->createProduct($request->validated(), $request->user()->id);
+
+        return response()->json([
+            'success' => true,
+            'data'    => $product->only(['id', 'name', 'sku', 'barcode', 'price', 'cost']),
+            'message' => "Producto «{$product->name}» creado. Sus unidades entran al recibir la compra.",
+        ], 201);
     }
 
     /**

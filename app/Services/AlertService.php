@@ -7,6 +7,7 @@ use App\Models\CashSession;
 use App\Models\Product;
 use App\Models\Purchase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -14,10 +15,22 @@ use Illuminate\Support\Facades\Schema;
  *
  * Se cachea dos minutos: la campana se pinta en todas las páginas y no
  * tiene sentido consultar el inventario entero en cada clic.
+ *
+ * ── H-01: la clave lleva empresa Y local ──
+ *
+ * Antes la clave era una sola (`mus.alertas`) para todo el sistema: durante
+ * 120 s cualquier negocio veía la campana del primero que la pidió —stock,
+ * compras y cajas de OTRO cliente—. El filtro de los modelos estaba bien;
+ * la fuga era la caché, que guardaba el resultado ya filtrado y se lo
+ * servía a todos.
+ *
+ * Va el local además de la empresa porque el stock se cuenta por
+ * existencias del local activo: dos locales del mismo negocio tampoco
+ * deben compartir campana.
  */
 class AlertService
 {
-    private const CACHE = 'mus.alertas';
+    private const PREFIJO = 'mus.alertas';
     private const SEGUNDOS = 120;
 
     /**
@@ -25,7 +38,9 @@ class AlertService
      */
     public function todas(): array
     {
-        return Cache::remember(self::CACHE, self::SEGUNDOS, function () {
+        $clave = self::clave(Contexto::empresaId(), Contexto::tiendaId());
+
+        return Cache::remember($clave, self::SEGUNDOS, function () {
             $items = array_merge(
                 $this->stock(),
                 $this->comprasPendientes(),
@@ -40,16 +55,54 @@ class AlertService
         });
     }
 
-    /** Se llama cuando algo cambió y la campana debe refrescarse. */
-    public static function olvidar(): void
+    /**
+     * Se llama cuando algo cambió y la campana debe refrescarse.
+     *
+     * Borra la campana de TODOS los locales de la empresa, no solo la del
+     * activo: una compra recibida en el local norte cambia el contador de
+     * «compras sin recibir» que ve el dueño parado en el local centro.
+     *
+     * Sin contexto (consola, colas) no se sabe de quién era el cambio, así
+     * que se borran todas. Son claves pequeñas y es raro: mejor una campana
+     * recalculada de más que una desactualizada.
+     *
+     * Se lee `tiendas` con DB y no con el modelo para no depender de ningún
+     * filtro: aquí se necesitan los ids tal cual, y nada más.
+     */
+    public static function olvidar(?int $empresaId = null): void
     {
-        Cache::forget(self::CACHE);
+        $empresaId ??= Contexto::empresaId();
+
+        $consulta = DB::table('tiendas')->select(['id', 'empresa_id']);
+
+        if ($empresaId !== null) {
+            $consulta->where('empresa_id', $empresaId);
+        }
+
+        foreach ($consulta->get() as $tienda) {
+            Cache::forget(self::clave((int) $tienda->empresa_id, (int) $tienda->id));
+            Cache::forget(self::clave((int) $tienda->empresa_id, null));
+        }
+
+        // La de «sin contexto», que usan consola y las instalaciones viejas.
+        Cache::forget(self::clave($empresaId, null));
+    }
+
+    /** `mus.alertas.{empresa}.{tienda}` — 0 cuando no hay. */
+    private static function clave(?int $empresaId, ?int $tiendaId): string
+    {
+        return self::PREFIJO . '.' . ($empresaId ?? 0) . '.' . ($tiendaId ?? 0);
     }
 
     /** @return array<int, array<string, mixed>> */
     private function stock(): array
     {
         if (! Schema::hasTable('existencias') || ! Contexto::tiendaId()) {
+            return [];
+        }
+
+        // H-F02 · Configuración › Inventario › «Alertas de stock».
+        if (! \App\Models\Setting::activo('inventario.alerta_activa')) {
             return [];
         }
 

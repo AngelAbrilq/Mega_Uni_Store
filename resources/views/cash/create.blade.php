@@ -7,6 +7,20 @@
         <x-mus.panel :title="__('mus.caja.base_inicial')" :sub="__('mus.caja.base_sub')">
             <div class="mf">
                 <div class="mf__grid">
+                    @if ($cajas->count())
+                        {{-- AT-CAJ-001 · RN-31: una caja física, un turno abierto. --}}
+                        <x-mus.select name="cash_register_id" :label="__('mus.caja.caja_fisica')" :required="true" :wide="true"
+                                      :empty="__('mus.caja.elige_caja')" :hint="__('mus.caja.caja_fisica_hint')"
+                                      :options="$cajas->filter(fn ($c) => $c->sessions->isEmpty())
+                                                      ->mapWithKeys(fn ($c) => [$c->id => $c->etiqueta])->all()" />
+
+                        @foreach ($cajas->filter(fn ($c) => $c->sessions->isNotEmpty()) as $ocupada)
+                            <p class="mfld__hint mf__wide" style="margin-top:-6px">
+                                {{ __('mus.caja.caja_ocupada', ['caja' => $ocupada->etiqueta, 'quien' => $ocupada->sessions->first()->user?->nombre_completo]) }}
+                            </p>
+                        @endforeach
+                    @endif
+
                     <x-mus.field name="opening_amount" :label="__('mus.caja.base_monto')" type="number"
                                  step="1" min="0" prefix="$" :required="true" :value="0"
                                  :hint="__('mus.caja.base_hint')" />

@@ -18,6 +18,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="theme-color" content="#0E1723">
     <title>{{ $active === 'register' ? 'Crear cuenta' : 'Iniciar sesión' }} · {{ $brand }}</title>
+    <meta name="description" content="Ingresa a {{ $brand }}: punto de venta, inventario, caja y reportes para tu negocio.">
+    <meta name="robots" content="noindex, follow">
+    @include('sitio.partials.iconos')
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -892,6 +895,7 @@
                 {{-- ============ REGISTRO ============ --}}
                 <form class="form" data-form="register" method="POST" action="{{ route('register') }}" novalidate>
                     @csrf
+                    <x-mus.antispam />
                     <input type="hidden" name="form_type" value="register">
 
                     <div class="form__eyebrow">Primera vez aquí</div>

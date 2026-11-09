@@ -123,6 +123,32 @@ class InventoryMathService
         return $result;
     }
 
+    /**
+     * Costo promedio ponderado tras una entrada de mercancía.
+     *
+     *   (stock_actual × costo_actual + cantidad_entrante × costo_entrante)
+     *   ─────────────────────────────────────────────────────────────────
+     *                 stock_actual + cantidad_entrante
+     *
+     * Un stock negativo (vendido sin existencia) se trata como cero: no hay
+     * unidades reales que promediar y arrastrarlo inflaría el costo.
+     */
+    public function weightedAverageCost(float $stockBefore, float $costBefore, float $qtyIn, float $unitCostIn): float
+    {
+        $stockBefore = max(0.0, $stockBefore);
+
+        if ($qtyIn <= 0) {
+            return $this->fromCents($this->toCents($costBefore));
+        }
+        if ($stockBefore <= 0) {
+            return $this->fromCents($this->toCents($unitCostIn));
+        }
+
+        $valueCents = $stockBefore * $this->toCents($costBefore) + $qtyIn * $this->toCents($unitCostIn);
+
+        return $this->fromCents((int) round($valueCents / ($stockBefore + $qtyIn)));
+    }
+
     /** Precio unitario sugerido = costo unitario × (1 + markup%). */
     public function suggestUnitPrice(float $unitCost, float $markupPercent): float
     {
@@ -170,38 +196,44 @@ class InventoryMathService
      * @param  array<string, mixed>|null $footer      {subtotal, descuento, iva, total}
      * @return array{suma_renglones:float, cuadra:bool|null, diferencia:float|null, detalle:string|null}
      */
-    public function reconcileInvoice(array $lineTotals, ?array $footer): array
+    public function reconcileInvoice(array $lineTotals, ?array $footer, float $extraCharges = 0.0): array
     {
-        $sumCents = array_sum(array_map(fn ($v) => $this->toCents((float) $v), $lineTotals));
+        // Fletes, recargos y otros cargos que no son mercancía: no entran al
+        // inventario, pero sí al cuadre contra el pie de la factura.
+        $sumCents = array_sum(array_map(fn ($v) => $this->toCents((float) $v), $lineTotals))
+                  + $this->toCents($extraCharges);
         $sum      = $this->fromCents($sumCents);
-        $subtotal = $footer['subtotal'] ?? null;
+        $num = fn (string $k) => isset($footer[$k]) && is_numeric($footer[$k]) ? $this->toCents((float) $footer[$k]) : null;
+        $subtotal = $num('subtotal');
+        $discount = $num('descuento') ?? 0;
+        $tax      = $num('iva');
+        $total    = $num('total');
 
-        if (! is_numeric($subtotal)) {
+        // Cada proveedor arma el pie a su manera: el subtotal puede ir antes o
+        // después del descuento, y los fletes pueden ir dentro o fuera de él.
+        // Se acepta cualquiera de las lecturas razonables.
+        $candidates = array_values(array_filter([
+            $subtotal,
+            $subtotal !== null ? $subtotal - $discount : null,
+            $total !== null && $tax !== null ? $total - $tax : null,
+            $total !== null && $tax === null ? $total : null,
+        ], fn ($v) => $v !== null));
+
+        if ($candidates === []) {
             return ['suma_renglones' => $sum, 'cuadra' => null, 'diferencia' => null,
-                    'detalle' => 'La factura no muestra subtotal legible; no se pudo cuadrar.'];
+                    'detalle' => 'La factura no muestra subtotal ni total legibles; no se pudo cuadrar.'];
         }
 
-        $discountCents = $this->toCents((float) ($footer['descuento'] ?? 0));
-        $subtotalCents = $this->toCents((float) $subtotal);
         // Tolerancia: 1 centavo por renglón (redondeos del proveedor), mínimo 1 peso.
         $toleranceCents = max(100, count($lineTotals));
-
-        // Los proveedores imprimen el subtotal antes o después del descuento: se aceptan ambos.
-        $diffs = [$sumCents - $subtotalCents, $sumCents - ($subtotalCents - $discountCents)];
-        $best  = min(array_map('abs', $diffs));
-        $ok    = $best <= $toleranceCents;
-
-        if ($ok && isset($footer['total'], $footer['iva']) && is_numeric($footer['total'])) {
-            $expected = $subtotalCents - $discountCents + $this->toCents((float) $footer['iva']);
-            $ok = abs($expected - $this->toCents((float) $footer['total'])) <= $toleranceCents
-               || abs($subtotalCents + $this->toCents((float) $footer['iva']) - $this->toCents((float) $footer['total'])) <= $toleranceCents;
-        }
+        $best = min(array_map(fn ($c) => abs($sumCents - $c), $candidates));
+        $ok   = $best <= $toleranceCents;
 
         return [
             'suma_renglones' => $sum,
             'cuadra'         => $ok,
             'diferencia'     => $this->fromCents($best),
-            'detalle'        => $ok ? null : 'La suma de los renglones no coincide con el pie de la factura: puede faltar un renglón o haber un valor mal leído.',
+            'detalle'        => $ok ? null : 'La suma de los renglones' . ($extraCharges > 0 ? ' y los cargos' : '') . ' no coincide con el pie de la factura: puede faltar un renglón o haber un valor mal leído.',
         ];
     }
 

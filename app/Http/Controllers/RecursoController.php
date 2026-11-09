@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Agenda\BloquearRecursoRequest;
+use App\Http\Requests\Agenda\GuardarRecursoRequest;
 use App\Models\Bloqueo;
 use App\Models\Horario;
 use App\Models\Recurso;
@@ -10,7 +12,6 @@ use App\Support\Contexto;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 
 /**
  * Quién atiende, cuándo, y cuándo no.
@@ -41,9 +42,9 @@ class RecursoController extends Controller implements HasMiddleware
         return view('recursos.create', $this->listas());
     }
 
-    public function store(Request $request)
+    public function store(GuardarRecursoRequest $request)
     {
-        $datos = $this->validar($request);
+        $datos = $this->datos($request);
 
         $recurso = Recurso::create($datos + ['tienda_id' => Contexto::tiendaId()]);
 
@@ -60,9 +61,9 @@ class RecursoController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function update(Request $request, Recurso $recurso)
+    public function update(GuardarRecursoRequest $request, Recurso $recurso)
     {
-        $recurso->update($this->validar($request));
+        $recurso->update($this->datos($request));
 
         $this->guardarHorarios($request, $recurso);
 
@@ -88,15 +89,9 @@ class RecursoController extends Controller implements HasMiddleware
 
     /* ═══════════════ Bloqueos ═══════════════ */
 
-    public function bloquear(Request $request, Recurso $recurso)
+    public function bloquear(BloquearRecursoRequest $request, Recurso $recurso)
     {
-        $datos = $request->validate([
-            'inicio' => ['required', 'date'],
-            'fin'    => ['required', 'date', 'after:inicio'],
-            'motivo' => ['nullable', 'string', 'max:150'],
-        ], [
-            'fin.after' => 'El bloqueo tiene que terminar después de empezar.',
-        ]);
+        $datos = $request->validated();
 
         $chocan = $recurso->citas()->vivas()->quePisan($datos['inicio'], $datos['fin'])->count();
 
@@ -122,21 +117,15 @@ class RecursoController extends Controller implements HasMiddleware
 
     /* ═══════════════ Apoyo ═══════════════ */
 
-    /** @return array<string, mixed> */
-    private function validar(Request $request): array
+    /**
+     * Datos validados del recurso. Una casilla desmarcada no viaja en el
+     * formulario: sin esto `activo` nunca volvería a false.
+     *
+     * @return array<string, mixed>
+     */
+    private function datos(GuardarRecursoRequest $request): array
     {
-        return $request->validate([
-            'nombre'  => ['required', 'string', 'max:120'],
-            'tipo'    => ['required', Rule::in(array_keys(Recurso::TIPOS))],
-            'color'   => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'user_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
-            'activo'  => ['nullable', 'boolean'],
-            'orden'   => ['nullable', 'integer', 'min:0', 'max:999'],
-            'notas'   => ['nullable', 'string', 'max:255'],
-        ], [
-            'nombre.required' => '¿Cómo se llama?',
-            'color.regex'     => 'El color va en formato #RRGGBB.',
-        ]) + ['activo' => $request->boolean('activo')];
+        return ['activo' => $request->boolean('activo')] + $request->validated();
     }
 
     /**

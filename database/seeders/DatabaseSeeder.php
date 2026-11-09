@@ -40,6 +40,7 @@ class DatabaseSeeder extends Seeder
             PeopleSeeder::class,           // 6. proveedores y clientes
             ProductSeeder::class,          // 7. catálogo de productos
             DemoSeeder::class,             // 8. movimiento de demostración
+            RrhhSeeder::class,             // 9. equipo del local (RN-44)
         ]);
 
         // Los usuarios se crean en el paso 3, cuando la empresa ya existe

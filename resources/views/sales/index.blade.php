@@ -2,6 +2,9 @@
 
 <x-mus.page :title="__('mus.ventas.titulo')" :subtitle="__('mus.ventas.subtitulo')" icon="money">
     <x-slot name="actions">
+        @can('reportes.ver')
+            <x-mus.btn href="{{ route('sales.monitor') }}" icon="clock">{{ __('menu.en_vivo') }}</x-mus.btn>
+        @endcan
         @can('ventas.crear')
             <x-mus.btn href="{{ route('pos.index') }}" variant="primary" icon="plus">{{ __('mus.ventas.nueva') }}</x-mus.btn>
         @endcan

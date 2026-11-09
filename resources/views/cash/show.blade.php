@@ -121,8 +121,49 @@
                 @endif
             </x-mus.panel>
 
+            {{-- AT-CAJ-001: ingresos y retiros de efectivo del turno. --}}
+            @if ($cash->movements->count() || ($abierta && auth()->user()->can('moverEfectivo', $cash)))
+                <x-mus.panel :title="__('mus.caja.movimientos')" :sub="__('mus.caja.movimientos_sub')">
+                    @if ($cash->movements->count())
+                        <ul class="cmed">
+                            @foreach ($cash->movements as $mov)
+                                <li>
+                                    <span>
+                                        <b>{{ $mov->type === 'retiro' ? __('mus.caja.retiro') : __('mus.caja.ingreso') }} · {{ $mov->reason }}</b>
+                                        <i>{{ $mov->user?->nombre_completo ?? '—' }} · {{ Formato::enPalabras($mov->created_at, 'HH:mm') }}</i>
+                                    </span>
+                                    <em class="{{ $mov->type === 'retiro' ? 'bad' : 'ok' }}">
+                                        {{ $mov->type === 'retiro' ? '−' : '+' }}<i class="moneda">$</i>{{ number_format((float) $mov->amount, 0, ',', '.') }}
+                                    </em>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <p class="cvacio">{{ __('mus.caja.sin_movimientos') }}</p>
+                    @endif
+
+                    @if ($abierta && auth()->user()->can('moverEfectivo', $cash))
+                        <form method="POST" action="{{ route('cash.movimientos.store', $cash) }}" class="cmov" novalidate>
+                            @csrf
+                            <div class="mf__grid">
+                                <x-mus.select name="type" :label="__('mus.caja.tipo_movimiento')" :required="true"
+                                              :options="['retiro' => __('mus.caja.retiro'), 'ingreso' => __('mus.caja.ingreso')]" />
+                                <x-mus.field name="amount" :label="__('mus.caja.valor')" type="number" step="1" min="1"
+                                             prefix="$" :required="true" />
+                                <x-mus.field name="reason" :label="__('mus.caja.motivo')" :required="true" :wide="true" max="200"
+                                             :hint="__('mus.caja.motivo_hint')" />
+                            </div>
+                            <x-mus.btn type="submit" variant="primary" icon="save" :block="true">{{ __('mus.caja.registrar_movimiento') }}</x-mus.btn>
+                        </form>
+                    @endif
+                </x-mus.panel>
+            @endif
+
             <x-mus.panel :title="__('mus.caja.datos_turno')">
                 <dl class="mdl">
+                    @if ($cash->register)
+                        <div><dt>{{ __('mus.caja.caja_fisica') }}</dt><dd>{{ $cash->register->etiqueta }}</dd></div>
+                    @endif
                     <div><dt>{{ __('mus.caja.abrio') }}</dt><dd>{{ $cash->user->name ?? '—' }}</dd></div>
                     <div><dt>{{ __('mus.caja.apertura') }}</dt><dd>{{ Formato::enPalabras($cash->opened_at, 'D MMM YYYY, HH:mm') }}</dd></div>
                     @if (! $abierta)
@@ -198,6 +239,10 @@
         .cmed li:last-child{ border-bottom:0; }
         .cmed b{ display:block; font-size:12.9px; font-weight:600; color:var(--ink); }
         .cmed i{ display:block; font-style:normal; font-size:11.3px; color:var(--muted); }
+        .cmed em.ok{ color:var(--ok); }
+        .cmed em.bad{ color:var(--bad); }
+        .cmov{ margin-top:14px; padding-top:14px; border-top:1px solid var(--line-2);
+               display:grid; gap:12px; }
         .cmed em{ font-style:normal; font-size:14px; font-weight:700; color:var(--ink);
                   font-variant-numeric:tabular-nums; }
         .cvacio{ margin:0; font-size:12.8px; color:var(--muted); }

@@ -29,12 +29,27 @@ use Illuminate\Support\Facades\Schema;
  * Las dos tablas tienen una columna de texto como llave primaria. Cambiar
  * una llave primaria en MySQL sobre una tabla con datos es de las
  * operaciones que fallan a la mitad y dejan la tabla en un estado raro.
- * Son tablas chicas —una decena de filas—, así que se leen enteras, se
- * vuelven a crear con la forma nueva y se devuelven los datos. Más pasos,
- * cero sorpresas.
+ *
+ * ── H-08 (2026-10-21): reconstruir sin perder datos ──
+ *
+ * La primera versión hacía `drop` y guardaba las filas solo en memoria de
+ * PHP. En MySQL cada DDL hace commit implícito: si el proceso moría entre
+ * el `drop` y los `insert`, los consecutivos (RN-07) y la configuración
+ * se perdían sin respaldo. Ahora:
+ *
+ *   1. La tabla vieja se RENOMBRA a `<tabla>_respaldo_h08` (nunca se borra primero).
+ *   2. Se crea la nueva y se copian las filas desde el respaldo.
+ *   3. Solo si el conteo cuadra se elimina el respaldo; si no, queda ahí
+ *      y la migración se detiene con un error que lo dice.
+ *
+ * Y el `down()` ya no aplana en silencio a una sola empresa/tienda: si
+ * hay datos de más de una, se niega (borraría consecutivos y repetiría
+ * números de factura).
  */
 return new class extends Migration
 {
+    private const SUFIJO_RESPALDO = '_respaldo_h08';
+
     public function up(): void
     {
         $empresaId = (int) (DB::table('empresas')->min('id') ?: 1);
@@ -52,34 +67,25 @@ return new class extends Migration
             return;
         }
 
-        // Se guarda lo que hay ANTES de tocar nada. El valor no se puede
-        // recalcular: puede ir por delante del documento más alto si se
-        // anuló el último, y volver atrás repetiría un número.
-        $viejos = DB::table('counters')->get();
+        $this->reconstruir(
+            'counters',
+            function (Blueprint $t) {
+                $t->id();
+                $t->foreignId('tienda_id')->constrained('tiendas')->cascadeOnDelete();
+                $t->string('key', 40);
+                $t->unsignedBigInteger('value')->default(0);
+                $t->timestamps();
 
-        Schema::drop('counters');
-
-        Schema::create('counters', function (Blueprint $t) {
-            $t->id();
-            $t->foreignId('tienda_id')->constrained('tiendas')->cascadeOnDelete();
-            $t->string('key', 40);
-            $t->unsignedBigInteger('value')->default(0);
-            $t->timestamps();
-
-            $t->unique(['tienda_id', 'key']);
-        });
-
-        $ahora = now();
-
-        foreach ($viejos as $fila) {
-            DB::table('counters')->insert([
+                $t->unique(['tienda_id', 'key']);
+            },
+            fn ($fila, $ahora) => [
                 'tienda_id'  => $tiendaId,
                 'key'        => $fila->key,
                 'value'      => $fila->value,
                 'created_at' => $fila->created_at ?? $ahora,
                 'updated_at' => $fila->updated_at ?? $ahora,
-            ]);
-        }
+            ],
+        );
     }
 
     /* ═══════════════ Ajustes ═══════════════ */
@@ -90,86 +96,140 @@ return new class extends Migration
             return;
         }
 
-        $viejos = DB::table('settings')->get();
+        $this->reconstruir(
+            'settings',
+            function (Blueprint $t) {
+                $t->id();
+                $t->foreignId('empresa_id')->constrained('empresas')->cascadeOnDelete();
+                $t->string('key', 80);
+                $t->text('value')->nullable();
+                $t->string('group', 40)->default('general');
+                $t->timestamps();
 
-        Schema::drop('settings');
-
-        Schema::create('settings', function (Blueprint $t) {
-            $t->id();
-            $t->foreignId('empresa_id')->constrained('empresas')->cascadeOnDelete();
-            $t->string('key', 80);
-            $t->text('value')->nullable();
-            $t->string('group', 40)->default('general');
-            $t->timestamps();
-
-            $t->unique(['empresa_id', 'key']);
-        });
-
-        $ahora = now();
-
-        foreach ($viejos as $fila) {
-            DB::table('settings')->insert([
+                $t->unique(['empresa_id', 'key']);
+            },
+            fn ($fila, $ahora) => [
                 'empresa_id' => $empresaId,
                 'key'        => $fila->key,
                 'value'      => $fila->value,
                 'group'      => $fila->group ?? 'general',
                 'created_at' => $fila->created_at ?? $ahora,
                 'updated_at' => $fila->updated_at ?? $ahora,
-            ]);
-        }
+            ],
+        );
 
         cache()->forget('mus.settings.v2');
     }
 
+    /* ═══════════════ Reversa ═══════════════ */
+
     public function down(): void
     {
-        /* Se vuelve a la forma vieja conservando los datos de la primera
-           empresa y la primera tienda, que es lo único que cabe allá. */
+        /*
+         * La forma vieja solo admite UNA empresa y UNA tienda. Si ya hay
+         * datos de varias, volver atrás borraría la configuración de los
+         * demás clientes y reiniciaría consecutivos (números de factura
+         * repetidos). Eso no se hace en silencio: se detiene aquí.
+         */
+        $this->exigirUnSoloAmbito('counters', 'tienda_id', 'tiendas');
+        $this->exigirUnSoloAmbito('settings', 'empresa_id', 'empresas');
 
         if (Schema::hasTable('counters') && Schema::hasColumn('counters', 'tienda_id')) {
-            $viejos = DB::table('counters')->orderBy('tienda_id')->get()->unique('key');
-
-            Schema::drop('counters');
-
-            Schema::create('counters', function (Blueprint $t) {
-                $t->string('key', 40)->primary();
-                $t->unsignedBigInteger('value')->default(0);
-                $t->timestamps();
-            });
-
-            foreach ($viejos as $fila) {
-                DB::table('counters')->insert([
+            $this->reconstruir(
+                'counters',
+                function (Blueprint $t) {
+                    $t->string('key', 40)->primary();
+                    $t->unsignedBigInteger('value')->default(0);
+                    $t->timestamps();
+                },
+                fn ($fila) => [
                     'key'        => $fila->key,
                     'value'      => $fila->value,
                     'created_at' => $fila->created_at,
                     'updated_at' => $fila->updated_at,
-                ]);
-            }
+                ],
+            );
         }
 
         if (Schema::hasTable('settings') && Schema::hasColumn('settings', 'empresa_id')) {
-            $viejos = DB::table('settings')->orderBy('empresa_id')->get()->unique('key');
-
-            Schema::drop('settings');
-
-            Schema::create('settings', function (Blueprint $t) {
-                $t->string('key', 80)->primary();
-                $t->text('value')->nullable();
-                $t->string('group', 40)->default('general');
-                $t->timestamps();
-            });
-
-            foreach ($viejos as $fila) {
-                DB::table('settings')->insert([
+            $this->reconstruir(
+                'settings',
+                function (Blueprint $t) {
+                    $t->string('key', 80)->primary();
+                    $t->text('value')->nullable();
+                    $t->string('group', 40)->default('general');
+                    $t->timestamps();
+                },
+                fn ($fila) => [
                     'key'        => $fila->key,
                     'value'      => $fila->value,
                     'group'      => $fila->group,
                     'created_at' => $fila->created_at,
                     'updated_at' => $fila->updated_at,
-                ]);
-            }
+                ],
+            );
         }
 
         cache()->forget('mus.settings.v2');
+    }
+
+    /* ═══════════════ Apoyo ═══════════════ */
+
+    /**
+     * Reconstruye una tabla sin que sus filas vivan nunca solo en memoria.
+     *
+     * @param  string    $tabla    Tabla a reconstruir.
+     * @param  callable  $esquema  Definición nueva (Blueprint).
+     * @param  callable  $mapear   (object $fila, Carbon $ahora): array → fila nueva.
+     *
+     * @throws \RuntimeException si la copia no cuadra; el respaldo queda intacto.
+     */
+    private function reconstruir(string $tabla, callable $esquema, callable $mapear): void
+    {
+        $respaldo = $tabla . self::SUFIJO_RESPALDO;
+
+        if (Schema::hasTable($respaldo)) {
+            throw new \RuntimeException(
+                "Ya existe «{$respaldo}» de un intento anterior. Revísala y elimínala antes de reintentar."
+            );
+        }
+
+        Schema::rename($tabla, $respaldo);
+        Schema::create($tabla, $esquema);
+
+        $ahora   = now();
+        $origen  = DB::table($respaldo)->count();
+
+        DB::table($respaldo)->orderBy('key')->chunk(500, function ($filas) use ($tabla, $mapear, $ahora) {
+            DB::table($tabla)->insert($filas->map(fn ($f) => $mapear($f, $ahora))->all());
+        });
+
+        $copiadas = DB::table($tabla)->count();
+
+        if ($copiadas !== $origen) {
+            throw new \RuntimeException(
+                "«{$tabla}»: se copiaron {$copiadas} de {$origen} filas. "
+                . "Los datos originales siguen en «{$respaldo}»."
+            );
+        }
+
+        Schema::drop($respaldo);
+    }
+
+    /** Detiene el rollback si la tabla ya tiene datos de más de un ámbito. */
+    private function exigirUnSoloAmbito(string $tabla, string $columna, string $nombreAmbito): void
+    {
+        if (! Schema::hasTable($tabla) || ! Schema::hasColumn($tabla, $columna)) {
+            return;
+        }
+
+        $ambitos = DB::table($tabla)->distinct()->count($columna);
+
+        if ($ambitos > 1) {
+            throw new \RuntimeException(
+                "Rollback bloqueado (H-08): «{$tabla}» tiene datos de {$ambitos} {$nombreAmbito}. "
+                . 'Volver al esquema anterior borraría información de los demás y repetiría consecutivos.'
+            );
+        }
     }
 };

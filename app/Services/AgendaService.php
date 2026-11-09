@@ -178,6 +178,8 @@ class AgendaService
                 // producto —un tinte, por ejemplo—, eso se descuenta aparte
                 // y a propósito, no de rebote al cobrar.
                 descontarStock: $cita->product?->duracion_minutos === null,
+                // El precio lo fija la cita (pactado al agendar), no el navegador.
+                permitirCambioDePrecio: true,
             );
 
             $cita->update(['sale_id' => $venta->id]);

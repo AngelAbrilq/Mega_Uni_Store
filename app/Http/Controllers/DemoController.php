@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Plataforma\CrearDemoRequest;
 use App\Services\DemoService;
 use App\Support\Contexto;
 use App\Support\Rubros;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 /**
  * «Quiero probarlo» sin que nadie tenga que estar disponible.
@@ -39,25 +38,9 @@ class DemoController extends Controller
         ]);
     }
 
-    public function guardar(Request $request, DemoService $demos)
+    public function guardar(CrearDemoRequest $request, DemoService $demos)
     {
-        $datos = $request->validate([
-            'negocio'  => ['required', 'string', 'max:120'],
-            'nombre'   => ['required', 'string', 'max:120'],
-            'email'    => ['required', 'email', 'max:150', 'unique:users,email'],
-            'telefono' => ['nullable', 'string', 'max:30'],
-            'rubro'    => ['required', Rule::in(array_keys(Rubros::paraEscoger()))],
-            'password' => ['required', 'confirmed', Password::min(8)],
-        ], [
-            'negocio.required'   => '¿Cómo se llama tu negocio?',
-            'nombre.required'    => '¿Cómo te llamas?',
-            'email.required'     => 'Necesitamos un correo para tu cuenta.',
-            'email.unique'       => 'Ese correo ya tiene una cuenta. Entra con ella.',
-            'rubro.required'     => 'Escoge qué clase de negocio tienes.',
-            'rubro.in'           => 'Esa clase de negocio no está en la lista.',
-            'password.required'  => 'Define una contraseña para entrar.',
-            'password.confirmed' => 'Las dos contraseñas no coinciden.',
-        ]);
+        $datos = $request->validated();
 
         $usuario = $demos->crear($datos);
 

@@ -47,6 +47,30 @@ class Sale extends Model
         return $this->hasMany(SaleItem::class);
     }
 
+    /** CL-PUN-001 · Puntos que ganó (o se le devolvieron a) esta venta. */
+    public function loyaltyTransactions(): HasMany
+    {
+        return $this->hasMany(LoyaltyTransaction::class);
+    }
+
+    /** VD-VTA-002 · Solicitudes de anulación (RN-43). */
+    public function voidRequests(): HasMany
+    {
+        return $this->hasMany(SaleVoidRequest::class)->latest('id');
+    }
+
+    /** La solicitud de anulación que espera aprobación, si hay. */
+    public function getAnulacionPendienteAttribute(): ?SaleVoidRequest
+    {
+        return $this->voidRequests->firstWhere('status', SaleVoidRequest::PENDIENTE);
+    }
+
+    /** TBL-VCU-001 · Cupones aplicados en esta venta. */
+    public function coupons(): HasMany
+    {
+        return $this->hasMany(SaleCoupon::class);
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(SalePayment::class);
@@ -59,7 +83,7 @@ class Sale extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     public function cashSession(): BelongsTo
@@ -69,7 +93,7 @@ class Sale extends Model
 
     public function voider(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'voided_by');
+        return $this->belongsTo(User::class, 'voided_by')->withTrashed();
     }
 
     public function returns(): HasMany
@@ -115,13 +139,36 @@ class Sale extends Model
     /** Total devuelto al cliente sobre esta venta. */
     public function getTotalDevueltoAttribute(): float
     {
-        return (float) $this->returns()->sum('total');
+        return (float) $this->returns()->aprobadas()->sum('total');
     }
 
     /** ¿Queda algo por devolver? */
+    /**
+     * Lo que el cliente todavía debe porque un pago fue rechazado (RN-32).
+     *
+     * Lo recibido de verdad son los pagos no rechazados menos el vuelto que
+     * se le devolvió. Si eso no alcanza el total, la diferencia es saldo.
+     */
+    public function getSaldoPendienteAttribute(): float
+    {
+        $pagos  = $this->relationLoaded('payments') ? $this->payments : $this->payments()->get();
+        $valido = (float) $pagos->where('status', '!=', SalePayment::RECHAZADO)->sum('amount');
+
+        return round(max(0, (float) $this->total - ($valido - (float) $this->change_amount)), 2);
+    }
+
+    /** ¿Tiene algún pago esperando verificación? */
+    public function getPagoPorVerificarAttribute(): bool
+    {
+        $pagos = $this->relationLoaded('payments') ? $this->payments : $this->payments()->get();
+
+        return $pagos->contains('status', SalePayment::PENDIENTE);
+    }
+
     public function getTieneDevolucionAttribute(): bool
     {
-        return $this->returns()->exists();
+        // Una rechazada no cuenta: la venta vuelve a poderse anular (RN-25, RN-30).
+        return $this->returns()->vigentes()->exists();
     }
 
     public function getAnuladaAttribute(): bool

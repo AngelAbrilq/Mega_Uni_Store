@@ -30,6 +30,7 @@
 
         <form method="POST" action="{{ route('demo.guardar') }}" novalidate>
             @csrf
+            <x-mus.antispam />
 
             {{-- ══════════ Rubro ══════════ --}}
             <fieldset class="mdemo__rubros">

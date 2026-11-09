@@ -223,6 +223,11 @@
                                       ]"
                                       :value="$ajustes['venta.redondeo'] ?? '0'"
                                       :hint="__('settings.ventas.redondeo_hint')" />
+
+                        <x-mus.field name="venta_pesos_por_punto" :label="__('settings.ventas.pesos_por_punto')" type="number"
+                                     step="1" min="1" prefix="$"
+                                     :value="$ajustes['venta.pesos_por_punto'] ?? '1000'"
+                                     :hint="__('settings.ventas.pesos_por_punto_hint')" />
                     </div>
 
                     <div class="sopts">
@@ -233,6 +238,10 @@
                         <x-mus.toggle name="venta_cliente_obligatorio" :label="__('settings.ventas.cliente_obligatorio')"
                                       :hint="__('settings.ventas.cliente_obligatorio_hint')"
                                       :checked="($ajustes['venta.cliente_obligatorio'] ?? '0') === '1'" />
+
+                        <x-mus.toggle name="venta_puntos_activos" :label="__('settings.ventas.puntos_activos')"
+                                      :hint="__('settings.ventas.puntos_activos_hint')"
+                                      :checked="($ajustes['venta.puntos_activos'] ?? '1') === '1'" />
                     </div>
                 </div>
             </x-mus.panel>

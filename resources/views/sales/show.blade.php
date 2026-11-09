@@ -1,4 +1,21 @@
-@php use App\Support\Formato; @endphp
+@php
+    use App\Support\Formato;
+
+    /* VD-VTA-002 · RN-43: quien tiene `ventas.anular` anula directo; quien solo
+       puede pedirlo, pide. Ninguno si ya está anulada, tiene devoluciones o
+       ya hay una solicitud esperando. */
+    $usuario     = auth()->user();
+    $pendiente   = $sale->anulacion_pendiente;
+    $rechazada   = $sale->voidRequests->firstWhere('status', \App\Models\SaleVoidRequest::RECHAZADA);
+    $anulable    = ! $sale->anulada && ! $sale->tiene_devolucion && ! $pendiente;
+    $modoAnular  = null;
+    if ($anulable && $usuario->can('ventas.anular') && $usuario->can('anular', $sale)) {
+        $modoAnular = 'directo';
+    } elseif ($anulable && $usuario->can('ventas.solicitar_anulacion') && $usuario->can('solicitarAnulacion', $sale)) {
+        $modoAnular = 'solicitud';
+    }
+    $puedeResolver = $pendiente && $usuario->can('ventas.anular') && $usuario->can('anular', $sale);
+@endphp
 
 <x-mus.page :title="__('mus.ventas.una') . ' ' . $sale->number"
             subtitle="{{ Formato::enPalabras($sale->sold_at, 'D [de] MMMM [de] YYYY, HH:mm') }}"
@@ -7,17 +24,57 @@
 
     <x-slot name="actions">
         <x-mus.btn href="{{ route('sales.recibo', $sale) }}" icon="id" target="_blank" id="btnRecibo">{{ __('mus.ventas.recibo') }}</x-mus.btn>
+        @if ($termica)
+            <x-mus.btn icon="id" id="btnTermica" type="button">{{ __('mus.ventas.imprimir_termica') }}</x-mus.btn>
+        @endif
+        {{-- H-04 / RN-25 / RN-27: solo se ofrece lo que el servidor va a aceptar. --}}
         @can('ventas.devolver')
-            @unless ($sale->anulada)
+            @if (! $sale->anulada && ! $pendiente && auth()->user()->can('devolver', $sale))
                 <x-mus.btn href="{{ route('returns.create', $sale) }}" icon="back">{{ __('mus.ventas.devolucion') }}</x-mus.btn>
-            @endunless
+            @endif
         @endcan
-        @can('ventas.anular')
-            @unless ($sale->anulada)
-                <x-mus.btn variant="danger" icon="alert" id="btnAnular">{{ __('mus.ventas.anular') }}</x-mus.btn>
-            @endunless
-        @endcan
+        @if ($modoAnular)
+            <x-mus.btn variant="danger" icon="alert" id="btnAnular">
+                {{ $modoAnular === 'directo' ? __('mus.ventas.anular') : 'Pedir anulación' }}
+            </x-mus.btn>
+        @endif
     </x-slot>
+
+    {{-- VD-VTA-002 · RN-43: anulación esperando aprobación --}}
+    @if ($pendiente)
+        <div class="vsol" data-reveal>
+            <span><x-mus.icon name="clock" :w="17" stroke-width="2.2" /></span>
+            <div>
+                <b>Anulación por aprobar</b>
+                <p>{{ $pendiente->requester?->nombre_completo ?? 'Alguien' }} la pidió {{ Formato::enPalabras($pendiente->created_at, 'D MMM, HH:mm') }}.
+                   Mientras tanto la venta sigue vigente y no admite devoluciones.</p>
+                <q>{{ $pendiente->reason }}</q>
+                @if ($puedeResolver)
+                    <div class="vsol__acc">
+                        <form method="POST" action="{{ route('void_requests.aprobar', $pendiente) }}">
+                            @csrf
+                            <button type="submit" class="mb mb--danger mb--sm">Aprobar y anular</button>
+                        </form>
+                        <form method="POST" action="{{ route('void_requests.rechazar', $pendiente) }}" class="vsol__rech">
+                            @csrf
+                            <input type="text" name="motivo" required minlength="5" maxlength="255" placeholder="Motivo del rechazo" aria-label="Motivo del rechazo">
+                            <button type="submit" class="mb mb--ghost mb--sm">Rechazar</button>
+                        </form>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @elseif ($rechazada && ! $sale->anulada)
+        <div class="vsol vsol--no" data-reveal>
+            <span><x-mus.icon name="close" :w="17" stroke-width="2.2" /></span>
+            <div>
+                <b>Anulación rechazada</b>
+                <p>{{ $rechazada->reviewer?->nombre_completo ?? 'Un supervisor' }} rechazó la solicitud de {{ $rechazada->requester?->nombre_completo ?? 'alguien' }}
+                   {{ Formato::enPalabras($rechazada->reviewed_at, 'D MMM, HH:mm') }}.</p>
+                <q>{{ $rechazada->rejection_reason }}</q>
+            </div>
+        </div>
+    @endif
 
     @if ($sale->anulada)
         <div class="vanul" data-reveal>
@@ -40,7 +97,7 @@
             <span><x-mus.icon name="back" :w="16" stroke-width="2.2" /></span>
             <div>
                 <b>{{ __('mus.ventas.con_devoluciones', ['n' => $sale->returns->count()]) }}</b>
-                <p>{{ __('mus.ventas.se_regreso', ['monto' => Formato::moneda($sale->returns->sum('total'))]) }}</p>
+                <p>{{ __('mus.ventas.se_regreso', ['monto' => Formato::moneda($sale->returns->where('status', \App\Models\SaleReturn::APROBADA)->sum('total'))]) }}</p>
                 <ul>
                     @foreach ($sale->returns as $d)
                         <li>
@@ -48,6 +105,8 @@
                             · {{ $d->returned_at?->format('d/m/Y') }}
                             · ${{ number_format((float) $d->total, 0, ',', '.') }}
                             · {{ \Illuminate\Support\Str::limit($d->reason, 40) }}
+                            @php [$etq, $tono] = $d->estado_etiqueta; @endphp
+                            <x-mus.badge :tone="$tono">{{ $etq }}</x-mus.badge>
                         </li>
                     @endforeach
                 </ul>
@@ -114,13 +173,38 @@
                 <ul class="vpag">
                     @foreach ($sale->payments as $p)
                         <li>
-                            <span>{{ $p->method_name }}</span>
+                            <span>
+                                {{ $p->method_name }}
+                                {{-- TBL-PAG-001 · RN-32 --}}
+                                @if ($p->status === 'pendiente')
+                                    <x-mus.badge tone="warn" :dot="true">Por verificar</x-mus.badge>
+                                @elseif ($p->status === 'rechazado')
+                                    <x-mus.badge tone="bad" :dot="true">Rechazado</x-mus.badge>
+                                @endif
+                            </span>
                             <b><i class="moneda">$</i>{{ number_format((float) $p->amount, 0, ',', '.') }}</b>
                             @if ($p->reference)<em>{{ $p->reference }}</em>@endif
+                            @if ($p->status === 'rechazado' && $p->rejection_reason)<em>{{ $p->rejection_reason }}</em>@endif
+                            @if ($p->status === 'pendiente')
+                                <div style="margin-top:6px">@include('payments._acciones', ['pago' => $p])</div>
+                            @endif
                         </li>
                     @endforeach
                 </ul>
+                @if ($sale->saldo_pendiente > 0)
+                    <p class="mfld__err" style="margin:10px 0 0">
+                        <x-mus.icon name="alert" :w="12" stroke-width="2.2" />
+                        <span>Saldo por cobrar: ${{ number_format($sale->saldo_pendiente, 0, ',', '.') }} (un pago fue rechazado).</span>
+                    </p>
+                @endif
                 <dl class="mdl" style="margin-top:10px">
+                    {{-- TBL-VCU-001 --}}
+                    @foreach ($sale->coupons as $uso)
+                        <div>
+                            <dt>Cupón {{ $uso->code }}</dt>
+                            <dd>−<i class="moneda">$</i>{{ number_format((float) $uso->discount_amount, 0, ',', '.') }}</dd>
+                        </div>
+                    @endforeach
                     <div><dt>{{ __('mus.pos.recibido') }}</dt><dd><i class="moneda">$</i>{{ number_format((float) $sale->paid_total, 0, ',', '.') }}</dd></div>
                     <div><dt>{{ __('mus.pos.cambio') }}</dt><dd><i class="moneda">$</i>{{ number_format((float) $sale->change_amount, 0, ',', '.') }}</dd></div>
                 </dl>
@@ -136,6 +220,16 @@
                             @else {{ __('mus.vacio.consumidor_final') }} @endif
                         </dd>
                     </div>
+                    @if ($sale->customer)
+                        @php $puntosVenta = (int) $sale->loyaltyTransactions()->withoutGlobalScopes()->sum('points'); @endphp
+                        <div>
+                            <dt>Puntos de fidelidad</dt>
+                            <dd>
+                                {{ $puntosVenta >= 0 ? '+' : '' }}{{ number_format($puntosVenta, 0, ',', '.') }}
+                                <small style="opacity:.6">vigentes de esta venta</small>
+                            </dd>
+                        </div>
+                    @endif
                     <div><dt>{{ __('mus.ventas.vendedor') }}</dt><dd>{{ $sale->user->name ?? '—' }}</dd></div>
                     <div>
                         <dt>{{ __('mus.ventas.turno_caja') }}</dt>
@@ -171,27 +265,30 @@
         </div>
     </div>
 
-    {{-- Formulario de anulación --}}
-    @can('ventas.anular')
-        @unless ($sale->anulada)
-            <div class="vmodal" id="modalAnular" role="dialog" aria-modal="true">
-                <form method="POST" action="{{ route('sales.anular', $sale) }}" class="vmodal__box">
-                    @csrf
+    {{-- Formulario de anulación: directa (ventas.anular) o solicitud (VD-VTA-002) --}}
+    @if ($modoAnular)
+        <div class="vmodal" id="modalAnular" role="dialog" aria-modal="true">
+            <form method="POST" action="{{ $modoAnular === 'directo' ? route('sales.anular', $sale) : route('void_requests.store', $sale) }}" class="vmodal__box">
+                @csrf
+                @if ($modoAnular === 'directo')
                     <h3>{{ __('mus.ventas.anular_titulo') }} {{ $sale->number }}</h3>
                     <p>{{ __('mus.ventas.anular_aviso') }}</p>
-                    <label>
-                        {{ __('mus.ventas.anular_motivo') }}
-                        <textarea name="motivo" rows="3" required minlength="5"
-                                  placeholder="{{ __('mus.ventas.anular_motivo_ph') }}"></textarea>
-                    </label>
-                    <div class="vmodal__foot">
-                        <button type="button" class="mb mb--ghost" id="btnCancelarAnular">{{ __('mus.acciones.cancelar') }}</button>
-                        <button type="submit" class="mb mb--danger">{{ __('mus.ventas.anular_si') }}</button>
-                    </div>
-                </form>
-            </div>
-        @endunless
-    @endcan
+                @else
+                    <h3>Pedir la anulación de {{ $sale->number }}</h3>
+                    <p>Un supervisor la revisa. Si la aprueba, la venta queda anulada y los productos vuelven al inventario; mientras tanto no cambia nada.</p>
+                @endif
+                <label>
+                    {{ __('mus.ventas.anular_motivo') }}
+                    <textarea name="motivo" rows="3" required minlength="5"
+                              placeholder="{{ __('mus.ventas.anular_motivo_ph') }}"></textarea>
+                </label>
+                <div class="vmodal__foot">
+                    <button type="button" class="mb mb--ghost" id="btnCancelarAnular">{{ __('mus.acciones.cancelar') }}</button>
+                    <button type="submit" class="mb mb--danger">{{ $modoAnular === 'directo' ? __('mus.ventas.anular_si') : 'Enviar solicitud' }}</button>
+                </div>
+            </form>
+        </div>
+    @endif
 
     @push('styles')
     <style>
@@ -207,6 +304,20 @@
         .vanul b{ display:block; font-size:13.6px; color:var(--ink); }
         .vanul p{ margin:3px 0 0; font-size:12.6px; color:var(--muted); line-height:1.5; }
         .vanul q{ display:block; margin-top:6px; font-size:12.6px; color:var(--ink-2); font-style:italic; }
+
+        .vsol{ display:flex; gap:12px; align-items:flex-start; margin-bottom:16px;
+               padding:14px 16px; border:1px solid rgba(196,127,5,.35); border-radius:12px; background:rgba(245,165,36,.07); }
+        .vsol > span{ display:grid; place-items:center; width:32px; height:32px; flex:none; border-radius:9px; background:#c47f05; color:#fff; }
+        .vsol--no{ border-color:var(--line); background:var(--paper); }
+        .vsol--no > span{ background:var(--muted-2); }
+        .vsol > div{ flex:1; min-width:0; }
+        .vsol b{ display:block; font-size:13.6px; color:var(--ink); }
+        .vsol p{ margin:3px 0 0; font-size:12.6px; color:var(--muted); line-height:1.5; }
+        .vsol q{ display:block; margin-top:6px; font-size:12.6px; color:var(--ink-2); font-style:italic; }
+        .vsol__acc{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:11px; }
+        .vsol__acc form{ display:flex; gap:6px; align-items:center; margin:0; }
+        .vsol__rech input{ height:30px; padding:0 9px; border:1px solid var(--line); border-radius:8px; font:inherit; font-size:12.5px; min-width:200px; background:var(--card); }
+        @media (max-width:760px){ .vsol__rech{ flex:1 0 100%; } .vsol__rech input{ flex:1; min-width:0; height:38px; font-size:16px; } }
 
         .vtot{ padding:13px 18px 16px; border-top:1px solid var(--line-2); background:var(--paper); }
         .vtot > div{ display:flex; justify-content:space-between; align-items:baseline;
@@ -278,6 +389,43 @@
        aviso con el botón para abrirlo a mano. Un clic de más es mucho
        mejor que un cliente esperando el papel.
        ══════════════════════════════════════════════════════════════ */
+    /* ══════════════════════════════════════════════════════════════
+       RN-28 · Recibo por el agente de caja (papel térmico + nube).
+       El servidor arma los bytes ESC/POS; el navegador se los pasa al
+       agente en 127.0.0.1 como text/plain (sin preflight). Si el agente
+       no responde, se cae al recibo del navegador: nunca sin papel.
+       ══════════════════════════════════════════════════════════════ */
+    var TERMICA = @json($termica);
+
+    function imprimirEnTermica() {
+        return fetch(TERMICA.recibo, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+            .then(function (r) { if (!r.ok) throw new Error('recibo'); return r.json(); })
+            .then(function (d) {
+                return fetch(TERMICA.url + '/imprimir', {
+                    method:  'POST',
+                    mode:    'cors',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body:    JSON.stringify({ token: TERMICA.token, datos: d.datos })
+                });
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (d) { if (!d.impreso) throw new Error(d.detalle || 'agente'); });
+    }
+
+    (function () {
+        var boton = document.getElementById('btnTermica');
+        if (!boton || !TERMICA) return;
+
+        boton.addEventListener('click', function () {
+            var texto = boton.textContent;
+            boton.disabled = true;
+            imprimirEnTermica()
+                .then(function () { boton.textContent = @json(__('mus.ventas.termica_ok')); })
+                .catch(function () { boton.textContent = @json(__('mus.ventas.termica_fallo')); })
+                .then(function () { setTimeout(function () { boton.textContent = texto; boton.disabled = false; }, 1600); });
+        });
+    })();
+
     (function () {
         var url = new URL(window.location.href);
         if (url.searchParams.get('imprimir') !== '1') return;
@@ -289,6 +437,19 @@
         // recargar la página no vuelve a disparar todo esto.
         url.searchParams.delete('imprimir');
         window.history.replaceState({}, '', url.toString());
+
+        // Con agente: a la térmica. Si falla, sigue el camino del navegador.
+        if (TERMICA) {
+            imprimirEnTermica().catch(abrirEnNavegador);
+            return;
+        }
+
+        abrirEnNavegador();
+    })();
+
+    function abrirEnNavegador() {
+        var recibo = document.getElementById('btnRecibo');
+        if (!recibo) return;
 
         var ventana = null;
 
@@ -310,7 +471,7 @@
 
         var destino = document.querySelector('.mp') || document.body;
         destino.parentNode.insertBefore(aviso, destino);
-    })();
+    }
 
     (function () {
         var m = document.getElementById('modalAnular');

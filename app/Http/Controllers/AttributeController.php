@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Catalogo\GuardarAttributeRequest;
 use App\Models\Attribute;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 
 class AttributeController extends Controller implements HasMiddleware
 {
@@ -48,9 +48,9 @@ class AttributeController extends Controller implements HasMiddleware
         return view('attributes.create', ['tipos' => self::TIPOS]);
     }
 
-    public function store(Request $request)
+    public function store(GuardarAttributeRequest $request)
     {
-        $data = $this->validar($request);
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
 
         $atributo = Attribute::create($data);
@@ -69,9 +69,9 @@ class AttributeController extends Controller implements HasMiddleware
         return view('attributes.edit', ['attribute' => $attribute, 'tipos' => self::TIPOS]);
     }
 
-    public function update(Request $request, Attribute $attribute)
+    public function update(GuardarAttributeRequest $request, Attribute $attribute)
     {
-        $data = $this->validar($request, $attribute);
+        $data = $request->validated();
         $data['is_active'] = $request->boolean('is_active');
 
         $attribute->update($data);
@@ -87,18 +87,5 @@ class AttributeController extends Controller implements HasMiddleware
 
         return redirect()->route('attributes.index')
             ->with('success', 'Atributo «' . $nombre . '» eliminado.');
-    }
-
-    /** @return array<string, mixed> */
-    private function validar(Request $request, ?Attribute $atributo = null): array
-    {
-        return $request->validate([
-            'name' => ['required', 'string', 'max:80', Rule::unique('attributes', 'name')->ignore($atributo?->id)],
-            'type' => ['required', 'string', 'max:50'],
-        ], [
-            'name.required' => 'El atributo necesita un nombre (Color, Talla…).',
-            'name.unique'   => 'Ya existe un atributo con ese nombre.',
-            'type.required' => 'Indica cómo se captura el valor.',
-        ]);
     }
 }

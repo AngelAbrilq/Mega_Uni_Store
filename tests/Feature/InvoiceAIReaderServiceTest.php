@@ -106,7 +106,30 @@ class InvoiceAIReaderServiceTest extends TestCase
     }
 
     #[Test]
-    public function traduce_la_caida_del_proveedor_a_502(): void
+    public function usa_el_modelo_de_respaldo_si_el_principal_esta_saturado(): void
+    {
+        config(['smart_inventory.providers.gemini.fallback_models' => 'modelo-respaldo']);
+        $ok = [
+            'es_factura' => true,
+            'calidad_imagen' => ['legible' => true, 'confianza' => 0.9, 'problemas' => []],
+            'proveedor' => ['nombre' => 'X', 'nit' => null, 'numero_factura' => 'F-1', 'fecha' => null],
+            'items' => [['producto' => 'Galleta', 'cantidad_cajas' => 1, 'cantidad_unidades' => 10, 'costo_total_compra' => 20, 'confianza' => 0.9]],
+            'totales_factura' => ['subtotal' => 20, 'descuento' => 0, 'iva' => 0, 'total' => 20],
+            'observaciones' => null,
+        ];
+        Http::fake([
+            '*/modelo-respaldo:generateContent' => Http::response(['candidates' => [['finishReason' => 'STOP', 'content' => ['parts' => [['text' => json_encode($ok)]]]]]]),
+            '*' => Http::response(['error' => ['code' => 503]], 503),
+        ]);
+
+        $data = app(InvoiceAIReaderService::class)->read($this->photo());
+
+        $this->assertSame('F-1', $data['proveedor']['numero_factura']);
+        Http::assertSentCount(2);
+    }
+
+    #[Test]
+    public function traduce_la_saturacion_del_proveedor_a_503(): void
     {
         Http::fake(['generativelanguage.googleapis.com/*' => Http::response(['error' => 'boom'], 503)]);
 
@@ -114,8 +137,8 @@ class InvoiceAIReaderServiceTest extends TestCase
             app(InvoiceAIReaderService::class)->read($this->photo());
             $this->fail('Se esperaba InvoiceReadingException');
         } catch (InvoiceReadingException $e) {
-            $this->assertSame(InvoiceReadingException::PROVIDER_ERROR, $e->errorCode);
-            $this->assertSame(502, $e->status());
+            $this->assertSame(InvoiceReadingException::PROVIDER_BUSY, $e->errorCode);
+            $this->assertSame(503, $e->status());
         }
     }
 }

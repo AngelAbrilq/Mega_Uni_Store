@@ -46,12 +46,12 @@ class Purchase extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     public function receiver(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'received_by');
+        return $this->belongsTo(User::class, 'received_by')->withTrashed();
     }
 
     public function scopeSearch(Builder $q, ?string $t): Builder

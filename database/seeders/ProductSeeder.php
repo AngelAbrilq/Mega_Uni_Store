@@ -203,6 +203,18 @@ class ProductSeeder extends Seeder
                 ['stock' => $stock, 'min_stock' => $minimo, 'activo' => true]
             );
 
+            // TBL-TPL-001: el proveedor habitual queda también como proveedor
+            // preferido, con el costo como precio pactado y una entrega de 2 a 7 días.
+            if ($producto->supplier_id) {
+                $producto->suppliers()->syncWithoutDetaching([
+                    $producto->supplier_id => [
+                        'supplier_price' => $costo,
+                        'lead_time_days' => 2 + ($i % 6),
+                        'is_preferred'   => true,
+                    ],
+                ]);
+            }
+
             $this->fechar($producto, $i, $total);
             $creados++;
         }

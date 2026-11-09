@@ -5,6 +5,7 @@
         'Superadministrador' => '#1B4870',
         'Administrador'      => '#2E6EA8',
         'Supervisor'         => '#4A8FC9',
+        'Cajero'             => '#2F8F83',
         'Vendedor'           => '#3E7D5C',
         'Bodeguero'          => '#96703C',
         'Reportero'          => '#66768F',
@@ -27,7 +28,7 @@
         <form method="GET" action="{{ route('users.index') }}" class="ufil">
             <div class="ufil__search">
                 <x-mus.icon name="search" :w="15" stroke-width="2" />
-                <input type="text" name="q" value="{{ $q }}" placeholder="Buscar por nombre o correo…">
+                <input type="text" name="q" value="{{ $q }}" placeholder="Buscar por nombre, apellido, correo o teléfono…">
             </div>
 
             <select name="rol" class="ufil__sel" onchange="this.form.submit()">
@@ -37,9 +38,15 @@
                 @endforeach
             </select>
 
+            <select name="estado" class="ufil__sel" onchange="this.form.submit()">
+                <option value="">Todos los estados</option>
+                <option value="activos" @selected($estado === 'activos')>Activos</option>
+                <option value="inactivos" @selected($estado === 'inactivos')>Inactivos</option>
+            </select>
+
             <button type="submit" class="mb mb--primary mb--sm">Buscar</button>
 
-            @if ($q !== '' || $rol !== '')
+            @if ($q !== '' || $rol !== '' || $estado !== '')
                 <a href="{{ route('users.index') }}" class="mb mb--ghost mb--sm">Limpiar</a>
             @endif
 
@@ -55,6 +62,7 @@
                             <th>#</th>
                             <th>Usuario</th>
                             <th>Roles</th>
+                            <th>Estado</th>
                             <th>Alta</th>
                             <th class="act"></th>
                         </tr>
@@ -69,8 +77,8 @@
                                                       :color="$colores[$user->roles->first()?->name] ?? '#22334C'"
                                                       :size="34" :round="true" />
                                         <span>
-                                            <b>{{ $user->name }}</b>
-                                            <span class="sub">{{ $user->email }}</span>
+                                            <b>{{ $user->nombre_completo }}</b>
+                                            <span class="sub">{{ $user->email }}@if ($user->phone) · {{ $user->phone }}@endif</span>
                                         </span>
                                     </div>
                                 </td>
@@ -80,6 +88,11 @@
                                     @empty
                                         <x-mus.badge tone="bad" :dot="true">Sin rol</x-mus.badge>
                                     @endforelse
+                                </td>
+                                <td>
+                                    <x-mus.badge :tone="$user->is_active ? 'ok' : 'off'" :dot="true">
+                                        {{ $user->is_active ? 'Activo' : 'Inactivo' }}
+                                    </x-mus.badge>
                                 </td>
                                 <td>{{ Formato::enPalabras($user->created_at, 'D MMM YYYY', '—') }}</td>
                                 <td class="act">
@@ -99,7 +112,7 @@
                                         @can('usuarios.eliminar')
                                             @if ($user->id !== auth()->id())
                                                 <x-mus.del :action="route('users.destroy', $user)"
-                                                           what="el usuario {{ $user->name }}" />
+                                                           what="el usuario {{ $user->nombre_completo }} (se da de baja; su historial se conserva)" />
                                             @endif
                                         @endcan
                                     </span>
@@ -113,7 +126,7 @@
             <x-mus.pagination :items="$users" label="usuarios" />
         @else
             <x-mus.empty icon="shield" title="Ningún usuario coincide"
-                         text="Prueba con otro nombre, otro correo o quita el filtro de rol." />
+                         text="Prueba con otro nombre, otro correo o quita los filtros." />
         @endif
     </x-mus.panel>
 
@@ -129,7 +142,8 @@
         .ufil__search input{ flex:1; border:0; outline:0; background:transparent;
                              font:inherit; font-size:13px; color:var(--ink); }
         .ufil__sel{ height:36px; padding:0 30px 0 11px; border:1px solid var(--line); border-radius:9px;
-                    background:#fff; font:inherit; font-size:13px; color:var(--ink); cursor:pointer; }
+                    font:inherit; font-size:13px; color:var(--ink); cursor:pointer;
+                    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2366768F' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 11px center; -webkit-appearance:none; appearance:none; }
         .ufil__sp{ flex:1 1 auto; }
 
         /* ── Celular: un filtro por línea, campos grandes ── */

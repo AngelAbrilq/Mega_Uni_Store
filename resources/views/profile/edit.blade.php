@@ -54,6 +54,19 @@
                 </x-slot>
             </x-mus.panel>
 
+            @php $abiertas = $sesiones->filter->vigente()->count(); @endphp
+            <x-mus.panel title="Sesiones" :sub="$abiertas . ' ' . ($abiertas === 1 ? 'dispositivo conectado' : 'dispositivos conectados')">
+                @include('profile.partials.sesiones', ['sesiones' => $sesiones, 'actual' => $actual, 'propias' => true])
+                @if ($abiertas > 1)
+                    <x-slot name="foot">
+                        <form method="POST" action="{{ route('sesiones.cerrar_otras') }}" style="width:100%">
+                            @csrf
+                            <x-mus.btn type="submit" icon="close" :block="true">Cerrar las demás sesiones</x-mus.btn>
+                        </form>
+                    </x-slot>
+                @endif
+            </x-mus.panel>
+
             @include('profile.partials.delete-user-form')
         </div>
     </div>

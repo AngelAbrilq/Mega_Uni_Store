@@ -50,8 +50,31 @@ class LimpiarDemos extends Command
         // el catálogo que se va a contar saldría filtrado por otra empresa.
         Contexto::olvidar();
 
+        /**
+         * Tres condiciones donde antes había dos.
+         *
+         * `es_demo` y `expira_en` describen a una demostración, pero un
+         * comando que BORRA no puede confiar en que esos dos campos estén
+         * siempre bien puestos. Basta un camino que se olvide de apagarlos
+         * —y hubo uno: suscribir— para que este comando barra a un cliente
+         * que está pagando.
+         *
+         * `suscrita_desde` es la tercera llave, y es la que no miente: se
+         * escribe el día del primer plan y no se borra nunca, ni cuando el
+         * cliente se da de baja. Si una empresa pagó alguna vez, aquí no
+         * entra, diga lo que diga `es_demo`.
+         *
+         * La cuarta mira el plan: una demostración lleva el plan «demo»
+         * puesto —no nulo—, así que no sirve preguntar si tiene plan sino
+         * CUÁL. Un plan de pago encima de una empresa marcada como demo es
+         * una contradicción, y ante la duda este comando no borra.
+         */
         $vencidas = Empresa::query()
             ->where('es_demo', true)
+            ->whereNull('suscrita_desde')
+            ->where(fn ($q) => $q
+                ->whereNull('plan_id')
+                ->orWhereHas('plan', fn ($p) => $p->where('es_demo', true)))
             ->whereNotNull('expira_en')
             ->where('expira_en', '<', $limite)
             ->orderBy('expira_en')

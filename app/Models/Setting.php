@@ -78,11 +78,21 @@ class Setting extends Model
         'venta.descuento_max'       => '100',
         'venta.cliente_obligatorio' => '0',
         'venta.redondeo'            => '0',         // 0 | 50 | 100
+        'venta.puntos_activos'      => '1',         // CL-PUN-001 · RN-38
+        'venta.pesos_por_punto'     => '1000',      // 1 punto por cada $1.000
 
         /* ── Inventario ── */
         'inventario.alerta_activa' => '1',
         'inventario.dias_rotacion' => '30',
         'inventario.costo_metodo'  => 'promedio',   // promedio | ultimo
+
+        /* ── Nómina (RN-45) · valores legales 2026, ver App\Support\Nomina\ReglasLaborales ── */
+        'nomina.smlmv'              => '1750905',
+        'nomina.auxilio_transporte' => '249095',
+        'nomina.horas_mes'          => 'auto',      // auto = calendario de la Ley 2101
+        'nomina.recargo_dominical'  => 'auto',      // auto = calendario de la Ley 2466
+        'nomina.exoneracion_114'    => '0',         // 1 = no paga salud 8,5 %, SENA ni ICBF por < 10 SMLMV
+        'nomina.ratio_alerta'       => '30',        // % costo de nómina / ingresos (NR-NOM-009)
 
         /* ── Apariencia ── */
         'apariencia.acento'      => 'azul',

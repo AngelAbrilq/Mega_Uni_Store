@@ -11,16 +11,12 @@
     }
     ksort($porModulo);
 
-    $etiquetas = [
-        'productos' => 'Productos', 'categorias' => 'Categorías', 'clientes' => 'Clientes',
-        'proveedores' => 'Proveedores', 'unidades' => 'Unidades', 'impuestos' => 'Impuestos',
-        'medios_pago' => 'Medios de pago', 'atributos' => 'Atributos', 'usuarios' => 'Usuarios',
-        'panel' => 'Panel', 'reportes' => 'Reportes', 'inventario' => 'Inventario',
-        'roles' => 'Roles', 'configuracion' => 'Configuración',
-    ];
+    $etiquetas = \App\Support\CatalogoPermisos::MODULOS;
+    /* Solo los módulos de ver/crear/editar/eliminar muestran las cuatro (apagadas si no las tiene). */
+    $conCrud = \App\Models\Permiso::where('action', 'crear')->pluck('module')->all();
 @endphp
 
-<x-mus.page title="{{ $user->name }}" subtitle="Ficha de usuario" icon="shield"
+<x-mus.page title="{{ $user->nombre_completo }}" subtitle="Ficha de usuario" icon="shield"
             :crumbs="['Usuarios' => route('users.index'), 'Detalle' => null]">
 
     <x-slot name="actions">
@@ -30,19 +26,34 @@
     </x-slot>
 
     <div class="ushow">
+        <div class="ushow__col">
         <x-mus.panel title="Cuenta" sub="Datos de acceso">
             <div class="mficha">
                 <x-mus.avatar :src="$user->imagen" :letras="$user->iniciales"
                               :color="$user->color_avatar" :size="64" :round="true" />
                 <div class="mficha__t">
-                    <b>{{ $user->name }}</b>
+                    <b>{{ $user->nombre_completo }}</b>
                     <span>{{ $user->roles->pluck('name')->join(' · ') ?: 'Sin rol' }}</span>
                 </div>
             </div>
 
             <dl class="mdl">
-                <div><dt>Nombre</dt><dd>{{ $user->name }}</dd></div>
+                <div><dt>Nombre(s)</dt><dd>{{ $user->name }}</dd></div>
+                <div><dt>Apellidos</dt><dd>{{ $user->last_name ?: '—' }}</dd></div>
                 <div><dt>Correo</dt><dd>{{ $user->email }}</dd></div>
+                <div><dt>Teléfono</dt><dd>{{ $user->phone ?: '—' }}</dd></div>
+                <div>
+                    <dt>Estado</dt>
+                    <dd>
+                        <x-mus.badge :tone="$user->is_active ? 'ok' : 'off'" :dot="true">
+                            {{ $user->is_active ? 'Activo' : 'Inactivo' }}
+                        </x-mus.badge>
+                    </dd>
+                </div>
+                <div>
+                    <dt>Locales</dt>
+                    <dd>{{ $user->tiendas->pluck('nombre')->join(' · ') ?: 'Todos los del negocio' }}</dd>
+                </div>
                 <div><dt>Identificador</dt><dd>#{{ $user->id }}</dd></div>
                 <div>
                     <dt>Correo verificado</dt>
@@ -71,6 +82,9 @@
             </x-slot>
         </x-mus.panel>
 
+        @include('users._sesiones')
+        </div>
+
         <x-mus.panel title="Permisos efectivos"
                      sub="{{ $user->getAllPermissions()->count() }} permisos heredados de sus roles">
             @if (count($porModulo))
@@ -79,11 +93,12 @@
                         <div class="uperm__row">
                             <span class="uperm__mod">{{ $etiquetas[$modulo] ?? ucfirst($modulo) }}</span>
                             <span class="uperm__acts">
-                                @foreach (['ver', 'crear', 'editar', 'eliminar'] as $a)
+                                @php $base = in_array($modulo, $conCrud, true) ? ['ver', 'crear', 'editar', 'eliminar'] : []; @endphp
+                                @foreach ($base as $a)
                                     <i class="{{ in_array($a, $acciones, true) ? 'on' : '' }}">{{ $a }}</i>
                                 @endforeach
-                                @foreach (array_diff($acciones, ['ver', 'crear', 'editar', 'eliminar']) as $extra)
-                                    <i class="on">{{ $extra }}</i>
+                                @foreach (array_diff($acciones, $base) as $extra)
+                                    <i class="on">{{ \App\Support\CatalogoPermisos::accion($extra) }}</i>
                                 @endforeach
                             </span>
                         </div>
@@ -96,9 +111,11 @@
         </x-mus.panel>
     </div>
 
+
     @push('styles')
     <style>
         .ushow{ display:grid; gap:16px; grid-template-columns:minmax(0,1fr) minmax(0,1.35fr); align-items:start; }
+        .ushow__col{ display:grid; gap:16px; min-width:0; }
         @media (max-width:960px){ .ushow{ grid-template-columns:minmax(0,1fr); } }
 
         .uperm__row{ display:flex; align-items:center; gap:12px; justify-content:space-between;

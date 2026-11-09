@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Models\Setting;
 use App\Support\Contexto;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
@@ -22,5 +23,29 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
 
         Contexto::olvidar();
+
+        // Mismo problema con la configuración: `Setting::$memoria` es estática.
+        // Una prueba que guarda `inventario.costo_metodo = ultimo` se lo heredaba
+        // a la siguiente empresa con el mismo id (RefreshDatabase reusa ids).
+        Setting::olvidar();
+    }
+
+    /**
+     * Campos anti-spam válidos para los formularios públicos protegidos
+     * con el middleware `antispam` (/probar, /register): honeypot vacío y
+     * una marca de tiempo cifrada de hace un minuto.
+     *
+     * @return array<string, string>
+     */
+    protected function antispam(int $haceSegundos = 60): array
+    {
+        $cfg = config('sitio.antispam');
+
+        return [
+            $cfg['campo_trampa'] => '',
+            $cfg['campo_tiempo'] => \Illuminate\Support\Facades\Crypt::encryptString(
+                (string) (now()->timestamp - $haceSegundos)
+            ),
+        ];
     }
 }

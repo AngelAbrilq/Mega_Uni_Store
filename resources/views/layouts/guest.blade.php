@@ -6,7 +6,14 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="theme-color" content="#0E1723">
 
-        <title>{{ config('app.name', 'MEGA UNI STORE') }}</title>
+        <title>{{ request()->routeIs('demo.*') ? 'Prueba gratis el ERP y POS · '.config('sitio.marca') : config('app.name', 'MEGA UNI STORE') }}</title>
+        <meta name="description" content="{{ config('sitio.descripcion') }}">
+        @if (request()->routeIs('demo.*'))
+            <link rel="canonical" href="{{ route('demo.crear') }}">
+        @else
+            <meta name="robots" content="noindex, follow">
+        @endif
+        @include('sitio.partials.iconos')
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

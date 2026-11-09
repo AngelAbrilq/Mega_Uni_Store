@@ -40,7 +40,7 @@ class DashboardController extends Controller implements HasMiddleware
     private function modulos(): array
     {
         return [
-            ['key' => 'sales',           'label' => 'Ventas',         'route' => 'sales.index',           'table' => 'sales',           'model' => Sale::class,          'hint' => 'Todo lo cobrado',         'tone' => 'blue',    'icon' => 'box'],
+            ['key' => 'sales',           'label' => 'Ventas',         'route' => 'sales.index',           'table' => 'sales',           'model' => Sale::class,          'hint' => 'Todo lo cobrado',         'tone' => 'blue',    'icon' => 'receipt'],
             ['key' => 'products',        'label' => 'Productos',      'route' => 'products.index',        'table' => 'products',        'model' => Product::class,       'hint' => 'Catálogo y precios',      'tone' => 'blue',    'icon' => 'box'],
             ['key' => 'categories',      'label' => 'Categorías',     'route' => 'categories.index',      'table' => 'categories',      'model' => Category::class,      'hint' => 'Árbol de clasificación',  'tone' => 'sky',     'icon' => 'layers'],
             ['key' => 'customers',       'label' => 'Clientes',       'route' => 'customers.index',       'table' => 'customers',       'model' => Customer::class,      'hint' => 'Base de compradores',     'tone' => 'emerald', 'icon' => 'users'],

@@ -38,7 +38,7 @@ class StockMovement extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     /** La venta, compra o ajuste que originó el movimiento. */

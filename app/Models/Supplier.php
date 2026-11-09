@@ -7,6 +7,7 @@ use App\Models\Concerns\ConImagen;
 use App\Models\Concerns\PerteneceAEmpresa;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -26,6 +27,14 @@ class Supplier extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    /** TBL-TPL-001 · Lo que surte, con su precio, código y días de entrega. */
+    public function catalogo(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'product_supplier')
+            ->withPivot(['supplier_sku', 'supplier_price', 'lead_time_days', 'is_preferred'])
+            ->withTimestamps();
     }
 
     /** Compras que se le han hecho a este proveedor. */

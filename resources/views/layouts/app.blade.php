@@ -72,7 +72,9 @@
     <meta name="mus-ctx" content="{{ \App\Support\Contexto::firma() }}">
     <meta name="theme-color" content="#0E1723">
 
-    <title>{{ config('app.name', 'MEGA U|I STORE') }}</title>
+    <title>{{ config('app.name', 'MEGA UNI STORE') }}</title>
+    <meta name="robots" content="noindex, nofollow">
+    @include('sitio.partials.iconos')
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1079,6 +1081,9 @@
         .mbg--off{ background:#F6F1F1; color:#8A5150; }
         .mbg--info{ background:#EDF3F9; color:#215480; }
         .mbg--warn{ background:#FAF5EC; color:#7C5C2E; }
+        /* «bad» y «soft» se usaban en varias vistas sin estilo: salían grises sin querer. */
+        .mbg--bad{ background:#FBEDEC; color:#A3302B; }
+        .mbg--soft{ background:var(--line-2); color:var(--ink-2); }
 
         /* --- Formularios --- */
         /* `minmax(0,1fr)` y no `1fr`: si no, un <select> con opciones
@@ -1503,6 +1508,11 @@
 
         .mbell__ok{ display:grid; place-items:center; gap:7px; padding:26px 0; color:var(--ok); }
         .mbell__ok p{ margin:0; font-size:12.4px; color:var(--muted); }
+        .mbell__i--baja .mbell__ico{ background:rgba(46,110,168,.12); color:var(--a-600); }
+        /* SA-NOT-001 · enlace al centro de notificaciones */
+        .mbell__todas{ display:block; padding:10px 14px; border-top:1px solid var(--line-2); text-align:center;
+                       font-size:12.4px; font-weight:600; color:var(--a-600); text-decoration:none; }
+        .mbell__todas:hover{ background:var(--paper); }
 
         @media (max-width:520px){ .mbell__box{ right:-60px; } }
 
@@ -1825,27 +1835,49 @@
                     } catch (\Throwable $e) {
                         // Antes de migrar las tablas todavía no hay nada que avisar.
                     }
+
+                    /* SA-NOT-001: notificaciones persistentes sin leer de esta persona. */
+                    $musNotis = collect();
+                    $musNotisN = 0;
+                    try {
+                        $musNotisN = auth()->user()?->unreadNotifications()->count() ?? 0;
+                        $musNotis  = $musNotisN ? auth()->user()->unreadNotifications()->take(5)->get() : collect();
+                    } catch (\Throwable $e) {
+                        // Sin la tabla `notifications` todavía.
+                    }
+                    $musCampana = $musAlertas['total'] + $musNotisN;
                 @endphp
 
                 <div class="mbell" id="musBell">
-                    <button class="mbell__btn {{ $musAlertas['criticas'] ? 'is-alta' : ($musAlertas['total'] ? 'is-media' : '') }}"
+                    <button class="mbell__btn {{ $musAlertas['criticas'] ? 'is-alta' : ($musCampana ? 'is-media' : '') }}"
                             type="button" id="musBellBtn"
-                            aria-label="{{ __('mus.buscador.avisos_n', ['n' => $musAlertas['total']]) }}">
+                            aria-label="{{ __('mus.buscador.avisos_n', ['n' => $musCampana]) }}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
                              stroke-linecap="round" stroke-linejoin="round">
                             <path d="M18 8.5a6 6 0 1 0-12 0c0 5-2.2 6.5-2.2 6.5h16.4S18 13.5 18 8.5"/>
                             <path d="M13.7 19a2 2 0 0 1-3.4 0"/>
                         </svg>
-                        @if ($musAlertas['total'])
-                            <span class="mbell__n">{{ $musAlertas['total'] > 9 ? '9+' : $musAlertas['total'] }}</span>
+                        @if ($musCampana)
+                            <span class="mbell__n">{{ $musCampana > 9 ? '9+' : $musCampana }}</span>
                         @endif
                     </button>
 
                     <div class="mbell__box" id="musBellBox">
                         <header>
                             <b>{{ __('mus.buscador.avisos') }}</b>
-                            <span>{{ $musAlertas['total'] ? $musAlertas['total'] . ' pendiente(s)' : 'todo en orden' }}</span>
+                            <span>{{ $musCampana ? $musCampana . ' pendiente(s)' : 'todo en orden' }}</span>
                         </header>
+
+                        @foreach ($musNotis as $n)
+                            <a href="{{ route('notifications.leer', $n->id) }}"
+                               class="mbell__i mbell__i--{{ ($n->data['nivel'] ?? 'info') === 'danger' ? 'alta' : (($n->data['nivel'] ?? 'info') === 'warning' ? 'media' : 'baja') }}">
+                                <span class="mbell__ico"><x-mus.icon :name="($n->data['nivel'] ?? 'info') === 'info' ? 'info' : 'alert'" :w="15" /></span>
+                                <span>
+                                    <b>{{ $n->data['titulo'] ?? 'Aviso' }}</b>
+                                    <em>{{ \Illuminate\Support\Str::limit($n->data['mensaje'] ?? '', 90) }}</em>
+                                </span>
+                            </a>
+                        @endforeach
 
                         @forelse ($musAlertas['items'] as $a)
                             <a href="{{ $a['url'] }}" class="mbell__i mbell__i--{{ $a['nivel'] }}">
@@ -1856,11 +1888,19 @@
                                 </span>
                             </a>
                         @empty
-                            <div class="mbell__ok">
-                                <x-mus.icon name="check" :w="22" stroke-width="2" />
-                                <p>{{ __('mus.buscador.sin_avisos') }}</p>
-                            </div>
+                            @if ($musNotis->isEmpty())
+                                <div class="mbell__ok">
+                                    <x-mus.icon name="check" :w="22" stroke-width="2" />
+                                    <p>{{ __('mus.buscador.sin_avisos') }}</p>
+                                </div>
+                            @endif
                         @endforelse
+
+                        @if (\Illuminate\Support\Facades\Route::has('notifications.index'))
+                            <a href="{{ route('notifications.index') }}" class="mbell__todas">
+                                {{ $musNotisN ? 'Ver las ' . $musNotisN . ' notificaciones sin leer' : 'Ver todas las notificaciones' }} →
+                            </a>
+                        @endif
                     </div>
                 </div>
 

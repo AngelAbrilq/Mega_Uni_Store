@@ -121,6 +121,10 @@ return [
 
         'redondeo' => 'Redondear el total',
         'redondeo_hint' => 'Útil donde ya no circulan las monedas pequeñas.',
+        'pesos_por_punto' => 'Pesos por punto de fidelidad',
+        'pesos_por_punto_hint' => 'Cada vez que el cliente acumula este valor en compras del local, gana 1 punto.',
+        'puntos_activos' => 'Acumular puntos de fidelidad',
+        'puntos_activos_hint' => 'Las ventas con cliente identificado suman puntos en el local donde compró.',
         'r_no'     => 'No redondear',
         'r_50'     => 'A los $50 más cercanos',
         'r_100'    => 'A los $100 más cercanos',

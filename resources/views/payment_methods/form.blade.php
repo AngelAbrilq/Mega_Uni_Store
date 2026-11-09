@@ -7,6 +7,10 @@
                       hint="Aparece como opción al cobrar" :wide="false"
                       :checked="$item?->is_active ?? true" />
         
+        <x-mus.toggle name="requires_verification" label="Exige verificación"
+                      hint="Transferencias, Nequi, Daviplata: el pago queda pendiente hasta que un supervisor confirme que llegó."
+                      :wide="false" :checked="$item?->requires_verification ?? false" />
+
         <x-mus.textarea name="description" label="Descripción" :value="$item?->description"
                         hint="Opcional. Condiciones o notas para el cajero." />
     </div>

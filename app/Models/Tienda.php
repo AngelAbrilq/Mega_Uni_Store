@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\Contexto;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -33,18 +35,50 @@ class Tienda extends Model
 
     protected $table = 'tiendas';
 
+    /* Cómo se abre el cajón de este local (ver CajonDelLocal). */
+    public const CAJON_SERVIDOR = 'server';
+    public const CAJON_AGENTE   = 'agent';
+    public const CAJON_NINGUNO  = 'none';
+
+    public const MODOS_CAJON = [
+        self::CAJON_AGENTE   => 'Agente en el PC de caja (servidor en la nube)',
+        self::CAJON_SERVIDOR => 'Conectado al servidor (instalación local)',
+        self::CAJON_NINGUNO  => 'Este local no tiene cajón',
+    ];
+
     protected $fillable = [
         'empresa_id', 'nombre', 'slug', 'codigo',
         'razon_social', 'nit', 'direccion', 'ciudad', 'telefono', 'correo', 'logo',
         'es_principal', 'activa',
+        'drawer_mode', 'agent_port',
     ];
+
+    /** El token del agente no viaja en ningún JSON ni listado. */
+    protected $hidden = ['agent_token'];
 
     protected function casts(): array
     {
         return [
             'es_principal' => 'boolean',
             'activa'       => 'boolean',
+            'agent_port'   => 'integer',
         ];
+    }
+
+    /* ─────────────── Agente del cajón ─────────────── */
+
+    /** Devuelve el token del agente, creándolo la primera vez. */
+    public function asegurarTokenDeAgente(): string
+    {
+        return $this->agent_token ?: $this->regenerarTokenDeAgente();
+    }
+
+    /** Token nuevo: el agente con el token viejo deja de obedecer. */
+    public function regenerarTokenDeAgente(): string
+    {
+        $this->forceFill(['agent_token' => \Illuminate\Support\Str::random(40)])->save();
+
+        return $this->agent_token;
     }
 
     /* ─────────────── Relaciones ─────────────── */
@@ -124,5 +158,11 @@ class Tienda extends Model
     public function prefijo(): string
     {
         return $this->codigo ? $this->codigo . '-' : '';
+    }
+
+    /** Locales activos del negocio en el que se trabaja. */
+    public function scopeActivasDelNegocio(Builder $q): Builder
+    {
+        return $q->where('activa', true)->whereIn('id', Contexto::tiendaIds() ?? []);
     }
 }

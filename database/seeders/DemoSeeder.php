@@ -86,6 +86,8 @@ class DemoSeeder extends Seeder
             $vendedor = $vendedores[$this->azar(0, $vendedores->count() - 1)];
 
             $turno = CashSession::create([
+                // WithoutModelEvents apaga el gancho que pone el local: se dice explícito.
+                'tienda_id'      => Contexto::tiendaId(),
                 'user_id'        => $vendedor->id,
                 'opening_amount' => 200000,
                 'status'         => CashSession::CERRADA,
@@ -126,13 +128,33 @@ class DemoSeeder extends Seeder
 
         // Turno de hoy, abierto, para poder vender de una vez.
         CashSession::create([
+            'tienda_id'      => Contexto::tiendaId(),
             'user_id'        => $vendedores->first()->id,
             'opening_amount' => 200000,
             'status'         => CashSession::ABIERTA,
             'opened_at'      => now()->setTime(7, 30),
         ]);
 
+        $this->fidelidadDemo();
+
         $this->command?->info("  Demo: {$ventas} ventas en {$turnos} turnos de caja");
+    }
+
+    /**
+     * CL-PUN-001 · Las ventas de demo se crean a mano (sin SaleService), así
+     * que los puntos se acumulan aquí, en orden, con la fecha de cada venta.
+     */
+    private function fidelidadDemo(): void
+    {
+        $servicio = app(\App\Services\FidelizacionService::class);
+
+        Sale::query()->whereNotNull('customer_id')->where('status', Sale::PAGADA)
+            ->orderBy('sold_at')->get()
+            ->each(function (Sale $venta) use ($servicio) {
+                $servicio->acumular($venta, $venta->user_id);
+                \App\Models\LoyaltyTransaction::withoutGlobalScopes()->where('sale_id', $venta->id)
+                    ->update(['created_at' => $venta->sold_at, 'updated_at' => $venta->sold_at]);
+            });
     }
 
     /**
@@ -164,9 +186,10 @@ class DemoSeeder extends Seeder
             return null;
         }
 
-        return DB::transaction(function () use ($turno, $vendedor, $cuando, $lineas, $clientes, $medios, $efectivo) {
+        return DB::transaction(function () use ($turno, $vendedor, $cuando, $lineas, $clientes, $medios, $efectivo, $tiendaId) {
 
             $venta = new Sale([
+                'tienda_id'       => $turno->tienda_id,
                 'number'          => Sale::siguienteNumero(),
                 'customer_id'     => $clientes && $this->azar(1, 3) > 1 ? $clientes[$this->azar(0, count($clientes) - 1)] : null,
                 'user_id'         => $vendedor->id,
@@ -298,6 +321,7 @@ class DemoSeeder extends Seeder
         }
 
         $compra = Purchase::create([
+            'tienda_id'      => Contexto::tiendaId(),
             'number'         => Purchase::siguienteNumero(),
             'invoice_number' => 'FV-24188',
             'supplier_id'    => $proveedor->id,

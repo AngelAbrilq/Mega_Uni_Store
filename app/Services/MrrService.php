@@ -46,6 +46,27 @@ class MrrService
             $empresa->periodo        = $periodo;
             $empresa->precio_pactado = $precioPactado;
 
+            /**
+             * Una demostración que empieza a pagar deja de ser demostración.
+             *
+             * Sin estas tres líneas pasaba lo peor que puede pasar: se le
+             * vendía el plan a un interesado que venía de /probar, se le
+             * cobraba, y esa noche `mus:limpiar-demos` le borraba el negocio
+             * entero — porque el limpiador mira `es_demo` y `expira_en`, y
+             * suscribir no los tocaba. El cliente pagando y el cron
+             * barriéndolo: nadie se entera hasta que llama.
+             *
+             * `expira_en` se pone en nulo porque un cliente de verdad no
+             * vence a las dos horas y media, y `estado` vuelve a activa por
+             * si la prueba ya se había quedado sin tiempo cuando decidió
+             * comprar — que es justo cuando más se decide.
+             */
+            if ($plan !== null && ! $plan->es_demo) {
+                $empresa->es_demo   = false;
+                $empresa->expira_en = null;
+                $empresa->estado    = 'activa';
+            }
+
             if ($tiendasContratadas !== null) {
                 $empresa->tiendas_contratadas = $tiendasContratadas;
             }

@@ -23,6 +23,22 @@ class CatalogSeeder extends Seeder
         $this->mediosDePago();
         $this->atributos();
         $this->categorias();
+        $this->cupones();
+    }
+
+    /** AT-CUP-001 · Dos cupones de ejemplo para probar el POS desde el primer día. */
+    private function cupones(): void
+    {
+        \App\Models\Coupon::updateOrCreate(['code' => 'BIENVENIDA10'], [
+            'description' => 'Bienvenida: 10 % en la primera compra', 'type' => 'percentage',
+            'value' => 10, 'max_discount' => 20000, 'max_uses' => 100, 'is_active' => true,
+        ]);
+        \App\Models\Coupon::updateOrCreate(['code' => 'FIJO5000'], [
+            'description' => '$5.000 en compras desde $30.000', 'type' => 'fixed',
+            'value' => 5000, 'min_purchase' => 30000, 'is_active' => true,
+        ]);
+
+        $this->command?->info('  Cupones: 2');
     }
 
     private function unidades(): void
@@ -87,10 +103,13 @@ class CatalogSeeder extends Seeder
             ['Crédito institucional', 'Cargo a la cuenta del estudiante o funcionario.',      false],
         ];
 
+        // RN-32: las transferencias quedan pendientes hasta verificar que llegaron.
+        $porVerificar = ['Nequi', 'Daviplata', 'Transferencia bancaria'];
+
         foreach ($datos as [$nombre, $desc, $activo]) {
             PaymentMethod::updateOrCreate(
                 ['name' => $nombre],
-                ['description' => $desc, 'is_active' => $activo]
+                ['description' => $desc, 'is_active' => $activo, 'requires_verification' => in_array($nombre, $porVerificar, true)]
             );
         }
 

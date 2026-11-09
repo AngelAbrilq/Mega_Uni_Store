@@ -18,7 +18,9 @@ return [
     'providers' => [
         'gemini' => [
             'key'      => env('GEMINI_API_KEY'),
-            'model'    => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+            'model'    => env('GEMINI_MODEL', 'gemini-3.8-flash'),
+            // Se usan en orden si el principal responde 429/503/404. Ej: "gemini-3.8-flash-lite"
+            'fallback_models' => env('GEMINI_FALLBACK_MODELS', ''),
             'endpoint' => env('GEMINI_ENDPOINT', 'https://generativelanguage.googleapis.com/v1beta/models'),
         ],
         'anthropic' => [
@@ -31,8 +33,10 @@ return [
 
     'http' => [
         'timeout'  => (int) env('SMART_INVENTORY_TIMEOUT', 60),
-        'retries'  => (int) env('SMART_INVENTORY_RETRIES', 2),
+        'retries'  => (int) env('SMART_INVENTORY_RETRIES', 3),
         'retry_ms' => 1500,
+        // Tope total por lectura (modelos + reintentos). Menor que los 90 s del navegador.
+        'deadline' => (int) env('SMART_INVENTORY_DEADLINE', 75),
     ],
 
     'image' => [

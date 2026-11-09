@@ -37,6 +37,7 @@
                 <option value="">Elegir producto…</option>
                 @foreach ($productos as $p)
                     <option value="{{ $p['id'] }}" data-costo="{{ $p['costo'] }}"
+                            data-precios='@json((object) ($p['precios'] ?? []))'
                             data-sku="{{ $p['sku'] }}" data-stock="{{ $p['stock'] }}">
                         {{ $p['sku'] ? $p['sku'] . ' · ' : '' }}{{ $p['nombre'] }}
                     </option>
@@ -180,6 +181,16 @@ window.COMPRA_LINEAS = @json(array_values((array) $lineas));
         vacio.hidden = cuerpo.children.length > 0;
     }
 
+    // TBL-TPL-001: si el proveedor elegido tiene precio pactado para el
+    // producto, ese es el costo sugerido; si no, el costo actual del producto.
+    function costoSugerido(opt) {
+        var prov = document.getElementById('f_supplier_id');
+        var precios = {};
+        try { precios = JSON.parse(opt.dataset.precios || '{}'); } catch (e) {}
+        if (prov && prov.value && precios[prov.value] != null) return precios[prov.value];
+        return opt.dataset.costo;
+    }
+
     function agregar(id, cant, costo, tasa, actualiza) {
         var opt = sel.querySelector('option[value="' + id + '"]');
         if (!opt) return;
@@ -204,7 +215,7 @@ window.COMPRA_LINEAS = @json(array_values((array) $lineas));
             '<td class="num"><input type="number" step="0.001" min="0.001" data-cant ' +
                 'name="items[' + i + '][quantity]" value="' + (cant || 1) + '"></td>' +
             '<td class="num"><input type="number" step="1" min="0" data-costo ' +
-                'name="items[' + i + '][unit_cost]" value="' + (costo != null ? costo : opt.dataset.costo) + '"></td>' +
+                'name="items[' + i + '][unit_cost]" value="' + (costo != null ? costo : costoSugerido(opt)) + '"></td>' +
             '<td class="num"><input type="number" step="0.01" min="0" max="100" data-tasa ' +
                 'name="items[' + i + '][tax_rate]" value="' + (tasa != null ? tasa : 19) + '"></td>' +
             '<td class="num"><b data-total>$0</b></td>' +

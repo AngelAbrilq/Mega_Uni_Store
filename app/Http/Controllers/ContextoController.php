@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Admin\CambiarContextoRequest;
 use App\Models\Tienda;
 use App\Support\Contexto;
 use Illuminate\Http\Request;
@@ -26,14 +27,11 @@ use Illuminate\Validation\ValidationException;
  */
 class ContextoController extends Controller
 {
-    public function cambiar(Request $request)
+    public function cambiar(CambiarContextoRequest $request)
     {
         $usuario = $request->user();
 
-        $datos = $request->validate([
-            'empresa_id' => ['required', 'integer'],
-            'tienda_id'  => ['nullable', 'integer'],
-        ]);
+        $datos = $request->validated();
 
         $empresaId = (int) $datos['empresa_id'];
 

@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -56,15 +58,45 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $credenciales = $this->only('email', 'password');
+
+        // SA-USR-003: un usuario desactivado no entra aunque su clave sea correcta.
+        // Los dados de baja (soft delete) ni siquiera se encuentran.
+        $entro = Auth::attemptWhen(
+            $credenciales,
+            fn (User $usuario) => $usuario->is_active,
+            $this->boolean('remember')
+        );
+
+        if (! $entro) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => 'El correo o la contraseña no coinciden con nuestros registros.',
+                'email' => $this->esCuentaDesactivada($credenciales)
+                    ? 'Tu usuario está desactivado. Habla con el administrador del negocio.'
+                    : 'El correo o la contraseña no coinciden con nuestros registros.',
             ]);
         }
 
         RateLimiter::clear($this->throttleKey());
+    }
+
+    /**
+     * ¿La clave era correcta pero la cuenta está desactivada?
+     *
+     * Solo se dice «desactivado» a quien demostró conocer la contraseña:
+     * a cualquier otro se le da el mensaje genérico, para no revelar qué
+     * correos existen.
+     *
+     * @param array{email: string, password: string} $credenciales
+     */
+    private function esCuentaDesactivada(array $credenciales): bool
+    {
+        $usuario = User::where('email', $credenciales['email'])->first();
+
+        return $usuario !== null
+            && ! $usuario->is_active
+            && Hash::check($credenciales['password'], $usuario->password);
     }
 
     /**

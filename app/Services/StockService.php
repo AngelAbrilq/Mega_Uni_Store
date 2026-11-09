@@ -67,7 +67,8 @@ class StockService
 
             $existencia = $this->filaBloqueada($producto, $tiendaId);
 
-            $saldo = (float) $existencia->stock + $cantidad;
+            $anterior = (float) $existencia->stock;
+            $saldo    = $anterior + $cantidad;
 
             $existencia->forceFill(['stock' => $saldo])->save();
 
@@ -98,6 +99,11 @@ class StockService
 
             // La campana de avisos debe reflejar el saldo nuevo.
             AlertService::olvidar();
+
+            // SA-NOT-001 · RN-37: aviso persistente al cruzar el mínimo.
+            if ($cantidad < 0) {
+                app(NotificacionService::class)->stockBajo($producto, $existencia, $anterior);
+            }
 
             return $movimiento;
         });

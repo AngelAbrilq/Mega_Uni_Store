@@ -2,26 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Catalogo\GuardarProductRequest;
 use App\Support\Contexto;
 use App\Models\Existencia;
+use App\Models\Attribute;
 use App\Models\Category;
 use App\Http\Controllers\Concerns\GuardaImagen;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Tax;
 use App\Models\Unit;
-use App\Services\LimiteService;
+use App\Services\CatalogoProductoService;
 use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 
 class ProductController extends Controller implements HasMiddleware
 {
     use GuardaImagen;
 
-    public function __construct(private StockService $stock, private LimiteService $limites)
+    public function __construct(
+        private StockService $stock,
+        private CatalogoProductoService $catalogo,
+    )
     {
     }
 
@@ -96,13 +100,10 @@ class ProductController extends Controller implements HasMiddleware
         return view('products.create', $this->listas());
     }
 
-    public function store(Request $request)
+    public function store(GuardarProductRequest $request)
     {
-        // Antes de validar nada más: si el plan no da para otro producto,
-        // no tiene sentido pedirle los datos y después decirle que no.
-        $this->limites->exigir('productos');
-
-        $data = $this->validar($request);
+        // El tope del plan se revisa ANTES de validar: GuardarProductRequest::prepareForValidation().
+        $data = $request->validated();
 
         $data['is_active']  = $request->boolean('is_active');
         $data['is_public']  = $request->boolean('is_public');
@@ -120,6 +121,9 @@ class ProductController extends Controller implements HasMiddleware
         unset($data['stock'], $data['min_stock']);
 
         $product = Product::create($data);
+
+        // AT-PRI-001 · TBL-TPL-001 · TBL-PPA-001
+        $this->catalogo->sincronizar($product, $request->validated());
 
         Existencia::create([
             'tienda_id'  => Contexto::tiendaId(),
@@ -146,7 +150,7 @@ class ProductController extends Controller implements HasMiddleware
 
     public function show(Product $product)
     {
-        $product->load(['category.parent', 'unit', 'tax', 'supplier', 'creator', 'editor']);
+        $product->load(['category.parent', 'unit', 'tax', 'extraTaxes', 'supplier', 'suppliers', 'attributeValues', 'creator', 'editor']);
 
         // Otros productos de la misma categoría, para navegar rápido.
         $relacionados = Product::query()
@@ -161,12 +165,14 @@ class ProductController extends Controller implements HasMiddleware
 
     public function edit(Product $product)
     {
+        $product->load(['extraTaxes:id', 'suppliers', 'attributeValues']);
+
         return view('products.edit', array_merge($this->listas(), ['product' => $product]));
     }
 
-    public function update(Request $request, Product $product)
+    public function update(GuardarProductRequest $request, Product $product)
     {
-        $data = $this->validar($request, $product);
+        $data = $request->validated();
 
         $data['is_active']  = $request->boolean('is_active');
         $data['is_public']  = $request->boolean('is_public');
@@ -186,6 +192,9 @@ class ProductController extends Controller implements HasMiddleware
         unset($data['stock'], $data['min_stock']);
 
         $product->update($data);
+
+        // AT-PRI-001 · TBL-TPL-001 · TBL-PPA-001
+        $this->catalogo->sincronizar($product, $request->validated());
 
         $this->cuadrarExistencia($product, $stockPedido, $minimoPedido, $request->user()?->id);
 
@@ -209,48 +218,6 @@ class ProductController extends Controller implements HasMiddleware
 
 
     /**
-     * Reglas de validación compartidas por store() y update().
-     *
-     * @return array<string, mixed>
-     */
-    private function validar(Request $request, ?Product $product = null): array
-    {
-        return $request->validate([
-            'name'        => ['required', 'string', 'max:200'],
-            'sku'         => ['nullable', 'string', 'max:50', Rule::unique('products', 'sku')->ignore($product?->id)],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'barcode'     => ['nullable', 'string', 'max:50', Rule::unique('products', 'barcode')->ignore($product?->id)],
-            'imagen'      => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
-            'category_id' => ['nullable', 'exists:categories,id'],
-            'unit_id'     => ['nullable', 'exists:units,id'],
-            'tax_id'      => ['nullable', 'exists:taxes,id'],
-            'supplier_id' => ['nullable', 'exists:suppliers,id'],
-            'price'       => ['required', 'numeric', 'min:0', 'max:99999999.99'],
-            'cost'        => ['required', 'numeric', 'min:0', 'max:99999999.99', 'lte:price'],
-            // Numérico y no entero: hay productos que se venden por peso.
-            'stock'       => ['required', 'numeric', 'min:0', 'max:999999'],
-            'min_stock'   => ['required', 'numeric', 'min:0', 'max:999999'],
-            // Entero, y nulo cuando no es un servicio. El máximo son diez
-            // horas: más que eso no es una cita, es un proyecto.
-            'duracion_minutos' => ['nullable', 'integer', 'min:5', 'max:600'],
-        ], [
-            'name.required'      => 'El producto necesita un nombre.',
-            'sku.unique'         => 'Ya existe otro producto con ese SKU.',
-            'barcode.unique'     => 'Ese código de barras ya está registrado.',
-            'imagen.image'       => 'El archivo debe ser una imagen.',
-            'imagen.mimes'       => 'La imagen debe ser JPG, PNG o WEBP.',
-            'imagen.max'         => 'La imagen no puede pesar más de 2 MB.',
-            'price.required'     => 'Indica el precio de venta.',
-            'cost.required'      => 'Indica cuánto te cuesta el producto.',
-            'cost.lte'           => 'El costo no puede ser mayor que el precio de venta.',
-            'stock.required'     => 'Indica cuántas unidades hay disponibles.',
-            'min_stock.required' => 'Indica a partir de cuántas unidades hay que reponer.',
-            'duracion_minutos.min' => 'Un servicio de menos de cinco minutos no se alcanza a agendar.',
-            'duracion_minutos.max' => 'Diez horas es el tope de una cita. Si dura más, pártelo en dos.',
-        ]);
-    }
-
-    /**
      * Listas para los selectores del formulario.
      *
      * @return array<string, mixed>
@@ -262,6 +229,7 @@ class ProductController extends Controller implements HasMiddleware
             'units'      => Unit::orderBy('name')->get(),
             'taxes'      => Tax::orderBy('name')->get(),
             'suppliers'  => Supplier::orderBy('name')->get(),
+            'attributes' => Attribute::active()->orderBy('name')->get(),
         ];
     }
 

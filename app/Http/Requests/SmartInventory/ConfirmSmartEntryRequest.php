@@ -26,6 +26,9 @@ class ConfirmSmartEntryRequest extends FormRequest
             'numero_factura' => ['nullable', 'string', 'max:50'],
             'fecha'          => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
             'imagen_ref'     => ['nullable', 'string', 'max:255', 'regex:#^smart-inventory/[\w\-/]+\.(jpe?g|png|webp)$#'],
+            'moneda'         => ['nullable', 'string', 'size:3', 'alpha'],
+            // Factura en moneda extranjera → la TRM es obligatoria (sin ella el kardex quedaría en dólares).
+            'trm'            => [Rule::requiredIf(fn () => strtoupper((string) $this->input('moneda', 'COP')) !== 'COP'), 'nullable', 'numeric', 'gt:0', 'max:1000000'],
 
             'items'                          => ['required', 'array', 'min:1', 'max:200'],
             'items.*.product_id'             => ['required', 'integer', 'distinct', Rule::exists('products', 'id')->where('empresa_id', $empresaId)->whereNull('deleted_at')],
@@ -56,6 +59,7 @@ class ConfirmSmartEntryRequest extends FormRequest
     {
         return [
             'supplier_id.required'          => 'Selecciona el proveedor.',
+            'trm.required'           => 'La factura está en moneda extranjera: indica la TRM para convertir los costos a pesos.',
             'items.*.product_id.required'   => 'Asocia cada renglón a un producto del catálogo.',
             'items.*.product_id.distinct'   => 'Hay dos renglones con el mismo producto; únelos en uno.',
             'items.*.cantidad_cajas.gt'     => 'La cantidad de cajas debe ser mayor que cero.',

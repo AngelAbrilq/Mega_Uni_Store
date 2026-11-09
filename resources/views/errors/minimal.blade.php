@@ -13,6 +13,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $codigo }} · {{ $titulo }} — MEGA UNI STORE</title>
+    <meta name="robots" content="noindex">
+    <link rel="icon" href="/favicon.ico" sizes="48x48">
     <style>
         *,*::before,*::after{ box-sizing:border-box; }
         :root{
@@ -88,7 +90,7 @@
         a.b--g:hover{ background:rgba(255,255,255,.09); }
 
         .marca{ margin-top:28px; font-size:10.8px; letter-spacing:.18em; text-transform:uppercase;
-                color:#4E617C; }
+                color:#7D8FA8; }
 
         @media (prefers-reduced-motion:reduce){ *{ animation:none !important; } }
     </style>
@@ -114,7 +116,7 @@
             @auth
                 <a class="b b--p" href="{{ route('dashboard') }}">Ir al panel</a>
             @else
-                <a class="b b--p" href="{{ route('login') }}">Iniciar sesión</a>
+                <a class="b b--p" href="{{ route('inicio') }}">Ir al inicio</a>
             @endauth
             <a class="b b--g" href="javascript:history.back()">Volver atrás</a>
         </div>

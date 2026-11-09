@@ -19,8 +19,17 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $actual = app(\App\Services\SesionService::class)->actual($request)?->id;
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user'     => $request->user(),
+            // TBL-SES-001: las abiertas primero, y las últimas cerradas como historia.
+            'sesiones' => \App\Models\UserSession::query()
+                ->where('user_id', $request->user()->id)
+                ->orderByDesc('is_active')->orderByDesc('last_activity_at')
+                ->limit(12)->get()
+                ->sortByDesc(fn ($s) => $s->id === $actual)->values(), // la de este equipo, arriba
+            'actual'   => $actual,
         ]);
     }
 

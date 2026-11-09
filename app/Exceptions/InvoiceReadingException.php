@@ -17,6 +17,7 @@ class InvoiceReadingException extends RuntimeException
     public const NOT_AN_INVOICE     = 'NOT_AN_INVOICE';
     public const NO_ITEMS           = 'NO_ITEMS';
     public const PROVIDER_ERROR     = 'PROVIDER_ERROR';
+    public const PROVIDER_BUSY      = 'PROVIDER_BUSY';
     public const PROVIDER_TIMEOUT   = 'PROVIDER_TIMEOUT';
     public const INVALID_RESPONSE   = 'INVALID_RESPONSE';
     public const NOT_CONFIGURED     = 'NOT_CONFIGURED';
@@ -27,6 +28,7 @@ class InvoiceReadingException extends RuntimeException
         self::NOT_AN_INVOICE   => 422,
         self::NO_ITEMS         => 422,
         self::PROVIDER_ERROR   => 502,
+        self::PROVIDER_BUSY    => 503,
         self::PROVIDER_TIMEOUT => 504,
         self::INVALID_RESPONSE => 502,
         self::NOT_CONFIGURED   => 500,

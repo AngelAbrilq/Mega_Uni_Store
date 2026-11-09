@@ -8,17 +8,37 @@
 
     /* Los textos del mostrador, traídos de lang/. Sin esto el guion
        imprimía «producto» y «Guardando…» en español encima de un panel
-       en inglés — y son justo los que más se leen. */
-    var T = @json([
-        'producto'    => __('mus.pos.js_producto'),
-        'productos'   => __('mus.pos.js_productos'),
-        'unidad'      => __('mus.pos.js_unidad'),
-        'unidades'    => __('mus.pos.js_unidades'),
-        'sinStock'    => __('mus.pos.js_sin_stock'),
-        'soloQuedan'  => __('mus.pos.js_solo_quedan'),
-        'guardando'   => __('mus.pos.js_guardando'),
-        'sinProductos'=> __('mus.pos.sin_productos'),
-    ]);
+       en inglés — y son justo los que más se leen.
+
+       El array se arma arriba, en un bloque de PHP, y NO dentro de la
+       directiva que lo vuelve JSON. Esa directiva no es una función:
+       Blade parte lo que le llega por las comas para sacar sus tres
+       argumentos —valor, opciones y profundidad—, así que un array
+       escrito ahí adentro se corta en la primera coma y el PHP compilado
+       queda con un corchete sin cerrar. Ese fue el error «Unclosed '['
+       on line 12 does not match ')'». Con la variable ya hecha no hay
+       comas que partir.
+
+       Y por eso este comentario no escribe esas directivas con su arroba:
+       Blade compila las directivas también dentro de un comentario de
+       JavaScript, así que nombrarlas aquí habría vuelto a romper la
+       vista — esta vez desde la explicación del arreglo. */
+    @php
+        $T = [
+            'producto'     => __('mus.pos.js_producto'),
+            'productos'    => __('mus.pos.js_productos'),
+            'unidad'       => __('mus.pos.js_unidad'),
+            'unidades'     => __('mus.pos.js_unidades'),
+            'sinStock'     => __('mus.pos.js_sin_stock'),
+            'soloQuedan'   => __('mus.pos.js_solo_quedan'),
+            'guardando'    => __('mus.pos.js_guardando'),
+            'sinProductos' => __('mus.pos.sin_productos'),
+            'cuponValidando' => __('mus.pos.cupon_validando'),
+            'cuponMinimo'    => __('mus.pos.cupon_minimo'),
+        ];
+    @endphp
+
+    var T = @json($T);
 
     /** Reemplaza :clave dentro de un texto de lang/, como hace __() en PHP. */
     function t(plantilla, repl) {
@@ -117,7 +137,7 @@
             if (p.stock < 1) { avisar(p.nombre, p.stock); return; }
             carrito.push({
                 id: p.id, nombre: p.nombre, precio: p.precio,
-                cant: 1, stock: p.stock, unidad: p.unidad, imp: p.imp
+                cant: 1, stock: p.stock, unidad: p.unidad, imps: p.imps || []
             });
         }
         pintarTodo();
@@ -146,19 +166,44 @@
         pintarTodo();
     }
 
+    // AT-PRI-001: suma de todos los impuestos del producto (igual que Tax::sobreRenglon).
     function impuestoDe(l) {
-        if (!l.imp) return 0;
-        if (l.imp.fijo) return l.imp.tasa * l.cant;
-        return (l.precio * l.cant) * l.imp.tasa / 100;
+        return (l.imps || []).reduce(function (total, t) {
+            return total + (t.fijo ? t.tasa * l.cant : (l.precio * l.cant) * t.tasa / 100);
+        }, 0);
+    }
+
+    /* ---------- VD-CUP-001 · cupón ----------
+       Mismo cálculo que Coupon::calcularDescuento y CouponService::repartir:
+       el descuento sale de la base antes de impuestos y se reparte entre los
+       renglones, así el IVA se calcula sobre lo que de verdad se paga. Es
+       solo una vista previa: el servidor lo vuelve a calcular al cobrar. */
+    var cupon = null;
+
+    function descuentoCupon(base) {
+        if (!cupon || base <= 0) return 0;
+        if (cupon.minimo != null && base + 0.009 < cupon.minimo) return 0;
+        var d = cupon.tipo === 'fixed' ? cupon.valor : base * cupon.valor / 100;
+        if (cupon.tipo !== 'fixed' && cupon.tope != null) d = Math.min(d, cupon.tope);
+        return Math.round(Math.max(0, Math.min(d, base)) * 100) / 100;
+    }
+
+    function impuestoSobre(l, base) {
+        return (l.imps || []).reduce(function (total, t) {
+            return total + (t.fijo ? t.tasa * l.cant : base * t.tasa / 100);
+        }, 0);
     }
 
     function totales() {
         var sub = 0, imp = 0;
+        carrito.forEach(function (l) { sub += l.precio * l.cant; });
+        var desc = descuentoCupon(sub);
         carrito.forEach(function (l) {
-            sub += l.precio * l.cant;
-            imp += impuestoDe(l);
+            var bruto = l.precio * l.cant;
+            var parte = sub > 0 ? desc * bruto / sub : 0;
+            imp += impuestoSobre(l, bruto - parte);
         });
-        return { sub: sub, imp: imp, desc: 0, total: sub + imp };
+        return { sub: sub, imp: imp, desc: desc, total: sub - desc + imp };
     }
 
     function pintarTicket() {
@@ -340,9 +385,232 @@
         recalcularPagos();
     });
 
+    /* ══════════════════════════════════════════════════════════════
+       Cajón monedero
+       ══════════════════════════════════════════════════════════════
+       Dos caminos hacia el mismo pulso:
+
+         · automático — al confirmar la venta. Dispara y olvida, con
+           keepalive:true, porque medio segundo después el navegador ya está
+           yendo al recibo y sin eso Chrome cancela la petición al descargar
+           la página. Ese es EL bug clásico de esta integración.
+
+         · manual — el botón «Abrir caja» de la barra superior, para dar
+           cambio o guardar un billete. Ese sí espera respuesta y sí queda
+           anotado en la bitácora, porque una caja que se abre sin venta es
+           justo lo que un arqueo no puede explicar solo.
+
+       Todos los errores se tragan a propósito: que el hardware falle nunca
+       debe pintar un error rojo encima de una venta que sí se guardó.
+       ══════════════════════════════════════════════════════════════ */
+    /*
+       Modo agente (servidor en la nube): el pulso NO pasa por el servidor.
+       El navegador le habla directo al agente del PC de caja en 127.0.0.1,
+       con el token del local. Va como text/plain para que sea una petición
+       «simple» (sin preflight), que es la única que keepalive garantiza.
+       Al servidor solo se le avisa de las aperturas manuales, para auditoría.
+    */
+    var CAJON = {
+        pulso:  '{{ route('pos.cajon') }}',
+        estado: '{{ route('pos.cajon.estado') }}',
+        activo: @json($cajon['activo']),
+        agente: @json($cajon['agente'])
+    };
+
+    function alAgente(ruta, opciones) {
+        var a = CAJON.agente;
+        opciones = opciones || {};
+
+        if ((opciones.method || 'GET') === 'GET') {
+            return fetch(a.url + ruta + '?token=' + encodeURIComponent(a.token), { mode: 'cors' });
+        }
+
+        return fetch(a.url + ruta, {
+            method:    'POST',
+            mode:      'cors',
+            keepalive: !!opciones.keepalive,
+            headers:   { 'Content-Type': 'text/plain' },
+            body:      JSON.stringify({ token: a.token })
+        });
+    }
+
+    function cabecerasCajon() {
+        return {
+            'X-CSRF-TOKEN':     '{{ csrf_token() }}',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept':           'application/json'
+        };
+    }
+
+    /* Camino automático. Sin await, sin then: sale y se olvida. */
+    function abrirCajon() {
+        if (!CAJON.activo) return;
+
+        if (CAJON.agente) {
+            try { alAgente('/cajon', { method: 'POST', keepalive: true }).catch(function () {}); }
+            catch (err) { /* sin agente: la venta sigue */ }
+            return;
+        }
+
+        try {
+            fetch(CAJON.pulso, {
+                method:      'POST',
+                headers:     cabecerasCajon(),
+                keepalive:   true,
+                credentials: 'same-origin'
+            }).catch(function () {});
+        } catch (err) { /* navegador viejo sin fetch: se ignora */ }
+    }
+
+    /* ---------- botón manual + semáforo ---------- */
+    (function cajonManual() {
+        var boton = $('posCajon');
+        if (!CAJON.activo || !boton) return;
+
+        var luz   = $('posCajonLuz');
+        var texto = $('posCajonTxt');
+        var base  = texto.textContent;
+
+        function pintar(estado) {
+            luz.dataset.nivel = estado.nivel || 'caido';
+
+            // El detalle largo va al title del botón: no roba espacio en la
+            // barra y está ahí para el momento en que algo falla.
+            boton.title = estado.mensaje + (estado.detalle ? ' — ' + estado.detalle : '');
+        }
+
+        function consultar(forzar) {
+            luz.dataset.nivel = 'probando';
+
+            if (CAJON.agente) {
+                alAgente('/estado')
+                    .then(function (r) { return r.json(); })
+                    .then(pintar)
+                    .catch(function () {
+                        pintar({ nivel: 'caido', mensaje: @json(__('mus.pos.cajon_sin_agente')) });
+                    });
+                return;
+            }
+
+            fetch(CAJON.estado + (forzar ? '?forzar=1' : ''), {
+                headers:     cabecerasCajon(),
+                credentials: 'same-origin'
+            })
+                .then(function (r) { return r.json(); })
+                .then(pintar)
+                .catch(function () {
+                    pintar({ nivel: 'caido', mensaje: @json(__('mus.pos.cajon_caido')) });
+                });
+        }
+
+        boton.addEventListener('click', function () {
+            boton.disabled   = true;
+            texto.textContent = @json(__('mus.pos.cajon_enviando'));
+
+            // Con agente: primero el pulso en el PC de caja, después el aviso
+            // al servidor (manual=1 + ok) para que quede en auditoría.
+            var pulso = CAJON.agente
+                ? alAgente('/cajon', { method: 'POST' })
+                    .then(function (r) { return r.json(); })
+                    .catch(function () { return { abierto: false }; })
+                    .then(function (d) {
+                        return fetch(CAJON.pulso, {
+                            method:      'POST',
+                            headers:     cabecerasCajon(),
+                            credentials: 'same-origin',
+                            body:        new URLSearchParams({ manual: '1', ok: d.abierto ? '1' : '0' })
+                        }).then(function () { return d; });
+                    })
+                : fetch(CAJON.pulso, {
+                    method:      'POST',
+                    headers:     cabecerasCajon(),
+                    credentials: 'same-origin',
+                    // manual=1 es lo que distingue esta apertura de la de una
+                    // venta: solo estas quedan escritas en auditoría.
+                    body:        new URLSearchParams({ manual: '1' })
+                }).then(function (r) { return r.json(); });
+
+            pulso
+                .then(function (d) {
+                    texto.textContent = d.abierto
+                        ? @json(__('mus.pos.cajon_enviado'))
+                        : @json(__('mus.pos.cajon_fallo'));
+                    if (d.estado) pintar(d.estado);
+                })
+                .catch(function () {
+                    texto.textContent = @json(__('mus.pos.cajon_fallo'));
+                    pintar({ nivel: 'caido', mensaje: @json(__('mus.pos.cajon_caido')) });
+                })
+                .then(function () {
+                    // Devolver la etiqueta al cabo de un momento, para que el
+                    // botón no quede congelado diciendo «Pulso enviado».
+                    setTimeout(function () {
+                        texto.textContent = base;
+                        boton.disabled    = false;
+                    }, 1400);
+                });
+        });
+
+        consultar(false);
+
+        // Cada minuto, y solo con la pestaña a la vista: sondear una cola de
+        // impresión de Windows cuesta cientos de milisegundos y no tiene
+        // sentido hacerlo contra un POS que nadie está mirando.
+        setInterval(function () {
+            if (!document.hidden) consultar(false);
+        }, 60000);
+
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) consultar(false);
+        });
+    })();
+
+    /* ---------- cupón: aplicar / quitar ---------- */
+    (function () {
+        var caja = $('posCupon'), campo = $('posCuponCodigo'), boton = $('posCuponAplicar');
+        var activo = $('posCuponActivo'), texto = $('posCuponTexto'), msg = $('posCuponMsg');
+        if (!caja) return;
+
+        function quitar() {
+            cupon = null; caja.classList.remove('is-on'); activo.hidden = true;
+            campo.value = ''; msg.textContent = ''; pintarTodo();
+        }
+
+        function aplicar() {
+            var codigo = campo.value.trim();
+            if (!codigo) { campo.focus(); return; }
+            boton.disabled = true; msg.textContent = ''; boton.textContent = T.cuponValidando;
+            var url = @json(route('pos.cupon')) + '?codigo=' + encodeURIComponent(codigo)
+                    + '&base=' + encodeURIComponent(totales().sub);
+            fetch(url, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (!d.ok) { msg.textContent = d.mensaje || ''; return; }
+                    cupon = d; texto.textContent = d.mensaje;
+                    caja.classList.add('is-on'); activo.hidden = false;
+                    pintarTodo();
+                })
+                .catch(function () { msg.textContent = '—'; })
+                .finally(function () { boton.disabled = false; boton.textContent = @json(__('mus.pos.cupon_aplicar')); });
+        }
+
+        boton.addEventListener('click', aplicar);
+        campo.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); aplicar(); } });
+        $('posCuponQuitar').addEventListener('click', quitar);
+    })();
+
     /* ---------- envío ---------- */
     form.addEventListener('submit', function (e) {
         if (!carrito.length) { e.preventDefault(); return; }
+
+        // Un cupón que dejó de cumplir el mínimo (se quitaron productos) se avisa antes de enviar.
+        if (cupon && cupon.minimo != null && totales().sub + 0.009 < cupon.minimo) {
+            e.preventDefault();
+            $('posCuponMsg').textContent = t(T.cuponMinimo, { codigo: cupon.codigo, minimo: pesos(cupon.minimo) });
+            return;
+        }
+
+        abrirCajon();
 
         ocultos.innerHTML = '';
 
@@ -352,6 +620,11 @@
                 '<input type="hidden" name="items[' + i + '][quantity]" value="' + l.cant + '">' +
                 '<input type="hidden" name="items[' + i + '][unit_price]" value="' + l.precio + '">');
         });
+
+        if (cupon) {
+            ocultos.insertAdjacentHTML('beforeend', '<input type="hidden" name="cupon">');
+            ocultos.lastElementChild.value = cupon.codigo;
+        }
 
         // Evita enviar medios de pago en blanco.
         modal.querySelectorAll('[data-pago]').forEach(function (i) {
@@ -371,6 +644,9 @@
         if (e.key === 'F2') { e.preventDefault(); buscar.focus(); buscar.select(); }
         if (e.key === 'F9') { e.preventDefault(); abrirModal(); }
         if (e.key === 'Escape' && modal.classList.contains('is-on')) cerrarModal();
+        // F4 abre la caja sin vender. F1..F3 y F5 los pisa el navegador; F4
+        // está libre en Chrome, Edge y Firefox.
+        if (e.key === 'F4') { e.preventDefault(); var b = $('posCajon'); if (b) b.click(); }
     });
 
     /* ---------- arranque ---------- */

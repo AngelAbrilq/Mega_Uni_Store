@@ -278,6 +278,6 @@ class DemoTest extends TestCase
             'rubro'                 => 'ferreteria',
             'password'              => 'ClaveLarga123',
             'password_confirmation' => 'ClaveLarga123',
-        ], $cambios);
+        ], $this->antispam(), $cambios);
     }
 }

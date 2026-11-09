@@ -7,8 +7,24 @@
             <em>{{ rtrim(rtrim(number_format($resumen['unidades'], 2, ',', '.'), '0'), ',') }} unidades</em></div>
         <div class="skpi__c"><span>Valor devuelto</span>
             <b class="bad"><i class="moneda">$</i>{{ number_format($resumen['valor'], 0, ',', '.') }}</b><em>en el mes</em></div>
-        <div class="skpi__c"><span>Total histórico</span><b data-count="{{ $resumen['total'] }}">0</b></div>
+        <div class="skpi__c"><span>Total histórico</span><b data-count="{{ $resumen['total'] }}">0</b><em>aprobadas</em></div>
+        <div class="skpi__c"><span>Por aprobar</span>
+            <b class="{{ $resumen['pendientes'] ? 'warn' : '' }}" data-count="{{ $resumen['pendientes'] }}">0</b>
+            <em>pendientes de revisión</em></div>
     </div>
+
+    <nav class="dest" aria-label="Filtrar por estado">
+        @foreach (['' => 'Todas', 'pendiente' => 'Pendientes', 'aprobada' => 'Aprobadas', 'rechazada' => 'Rechazadas'] as $valor => $texto)
+            <a href="{{ route('returns.index', array_filter(['estado' => $valor, 'q' => $q])) }}"
+               class="dest__a {{ $estado === $valor ? 'is-on' : '' }}"
+               @if ($estado === $valor) aria-current="page" @endif>
+                {{ $texto }}
+                @if ($valor === 'pendiente' && $resumen['pendientes'])
+                    <span class="dest__n">{{ $resumen['pendientes'] }}</span>
+                @endif
+            </a>
+        @endforeach
+    </nav>
 
     <x-mus.panel :pad="false" :reveal="true">
         <x-mus.toolbar :count="$returns->total()" label="devoluciones"
@@ -24,6 +40,7 @@
                             <th>Motivo</th>
                             <th class="num">Ítems</th>
                             <th class="num">Devuelto</th>
+                            <th>Estado</th>
                             <th>Quién</th>
                             <th>Fecha</th>
                             <th class="act"></th>
@@ -41,6 +58,10 @@
                                 <td><span class="sub">{{ \Illuminate\Support\Str::limit($d->reason, 44) }}</span></td>
                                 <td class="num">{{ $d->items_count }}</td>
                                 <td class="num"><b style="color:var(--bad)"><i class="moneda">$</i>{{ number_format((float) $d->total, 0, ',', '.') }}</b></td>
+                                <td>
+                                    @php [$etq, $tono] = $d->estado_etiqueta; @endphp
+                                    <x-mus.badge :tone="$tono" :dot="true">{{ $etq }}</x-mus.badge>
+                                </td>
                                 <td>{{ $d->user->name ?? '—' }}</td>
                                 <td>{{ Formato::enPalabras($d->returned_at, 'D MMM, HH:mm') }}</td>
                                 <td class="act">
@@ -74,6 +95,17 @@
                     letter-spacing:-.03em; color:var(--ink); line-height:1.05;
                     font-variant-numeric:tabular-nums; }
         .skpi__c b.bad{ color:var(--bad); }
+        .skpi__c b.warn{ color:var(--warn); }
+
+        .dest{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+        .dest__a{ display:inline-flex; align-items:center; gap:6px; height:32px; padding:0 13px;
+                  border:1px solid var(--line); border-radius:999px; background:var(--card);
+                  font-size:12.6px; color:var(--ink-2); text-decoration:none; }
+        .dest__a:hover{ border-color:var(--a-400); }
+        .dest__a.is-on{ background:var(--a-500); border-color:var(--a-500); color:#fff; }
+        .dest__n{ display:inline-grid; place-items:center; min-width:18px; height:18px; padding:0 5px;
+                  border-radius:9px; background:var(--warn); color:#fff; font-size:10.5px; font-weight:700; }
+        @media (max-width:760px){ .dest__a{ height:38px; font-size:14px; } }
         .skpi__c em{ display:block; font-style:normal; font-size:11.4px; color:var(--muted); }
     </style>
     @endpush

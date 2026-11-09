@@ -17,7 +17,7 @@ return [
          * `Spatie\Permission\Contracts\Permission` contract.
          */
 
-        'permission' => Permission::class,
+        'permission' => App\Models\Permiso::class, // SA-PER-001: módulo, acción, descripción
 
         /*
          * When using the "HasRoles" trait from this package, we need to know which

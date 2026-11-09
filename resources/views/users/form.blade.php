@@ -7,6 +7,7 @@
         'Superadministrador' => 'Acceso total, incluidos los parámetros del sistema.',
         'Administrador'      => 'Gestiona todo el negocio: catálogo, terceros y usuarios.',
         'Supervisor'         => 'Consulta todo y edita catálogo, pero no elimina ni toca usuarios.',
+        'Cajero'             => 'Cobra en el POS, abre y cierra su turno de caja.',
         'Vendedor'           => 'Atiende el mostrador: consulta productos y gestiona clientes.',
         'Bodeguero'          => 'Recibe mercancía y ajusta existencias.',
         'Reportero'          => 'Solo lectura: informes y consultas.',
@@ -14,21 +15,13 @@
 
     $actuales = (array) (old('roles') ?? ($item?->roles->pluck('name')->all() ?? []));
 
-    /* Para que el detalle del rol se lea en español y no en nombres de código. */
-    $etiquetasModulo = [
-        'productos' => 'Productos', 'categorias' => 'Categorías', 'clientes' => 'Clientes',
-        'proveedores' => 'Proveedores', 'unidades' => 'Unidades', 'impuestos' => 'Impuestos',
-        'medios_pago' => 'Medios de pago', 'atributos' => 'Atributos', 'usuarios' => 'Usuarios',
-        'ventas' => 'Ventas', 'compras' => 'Compras', 'caja' => 'Caja',
-        'inventario' => 'Inventario', 'panel' => 'Panel', 'reportes' => 'Reportes',
-        'auditoria' => 'Auditoría', 'roles' => 'Roles', 'configuracion' => 'Configuración',
-    ];
+    /* SA-USR-002: locales donde trabaja. Ninguno marcado = todos. */
+    $tiendasActuales = array_map('intval', (array) (old('tiendas')
+        ?? ($item?->tiendas->pluck('id')->all() ?? [])));
 
-    $nombresAccion = [
-        'ver' => 'ver', 'crear' => 'crear', 'editar' => 'editar', 'eliminar' => 'eliminar',
-        'anular' => 'anular', 'devolver' => 'devolver', 'abrir' => 'abrir', 'cerrar' => 'cerrar',
-        'ajustar' => 'ajustar', 'recibir' => 'recibir', 'gestionar' => 'gestionar',
-    ];
+    /* Para que el detalle del rol se lea en español y no en nombres de código (SA-PER-001). */
+    $etiquetasModulo = \App\Support\CatalogoPermisos::MODULOS;
+    $nombresAccion   = array_map('mb_strtolower', \App\Support\CatalogoPermisos::ACCIONES);
 @endphp
 
 <div class="mf">
@@ -36,12 +29,19 @@
         <x-mus.imagen name="foto" label="Foto de perfil" :actual="$item?->imagen"
                       hint="Opcional · JPG, PNG o WEBP · máximo 2 MB. Se recorta en círculo sola." />
 
-        <x-mus.field name="name" label="Nombre completo" :value="$item?->name" :required="true"
-                     :wide="true" max="255" />
+        <x-mus.field name="name" label="Nombre(s)" :value="$item?->name" :required="true"
+                     max="255" autocomplete="given-name" />
+
+        <x-mus.field name="last_name" label="Apellidos" :value="$item?->last_name"
+                     max="100" autocomplete="family-name" />
 
         <x-mus.field name="email" label="Correo electrónico" type="email" :value="$item?->email"
-                     :required="true" max="255" :wide="true"
+                     :required="true" max="255"
                      hint="Con este correo inicia sesión. Va en minúsculas." />
+
+        <x-mus.field name="phone" label="Teléfono" type="tel" :value="$item?->phone"
+                     max="30" autocomplete="tel" inputmode="tel"
+                     hint="Opcional · ej. 300 123 4567" />
 
         <x-mus.field name="password" label="{{ $item ? 'Nueva contraseña' : 'Contraseña' }}"
                      type="password" :required="! $item"
@@ -51,8 +51,48 @@
         <x-mus.field name="password_confirmation" label="Repetir contraseña"
                      type="password" :required="! $item"
                      autocomplete="new-password" />
+
+        <x-mus.toggle name="is_active" label="Usuario activo"
+                      hint="Si lo apagas no podrá iniciar sesión y su sesión abierta se cerrará. Su historial se conserva."
+                      :checked="$item?->is_active ?? true" />
     </div>
 </div>
+
+@if ($tiendas->count() > 1)
+    <div class="urol">
+        <div class="urol__head">
+            <span class="urol__ico"><x-mus.icon name="branch" :w="15" /></span>
+            <div>
+                <b>Locales donde trabaja</b>
+                <span>Si no marcas ninguno, podrá trabajar en todos los locales del negocio.</span>
+            </div>
+        </div>
+
+        @error('tiendas.*')
+            <p class="mfld__err" style="margin:0 0 10px">
+                <x-mus.icon name="alert" :w="12" stroke-width="2.2" /><span>{{ $message }}</span>
+            </p>
+        @enderror
+
+        <input type="hidden" name="tiendas_presentes" value="1">
+
+        <div class="urol__grid">
+            @foreach ($tiendas as $tienda)
+                <div class="urol__box">
+                    <label class="urol__card">
+                        <input type="checkbox" name="tiendas[]" value="{{ $tienda->id }}"
+                               @checked(in_array($tienda->id, $tiendasActuales, true))>
+                        <span class="urol__mark"><x-mus.icon name="check" :w="12" stroke-width="3" /></span>
+                        <span class="urol__txt">
+                            <b>{{ $tienda->nombre }}</b>
+                            <span>{{ $tienda->activa ? 'Local abierto' : 'Local cerrado' }}</span>
+                        </span>
+                    </label>
+                </div>
+            @endforeach
+        </div>
+    </div>
+@endif
 
 <div class="urol">
     <div class="urol__head">
@@ -123,7 +163,7 @@
     .urol__ico{ display:grid; place-items:center; width:30px; height:30px; flex:none;
                 border-radius:9px; background:var(--a-500); color:#fff; }
     .urol__head b{ display:block; font-size:13.5px; color:var(--ink); letter-spacing:-.01em; }
-    .urol__head span span{ display:block; font-size:12.2px; color:var(--muted); margin-top:1px; }
+    .urol__head div > span{ display:block; font-size:12.2px; color:var(--muted); margin-top:1px; line-height:1.5; }
 
     .urol__grid{ display:grid; gap:10px; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); }
 

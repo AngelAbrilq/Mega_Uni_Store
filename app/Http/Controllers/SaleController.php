@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
+use App\Support\CajonDelLocal;
+use App\Services\ReciboEscPos;
+use App\Http\Requests\AnularDocumentoRequest;
 use App\Models\Sale;
 use App\Models\User;
 use App\Services\SaleService;
@@ -17,7 +21,7 @@ class SaleController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:ventas.ver',    only: ['index', 'show', 'recibo']),
+            new Middleware('permission:ventas.ver',    only: ['index', 'show', 'recibo', 'reciboEscPos']),
             new Middleware('permission:ventas.anular', only: ['anular']),
         ];
     }
@@ -70,9 +74,28 @@ class SaleController extends Controller implements HasMiddleware
     {
         $sale->load(['items.product:id,sku', 'payments.paymentMethod:id,name',
                      'customer', 'user:id,name', 'voider:id,name', 'cashSession',
-                     'returns:id,sale_id,number,total,reason,returned_at']);
+                     'returns:id,sale_id,number,total,reason,returned_at,status',
+                     'voidRequests.requester:id,name,last_name', 'voidRequests.reviewer:id,name,last_name']);
 
-        return view('sales.show', compact('sale'));
+        // RN-28 · Con agente de caja y papel térmico, el recibo sale por el agente.
+        $termica = CajonDelLocal::configuracion()['agente'] && ReciboEscPos::aplica()
+            ? CajonDelLocal::configuracion()['agente'] + ['recibo' => route('sales.recibo.escpos', $sale)]
+            : null;
+
+        return view('sales.show', compact('sale', 'termica'));
+    }
+
+    /**
+     * RN-28 · Recibo en bytes ESC/POS (base64) para que el POS se lo pase al
+     * agente de caja. El servidor no imprime: solo arma los bytes.
+     */
+    public function reciboEscPos(Sale $sale, ReciboEscPos $recibo): JsonResponse
+    {
+        if (! ReciboEscPos::aplica()) {
+            return response()->json(['error' => 'Este negocio imprime en A4: usa el recibo del navegador.'], 422);
+        }
+
+        return response()->json(['datos' => base64_encode($recibo->generar($sale))]);
     }
 
     /** Recibo listo para imprimir, en formato de tirilla. */
@@ -83,14 +106,9 @@ class SaleController extends Controller implements HasMiddleware
         return view('sales.recibo', compact('sale'));
     }
 
-    public function anular(Request $request, Sale $sale)
+    public function anular(AnularDocumentoRequest $request, Sale $sale)
     {
-        $datos = $request->validate([
-            'motivo' => ['required', 'string', 'min:5', 'max:255'],
-        ], [
-            'motivo.required' => 'Explica por qué se anula la venta.',
-            'motivo.min'      => 'El motivo debe tener al menos 5 caracteres.',
-        ]);
+        $datos = $request->validated();
 
         try {
             $this->ventas->anular($sale, $request->user()->id, $datos['motivo']);

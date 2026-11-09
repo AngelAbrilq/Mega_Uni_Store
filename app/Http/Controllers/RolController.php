@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Admin\GuardarRolRequest;
 use App\Models\Rol;
 use App\Support\Contexto;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
-use Spatie\Permission\Models\Permission;
+use App\Support\CatalogoPermisos;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
@@ -27,69 +27,6 @@ use Spatie\Permission\PermissionRegistrar;
  */
 class RolController extends Controller implements HasMiddleware
 {
-    /**
-     * Cómo se agrupan los permisos en el formulario.
-     *
-     * El orden importa: es el orden en que se leen. Primero lo de vender,
-     * que es lo que hace la mayoría todo el día; al final lo de
-     * administrar, que lo toca una persona una vez.
-     */
-    private const GRUPOS = [
-        'Vender'        => ['ventas', 'caja', 'clientes'],
-        'Catálogo'      => ['productos', 'categorias', 'unidades', 'atributos', 'impuestos'],
-        'Inventario'    => ['inventario', 'compras', 'proveedores'],
-        'Información'   => ['panel', 'reportes'],
-        'Administración' => ['usuarios', 'roles', 'auditoria', 'medios_pago', 'configuracion'],
-    ];
-
-    /**
-     * En qué orden se leen las acciones.
-     *
-     * Alfabético no sirve: pondría «Anular» antes que «Ver», y quien marca
-     * permisos piensa de menos a más —primero dejar mirar, después dejar
-     * tocar, de último dejar deshacer—. Este orden es ese razonamiento.
-     */
-    private const ORDEN = [
-        'ver', 'crear', 'editar', 'eliminar',
-        'anular', 'devolver', 'abrir', 'cerrar', 'ajustar', 'recibir', 'gestionar',
-    ];
-
-    /** Cómo se lee cada permiso en pantalla. */
-    private const ACCIONES = [
-        'ver'      => 'Ver',
-        'crear'    => 'Crear',
-        'editar'   => 'Editar',
-        'eliminar' => 'Eliminar',
-        'anular'   => 'Anular',
-        'devolver' => 'Recibir devoluciones',
-        'abrir'    => 'Abrir',
-        'cerrar'   => 'Cerrar (arqueo)',
-        'ajustar'  => 'Ajustar a mano',
-        'recibir'  => 'Recibir mercancía',
-        'gestionar' => 'Gestionar',
-    ];
-
-    private const MODULOS = [
-        'ventas'        => 'Ventas',
-        'caja'          => 'Caja',
-        'clientes'      => 'Clientes',
-        'productos'     => 'Productos',
-        'categorias'    => 'Categorías',
-        'unidades'      => 'Unidades',
-        'atributos'     => 'Atributos',
-        'impuestos'     => 'Impuestos',
-        'inventario'    => 'Inventario',
-        'compras'       => 'Compras',
-        'proveedores'   => 'Proveedores',
-        'panel'         => 'Panel',
-        'reportes'      => 'Reportes',
-        'usuarios'      => 'Usuarios',
-        'roles'         => 'Roles',
-        'auditoria'     => 'Auditoría',
-        'medios_pago'   => 'Medios de pago',
-        'configuracion' => 'Configuración',
-    ];
-
     public static function middleware(): array
     {
         return [new Middleware('permission:roles.gestionar')];
@@ -118,9 +55,9 @@ class RolController extends Controller implements HasMiddleware
         return view('roles.create', $this->listas());
     }
 
-    public function store(Request $request)
+    public function store(GuardarRolRequest $request)
     {
-        $datos = $this->validar($request);
+        $datos = $request->validated();
 
         $rol = Rol::create([
             'name'       => $datos['name'],
@@ -145,11 +82,11 @@ class RolController extends Controller implements HasMiddleware
         return view('roles.edit', $this->listas() + ['role' => $role]);
     }
 
-    public function update(Request $request, Rol $role)
+    public function update(GuardarRolRequest $request, Rol $role)
     {
         $this->soloPropios($role);
 
-        $datos = $this->validar($request, $role);
+        $datos = $request->validated();
 
         $role->name = $datos['name'];
         $role->save();
@@ -203,65 +140,15 @@ class RolController extends Controller implements HasMiddleware
         abort_unless($role->empresa_id === Contexto::empresaId(), 404);
     }
 
-    /** @return array<string, mixed> */
-    private function validar(Request $request, ?Rol $role = null): array
-    {
-        return $request->validate([
-            'name' => [
-                'required', 'string', 'max:80',
-                // Único dentro del negocio. Y además se comprueba contra
-                // los del sistema, para que nadie cree un «Cajero» propio
-                // que se confunda con el de siempre.
-                Rule::unique('roles', 'name')
-                    ->where(fn ($q) => $q->where('guard_name', 'web')
-                        ->where(fn ($s) => $s->whereNull('empresa_id')
-                            ->orWhere('empresa_id', Contexto::empresaId())))
-                    ->ignore($role?->id),
-            ],
-            'permisos'   => ['array'],
-            'permisos.*' => ['string', Rule::exists('permissions', 'name')],
-        ], [
-            'name.required' => 'Ponle un nombre al rol.',
-            'name.unique'   => 'Ya existe un rol con ese nombre.',
-        ]);
-    }
-
     /**
-     * Los permisos, agrupados como se leen.
+     * Los permisos, agrupados como se leen (SA-PER-001 · H-F14: salen de
+     * la base, así un módulo nuevo nunca queda fuera del formulario).
      *
      * @return array<string, mixed>
      */
     private function listas(): array
     {
-        $todos = Permission::orderBy('name')->pluck('name');
-
-        $grupos = [];
-
-        foreach (self::GRUPOS as $titulo => $modulos) {
-            foreach ($modulos as $modulo) {
-                $delModulo = $todos->filter(
-                    fn (string $p) => str_starts_with($p, $modulo . '.')
-                );
-
-                if ($delModulo->isEmpty()) {
-                    continue;
-                }
-
-                $grupos[$titulo][self::MODULOS[$modulo] ?? ucfirst($modulo)] = $delModulo
-                    ->sortBy(function (string $p) {
-                        $posicion = array_search(explode('.', $p)[1], self::ORDEN, true);
-
-                        // Lo que no esté en la lista va al final, no primero.
-                        return $posicion === false ? 99 : $posicion;
-                    })
-                    ->mapWithKeys(fn (string $p) => [
-                        $p => self::ACCIONES[explode('.', $p)[1]] ?? ucfirst(explode('.', $p)[1]),
-                    ])
-                    ->all();
-            }
-        }
-
-        return ['grupos' => $grupos];
+        return ['grupos' => CatalogoPermisos::agrupados()];
     }
 
     /**

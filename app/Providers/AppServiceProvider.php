@@ -20,7 +20,21 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Gate::before(function ($user, string $ability) {
+        /* TBL-SES-001: cerrar sesión deja la sesión registrada como cerrada (RN-41). */
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Auth\Events\Logout::class, function ($evento) {
+            if ($evento->guard !== 'web' || ! app()->bound('request')) {
+                return;
+            }
+
+            $servicio = app(\App\Services\SesionService::class);
+            $sesion   = $servicio->actual(request());
+
+            if ($sesion) {
+                $servicio->cerrar($sesion, \App\Models\UserSession::CERRADA, $evento->user?->getAuthIdentifier());
+            }
+        });
+
+        Gate::before(function ($user, string $ability, array $argumentos = []) {
             /**
              * Un cliente de la tienda pública NO es un usuario del panel:
              * vive en otra tabla y entra por otro guard. Si por alguna ruta
@@ -43,6 +57,14 @@ class AppServiceProvider extends ServiceProvider
             // El superadministrador pasa por encima de cualquier permiso.
             // Devolver null (y no false) deja que Gate siga evaluando el
             // resto de reglas para los demás roles.
+            //
+            // H-04: pero NO por encima de una Policy por registro (can('anular',
+            // $venta)). Esas reglas no son de permiso sino de coherencia —en
+            // qué local se mueve el inventario— y valen para todos.
+            if (collect($argumentos)->contains(fn ($a) => $a instanceof \Illuminate\Database\Eloquent\Model)) {
+                return null;
+            }
+
             return $user->hasRole('Superadministrador') ? true : null;
         });
 
@@ -52,6 +74,12 @@ class AppServiceProvider extends ServiceProvider
         Carbon::setLocale(config('app.locale', 'es'));
 
         $this->directivas();
+
+        // Con HTTPS forzado, route()/asset()/url() generan https aunque el
+        // TLS lo termine un proxy: evita contenido mixto y canónicos http.
+        if (config('sitio.forzar_https')) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
     }
 
     /**

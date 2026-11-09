@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Existencia;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\Supplier;
@@ -24,11 +25,53 @@ use InvalidArgumentException;
  */
 class SmartInventoryService
 {
+    private const BASE_CURRENCY = 'COP';
+
+    /** Rango en que el costo leído se considera coherente con el del catálogo. */
+    private const COST_RATIO_MIN = 0.5;
+    private const COST_RATIO_MAX = 2.0;
+
     public function __construct(
         private InvoiceAIReaderService $reader,
         private InventoryMathService $math,
         private PurchaseService $purchases,
+        private LimiteService $limits,
     ) {}
+
+    /**
+     * Crea en el catálogo un producto que llegó en la factura y no existía.
+     * Nace con stock 0: sus unidades entran cuando se reciba la compra, para
+     * que el kardex explique de dónde salió cada una.
+     *
+     * @param  array{name:string, sku?:?string, barcode?:?string, price:float, cost?:?float}  $data
+     */
+    public function createProduct(array $data, int $userId): Product
+    {
+        $this->limits->exigir('productos');   // respeta el tope del plan (LimiteDelPlan → 422 JSON)
+
+        return DB::transaction(function () use ($data, $userId) {
+            $product = Product::create([
+                'name'       => $data['name'],
+                'sku'        => $data['sku'] ?? null,
+                'barcode'    => $data['barcode'] ?? null,
+                'price'      => (float) $data['price'],
+                'cost'       => (float) ($data['cost'] ?? 0),
+                'is_active'  => true,
+                'is_public'  => false,
+                'created_by' => $userId,
+            ]);
+
+            Existencia::create([
+                'tienda_id'  => Contexto::tiendaId(),
+                'product_id' => $product->id,
+                'stock'      => 0,
+                'min_stock'  => 0,
+                'activo'     => true,
+            ]);
+
+            return $product;
+        });
+    }
 
     /**
      * @return array<string, mixed>
@@ -42,9 +85,13 @@ class SmartInventoryService
         $products = $this->matchProducts($extraction['items']);
         $supplier = $this->matchSupplier($extraction['proveedor'] ?? []);
 
+        $currency = $this->normalizeCurrency($extraction['moneda'] ?? null);
+        $foreign  = $currency !== self::BASE_CURRENCY;
+        $charges  = (float) ($extraction['cargos_no_mercancia']['total'] ?? 0);
+
         $lines = [];
         foreach ($extraction['items'] as $index => $aiItem) {
-            $lines[] = $this->buildLine($index, (array) $aiItem, $products, $markup);
+            $lines[] = $this->buildLine($index, (array) $aiItem, $products, $markup, $foreign);
         }
 
         $invoiceNumber = $extraction['proveedor']['numero_factura'] ?? null;
@@ -60,7 +107,18 @@ class SmartInventoryService
             'cuadre_factura'  => $this->math->reconcileInvoice(
                 array_map(fn ($l) => $l['calculado']['costo_total_compra'] ?? 0, array_filter($lines, fn ($l) => $l['calculado'] !== null)),
                 $extraction['totales_factura'] ?? null,
+                $charges,
             ),
+            'moneda' => [
+                'codigo'     => $currency,
+                'extranjera' => $foreign,   // true → el frontend exige TRM antes de confirmar
+                'evidencia'  => $foreign ? ($extraction['moneda_evidencia'] ?? null) : null,
+            ],
+            'cargos_no_mercancia' => [
+                'total'   => round($charges, 2),
+                'detalle' => $extraction['cargos_no_mercancia']['detalle'] ?? null,
+            ],
+            'fecha_alerta' => $this->dateWarning($extraction['proveedor']['fecha'] ?? null),
             'resumen' => [
                 'renglones'          => count($lines),
                 'requieren_revision' => count(array_filter($lines, fn ($l) => $l['estado'] !== 'ok')),
@@ -85,7 +143,12 @@ class SmartInventoryService
             ]);
         }
 
-        return DB::transaction(function () use ($data, $userId) {
+        $currency = $this->normalizeCurrency($data['moneda'] ?? null);
+        // La factura viene en su moneda; el kardex siempre en pesos. Los
+        // precios de venta ya vienen en pesos (son los de la tienda).
+        $rate = $currency === self::BASE_CURRENCY ? 1.0 : (float) $data['trm'];
+
+        return DB::transaction(function () use ($data, $userId, $currency, $rate) {
             $purchaseLines = [];
             $priceUpdates  = [];
 
@@ -94,7 +157,7 @@ class SmartInventoryService
                     $calc = $this->math->calculate(
                         (float) $item['cantidad_cajas'],
                         (float) $item['cantidad_unidades'],
-                        (float) $item['costo_total_compra'],
+                        round((float) $item['costo_total_compra'] * $rate, 2),
                         isset($item['precio_venta_unitario']) ? (float) $item['precio_venta_unitario'] : null,
                     );
                 } catch (InvalidArgumentException $e) {
@@ -120,7 +183,9 @@ class SmartInventoryService
                 userId: $userId,
                 factura: $data['numero_factura'] ?? null,
                 fecha: $data['fecha'] ?? null,
-                notas: trim('Ingreso inteligente (IA)' . (! empty($data['imagen_ref']) ? ' · soporte ' . $data['imagen_ref'] : '')),
+                notas: trim('Ingreso inteligente (IA)'
+                    . ($currency !== self::BASE_CURRENCY ? " · factura en {$currency}, TRM " . number_format($rate, 2, ',', '.') : '')
+                    . (! empty($data['imagen_ref']) ? ' · soporte ' . $data['imagen_ref'] : '')),
             );
 
             if ($priceUpdates !== []) {
@@ -140,15 +205,20 @@ class SmartInventoryService
      * @param  array<string, Collection>     $products  ['codigo' => …, 'nombre' => …]
      * @return array<string, mixed>
      */
-    private function buildLine(int $index, array $ai, array $products, float $markup): array
+    private function buildLine(int $index, array $ai, array $products, float $markup, bool $foreign = false): array
     {
         $product = $this->findProduct($ai, $products);
-        $alerts  = [];
+        $alerts  = ! empty($ai['cantidad_inferida']) ? ['CANTIDAD_DEDUCIDA'] : [];
 
         // Origen del precio de venta: factura (PVP impreso) → precio actual del producto → sugerido por markup.
+        // En moneda extranjera no se puede comparar un costo en USD con un precio
+        // en pesos: el precio se calcula en el navegador cuando el usuario da la TRM.
+        // El precio del catálogo ya está en pesos: sirve en cualquier moneda.
         [$unitSale, $priceSource] = match (true) {
+            $product && (float) $product->price > 0 && ($foreign || ! is_numeric($ai['precio_venta_unitario'] ?? null))
+                                                             => [(float) $product->price, 'producto'],
+            $foreign                                         => [null, 'pendiente_trm'],
             is_numeric($ai['precio_venta_unitario'] ?? null) => [(float) $ai['precio_venta_unitario'], 'factura'],
-            $product && (float) $product->price > 0         => [(float) $product->price, 'producto'],
             default                                          => [null, 'sugerido'],
         };
 
@@ -166,12 +236,14 @@ class SmartInventoryService
                 $alerts[] = 'LECTURA_INCONSISTENTE';
             }
 
-            if ($unitSale === null) {
+            if ($unitSale === null && ! $foreign) {
                 $base     = $this->math->calculate($boxes, $upb, $total);
                 $unitSale = $this->math->suggestUnitPrice($base['costo_unitario'], $markup);
             }
 
-            $calc = $this->math->calculate($boxes, $upb, $total, $unitSale);
+            // En moneda extranjera los márgenes se calculan en el navegador con
+            // la TRM: comparar un costo en USD con un precio en pesos no tiene sentido.
+            $calc = $this->math->calculate($boxes, $upb, $total, $foreign ? null : $unitSale);
         } catch (InvalidArgumentException $e) {
             return [
                 'indice' => $index, 'estado' => 'incompleto', 'error' => $e->getMessage(),
@@ -182,6 +254,17 @@ class SmartInventoryService
         }
 
         $discrepancies = $this->math->discrepancies($ai, $calc);
+
+        // Cordura contra el catálogo: un costo unitario que es menos de la
+        // mitad o más del doble del actual casi siempre es una lectura mala
+        // (unidades por caja mal leídas, un cero de más…), no un cambio de precio.
+        $catalogCost = $product ? (float) $product->cost : 0.0;
+        if ($catalogCost > 0 && ! $foreign) {
+            $ratio = $calc['costo_unitario'] / $catalogCost;
+            if ($ratio < self::COST_RATIO_MIN || $ratio > self::COST_RATIO_MAX) {
+                $alerts[] = 'COSTO_ATIPICO';
+            }
+        }
         $alerts = array_values(array_unique(array_merge(
             $alerts,
             array_diff($calc['alertas'], ['SIN_PRECIO_VENTA']),
@@ -191,7 +274,7 @@ class SmartInventoryService
         )));
         unset($calc['alertas']);
 
-        $blocking = array_intersect($alerts, ['PRODUCTO_NO_ENCONTRADO', 'BAJA_CONFIANZA', 'LECTURA_INCONSISTENTE', 'VENTA_BAJO_COSTO']);
+        $blocking = array_intersect($alerts, ['PRODUCTO_NO_ENCONTRADO', 'BAJA_CONFIANZA', 'LECTURA_INCONSISTENTE', 'VENTA_BAJO_COSTO', 'CANTIDAD_DEDUCIDA', 'COSTO_ATIPICO']);
 
         return [
             'indice'              => $index,
@@ -203,6 +286,8 @@ class SmartInventoryService
             'confianza'           => $ai['confianza'] ?? null,
             'producto_sugerido'   => $product?->only(['id', 'name', 'sku', 'barcode', 'price', 'cost']),
             'origen_precio_venta' => $priceSource,
+            'precio_venta_sugerido' => $unitSale,   // siempre en pesos
+            'cantidad_inferida'   => ! empty($ai['cantidad_inferida']),
             'calculado'           => $calc,      // ← lo que el frontend debe mostrar
             'discrepancias'       => $discrepancies,
             'alertas'             => $alerts,
@@ -269,6 +354,27 @@ class SmartInventoryService
         $name = trim((string) ($header['nombre'] ?? ''));
 
         return $name === '' ? null : Supplier::query()->where('name', $name)->first(['id', 'name', 'tax_id']);
+    }
+
+    /** Código ISO de 3 letras; cualquier cosa ilegible se toma como la moneda base. */
+    private function normalizeCurrency(?string $code): string
+    {
+        $code = strtoupper(trim((string) $code));
+
+        return preg_match('/^[A-Z]{3}$/', $code) ? $code : self::BASE_CURRENCY;
+    }
+
+    /** Aviso cuando la fecha leída no sirve y la pantalla tendrá que usar la de hoy. */
+    private function dateWarning(?string $date): ?string
+    {
+        if (! $date || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || ! strtotime($date)) {
+            return 'No se pudo leer la fecha de la factura: se usará la de hoy. Verifícala.';
+        }
+        if ($date > now()->toDateString()) {
+            return "La factura tiene fecha futura ({$date}): se usará la de hoy. Verifícala.";
+        }
+
+        return null;
     }
 
     private function isDuplicate(int $supplierId, string $invoiceNumber): bool

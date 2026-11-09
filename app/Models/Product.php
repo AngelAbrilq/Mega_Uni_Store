@@ -10,6 +10,8 @@ use App\Support\Contexto;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -94,16 +96,53 @@ class Product extends Model
         return $this->belongsTo(Supplier::class);
     }
 
+    /** AT-PRI-001 · Impuestos adicionales al principal (impoconsumo, bolsa…). */
+    public function extraTaxes(): BelongsToMany
+    {
+        return $this->belongsToMany(Tax::class, 'product_tax')->withTimestamps();
+    }
+
+    /**
+     * Todos los impuestos que se cobran al vender: el principal y los
+     * adicionales, sin repetir.
+     *
+     * @return Collection<int, Tax>
+     */
+    public function impuestos(): Collection
+    {
+        return collect([$this->tax])
+            ->merge($this->extraTaxes)
+            ->filter()
+            ->unique('id')
+            ->values();
+    }
+
+    /** TBL-TPL-001 · Proveedores que surten el producto, con su precio y entrega. */
+    public function suppliers(): BelongsToMany
+    {
+        return $this->belongsToMany(Supplier::class, 'product_supplier')
+            ->withPivot(['supplier_sku', 'supplier_price', 'lead_time_days', 'is_preferred'])
+            ->withTimestamps();
+    }
+
+    /** TBL-PPA-001 · Valores de los atributos del catálogo (Marca, Talla…). */
+    public function attributeValues(): BelongsToMany
+    {
+        return $this->belongsToMany(Attribute::class, 'attribute_product')
+            ->withPivot('value')
+            ->withTimestamps();
+    }
+
     /** Usuario que registró el producto. */
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 
     /** Último usuario que lo modificó. */
     public function editor(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'updated_by');
+        return $this->belongsTo(User::class, 'updated_by')->withTrashed();
     }
 
     /** Movimientos de inventario de este producto (kardex). */

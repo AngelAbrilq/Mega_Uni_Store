@@ -11,6 +11,13 @@
 @endphp
 
 <x-mus.page title="Todos los negocios" subtitle="Lo que hay en el sistema, cliente por cliente" icon="grid">
+    <x-slot name="actions">
+        <x-mus.btn href="{{ route('sistema.planes.index') }}" icon="card">Planes</x-mus.btn>
+        <x-mus.btn href="{{ route('sistema.permisos.index') }}" icon="key">Permisos</x-mus.btn>
+        <x-mus.btn href="{{ route('sistema.nuevo') }}" variant="primary" icon="plus">
+            Nuevo negocio
+        </x-mus.btn>
+    </x-slot>
 
     {{-- ══════════ El pulso ══════════ --}}
     <div class="msis__tiras">

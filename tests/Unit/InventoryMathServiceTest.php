@@ -99,6 +99,42 @@ class InventoryMathServiceTest extends TestCase
     }
 
     #[Test]
+    public function promedia_el_costo_ponderado_al_recibir(): void
+    {
+        // 2 SSD a $100 + 10 SSD a $100 → sigue en $100
+        $this->assertSame(100.0, $this->math->weightedAverageCost(2, 100, 10, 100));
+        // 5 RAM a $50 + 5 RAM a $60 → $55
+        $this->assertSame(55.0, $this->math->weightedAverageCost(5, 50, 5, 60));
+        // Producto nuevo (stock 0): el costo es el de la compra
+        $this->assertSame(40.0, $this->math->weightedAverageCost(0, 0, 2, 40));
+    }
+
+    #[Test]
+    public function ignora_stock_negativo_al_promediar(): void
+    {
+        $this->assertSame(60.0, $this->math->weightedAverageCost(-3, 50, 5, 60));
+    }
+
+    #[Test]
+    public function cuadra_incluyendo_cargos_que_no_son_mercancia(): void
+    {
+        // Simulación: 250 + 1000 + 80 = 1330 en productos + 70 de cargos = 1400
+        $r = $this->math->reconcileInvoice([250, 1000, 80], ['subtotal' => null, 'descuento' => 0, 'iva' => null, 'total' => 1400], 70);
+
+        $this->assertTrue($r['cuadra']);
+        $this->assertSame(1400.0, $r['suma_renglones']);
+    }
+
+    #[Test]
+    public function cuadra_con_el_envio_fuera_del_subtotal(): void
+    {
+        // Invoice real probado: renglones 730 + cargos 50 (30 recargo + 20 envío) = total 840 − IVA 60
+        $r = $this->math->reconcileInvoice([50, 150, 500, 30], ['subtotal' => 760, 'descuento' => 0, 'iva' => 60, 'total' => 840], 50);
+
+        $this->assertTrue($r['cuadra']);
+    }
+
+    #[Test]
     public function sugiere_precio_por_markup(): void
     {
         $this->assertSame(2.6, $this->math->suggestUnitPrice(2, 30));

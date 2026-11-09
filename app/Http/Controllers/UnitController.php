@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Catalogo\GuardarUnitRequest;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Validation\Rule;
 
 class UnitController extends Controller implements HasMiddleware
 {
@@ -42,9 +42,9 @@ class UnitController extends Controller implements HasMiddleware
         return view('units.create', ['tipos' => self::TIPOS]);
     }
 
-    public function store(Request $request)
+    public function store(GuardarUnitRequest $request)
     {
-        $unidad = Unit::create($this->validar($request));
+        $unidad = Unit::create($request->validated());
 
         return redirect()->route('units.index')
             ->with('success', 'Unidad «' . $unidad->name . '» creada.');
@@ -62,9 +62,9 @@ class UnitController extends Controller implements HasMiddleware
         return view('units.edit', ['unit' => $unit, 'tipos' => self::TIPOS]);
     }
 
-    public function update(Request $request, Unit $unit)
+    public function update(GuardarUnitRequest $request, Unit $unit)
     {
-        $unit->update($this->validar($request, $unit));
+        $unit->update($request->validated());
 
         return redirect()->route('units.index')
             ->with('success', 'Unidad «' . $unit->name . '» actualizada.');
@@ -82,21 +82,5 @@ class UnitController extends Controller implements HasMiddleware
 
         return redirect()->route('units.index')
             ->with('success', 'Unidad «' . $nombre . '» eliminada.');
-    }
-
-    /** @return array<string, mixed> */
-    private function validar(Request $request, ?Unit $unit = null): array
-    {
-        return $request->validate([
-            'name'   => ['required', 'string', 'max:80', Rule::unique('units', 'name')->ignore($unit?->id)],
-            'symbol' => ['required', 'string', 'max:10', Rule::unique('units', 'symbol')->ignore($unit?->id)],
-            'type'   => ['required', 'string', 'max:50'],
-        ], [
-            'name.required'   => 'La unidad necesita un nombre (por ejemplo, Kilogramo).',
-            'name.unique'     => 'Ya existe una unidad con ese nombre.',
-            'symbol.required' => 'Escribe el símbolo corto (kg, L, und…).',
-            'symbol.unique'   => 'Ese símbolo ya está en uso.',
-            'type.required'   => 'Indica qué tipo de medida es.',
-        ]);
     }
 }

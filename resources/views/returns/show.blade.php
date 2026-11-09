@@ -9,6 +9,58 @@
         <x-mus.btn href="{{ route('sales.show', $devolucion->sale_id) }}" icon="money">Ver la venta</x-mus.btn>
     </x-slot>
 
+    @if ($devolucion->status === \App\Models\SaleReturn::PENDIENTE)
+        <div class="cav cav--warn" data-reveal>
+            <span><x-mus.icon name="clock" :w="16" stroke-width="2.4" /></span>
+            <div>
+                <b>Pendiente de aprobación</b>
+                <p>
+                    La cantidad quedó reservada en la venta, pero la mercancía todavía
+                    no volvió al inventario. Un supervisor debe aprobarla o rechazarla.
+                </p>
+                <q>{{ $devolucion->reason }}</q>
+
+                @can('ventas.aprobar_devolucion')
+                    @can('revisar', $devolucion)
+                        @error('devolucion')<p class="mfld__err">{{ $message }}</p>@enderror
+                        <div class="drev">
+                            <form method="POST" action="{{ route('returns.aprobar', $devolucion) }}">
+                                @csrf
+                                <x-mus.btn type="submit" variant="primary" icon="check">Aprobar devolución</x-mus.btn>
+                            </form>
+
+                            <form method="POST" action="{{ route('returns.rechazar', $devolucion) }}" class="drev__no">
+                                @csrf
+                                <label for="motivo_rechazo" class="mfld__lab">Motivo del rechazo</label>
+                                <div class="drev__fila">
+                                    <input id="motivo_rechazo" name="motivo_rechazo" class="mfld__in"
+                                           value="{{ old('motivo_rechazo') }}" maxlength="255" required
+                                           placeholder="Ej. el producto no corresponde a la venta">
+                                    <x-mus.btn type="submit" icon="close">Rechazar</x-mus.btn>
+                                </div>
+                                @error('motivo_rechazo')<p class="mfld__err">{{ $message }}</p>@enderror
+                            </form>
+                        </div>
+                    @else
+                        <p><i>Para revisarla cámbiate al local de la venta.</i></p>
+                    @endcan
+                @endcan
+            </div>
+        </div>
+    @elseif ($devolucion->status === \App\Models\SaleReturn::RECHAZADA)
+        <div class="cav cav--bad" data-reveal>
+            <span><x-mus.icon name="close" :w="16" stroke-width="2.4" /></span>
+            <div>
+                <b>Devolución rechazada</b>
+                <p>
+                    {{ $devolucion->reviewer->name ?? 'Un supervisor' }} la rechazó
+                    {{ \App\Support\Formato::enPalabras($devolucion->reviewed_at, 'D MMM YYYY, HH:mm') }}.
+                    La cantidad volvió a quedar disponible y el inventario no se movió.
+                </p>
+                <q>{{ $devolucion->rejection_reason }}</q>
+            </div>
+        </div>
+    @else
     <div class="cav {{ $devolucion->restock ? 'cav--ok' : 'cav--warn' }}" data-reveal>
         <span><x-mus.icon :name="$devolucion->restock ? 'check' : 'alert'" :w="16" stroke-width="2.4" /></span>
         <div>
@@ -25,6 +77,7 @@
             <q>{{ $devolucion->reason }}</q>
         </div>
     </div>
+    @endif
 
     <div class="vgrid">
         <x-mus.panel title="Productos devueltos" :pad="false"
@@ -85,6 +138,19 @@
                     <dd>{{ $devolucion->sale?->customer?->full_name ?? 'Consumidor final' }}</dd>
                 </div>
                 <div><dt>Recibió</dt><dd>{{ $devolucion->user->name ?? '—' }}</dd></div>
+                <div>
+                    <dt>Estado</dt>
+                    <dd>
+                        @php [$etq, $tono] = $devolucion->estado_etiqueta; @endphp
+                        <x-mus.badge :tone="$tono" :dot="true">{{ $etq }}</x-mus.badge>
+                    </dd>
+                </div>
+                @if ($devolucion->reviewed_by)
+                    <div>
+                        <dt>{{ $devolucion->status === 'rechazada' ? 'Rechazó' : 'Aprobó' }}</dt>
+                        <dd>{{ $devolucion->reviewer->name ?? '—' }} · {{ Formato::enPalabras($devolucion->reviewed_at, 'D MMM, HH:mm') }}</dd>
+                    </div>
+                @endif
                 <div><dt>Fecha</dt><dd>{{ Formato::enPalabras($devolucion->returned_at, 'D MMM YYYY, HH:mm') }}</dd></div>
                 <div>
                     <dt>Reingresó a bodega</dt>
@@ -117,6 +183,15 @@
         .cav--ok > span{ background:var(--ok); }
         .cav--warn{ border-color:rgba(150,112,60,.35); background:rgba(150,112,60,.06); }
         .cav--warn > span{ background:var(--warn); }
+        .cav--bad{ border-color:rgba(180,60,60,.35); background:rgba(180,60,60,.06); }
+        .cav--bad > span{ background:var(--bad); }
+
+        .drev{ display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; margin-top:12px; }
+        .drev__no{ flex:1 1 300px; }
+        .drev__fila{ display:flex; gap:8px; }
+        .drev__fila .mfld__in{ flex:1; min-width:0; height:38px; padding:0 11px;
+                               border:1px solid var(--line); border-radius:9px; font:inherit; }
+        @media (max-width:760px){ .drev__fila{ flex-direction:column; } .drev__fila .mfld__in{ height:44px; font-size:16px; } }
 
         .ctot{ padding:13px 18px 16px; border-top:1px solid var(--line-2); background:var(--paper); }
         .ctot > div{ display:flex; justify-content:space-between; align-items:baseline;

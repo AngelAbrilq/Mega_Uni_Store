@@ -5,13 +5,10 @@
     $textoStock = ['agotado' => 'Agotado', 'bajo' => 'Por debajo del mínimo', 'ok' => 'Disponible'];
 
     // Precio con impuesto incluido, para saber qué paga realmente el cliente.
-    $impuesto = $product->tax;
-    $valorImp = 0.0;
-    if ($impuesto) {
-        $valorImp = $impuesto->type === 'fixed'
-            ? (float) $impuesto->rate
-            : (float) $product->price * (float) $impuesto->rate / 100;
-    }
+    // AT-PRI-001: el principal y los adicionales, igual que el POS (Tax::sobreRenglon).
+    $impuesto    = $product->tax;
+    $calculo     = \App\Models\Tax::sobreRenglon($product->impuestos(), (float) $product->price, 1);
+    $valorImp    = $calculo['monto'];
     $precioFinal = (float) $product->price + $valorImp;
 @endphp
 
@@ -52,7 +49,7 @@
         <div class="pshow-kpi__c">
             <span>Precio con impuesto</span>
             <b><i class="moneda">$</i>{{ number_format($precioFinal, 0, ',', '.') }}</b>
-            <em>{{ $impuesto ? $impuesto->label : 'Sin impuesto asociado' }}</em>
+            <em>{{ $product->impuestos()->isNotEmpty() ? $product->impuestos()->pluck('label')->join(' + ') : 'Sin impuesto asociado' }}</em>
         </div>
     </div>
 
@@ -75,15 +72,25 @@
                     <dd>{{ $product->category?->path ?? '—' }}</dd>
                 </div>
                 <div><dt>Unidad</dt><dd>{{ optional($product->unit)->label ?? '—' }}</dd></div>
-                <div><dt>Impuesto</dt><dd>{{ $impuesto?->label ?? '—' }}</dd></div>
                 <div>
-                    <dt>Proveedor</dt>
+                    <dt>Impuestos</dt>
+                    <dd>
+                        @forelse ($product->impuestos() as $t)
+                            <x-mus.badge tone="{{ $t->id === $product->tax_id ? 'info' : 'soft' }}">{{ $t->label }}</x-mus.badge>
+                        @empty — @endforelse
+                    </dd>
+                </div>
+                <div>
+                    <dt>Proveedor preferido</dt>
                     <dd>
                         @if ($product->supplier)
                             <a href="{{ route('suppliers.show', $product->supplier) }}">{{ $product->supplier->name }}</a>
                         @else — @endif
                     </dd>
                 </div>
+                @foreach ($product->attributeValues as $atr)
+                    <div><dt>{{ $atr->name }}</dt><dd>{{ $atr->pivot->value }}</dd></div>
+                @endforeach
                 <div><dt>Costo</dt><dd><i class="moneda">$</i>{{ number_format($product->cost, 2, ',', '.') }}</dd></div>
                 <div><dt>Precio de venta</dt><dd><i class="moneda">$</i>{{ number_format($product->price, 2, ',', '.') }}</dd></div>
                 <div><dt>Stock mínimo</dt><dd>{{ number_format($product->min_stock, 0, ',', '.') }}</dd></div>
@@ -102,6 +109,27 @@
         </x-mus.panel>
 
         <div style="display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-content:start">
+            {{-- TBL-TPL-001 --}}
+            @if ($product->suppliers->count())
+                <x-mus.panel title="Proveedores" sub="{{ $product->suppliers->count() }} {{ $product->suppliers->count() === 1 ? 'proveedor' : 'proveedores' }}">
+                    <ul class="pprov">
+                        @foreach ($product->suppliers->sortByDesc('pivot.is_preferred') as $sup)
+                            <li>
+                                <span>
+                                    <a href="{{ route('suppliers.show', $sup) }}"><b>{{ $sup->name }}</b></a>
+                                    @if ($sup->pivot->is_preferred)<x-mus.badge tone="ok" :dot="true">Preferido</x-mus.badge>@endif
+                                    <i>
+                                        {{ $sup->pivot->supplier_sku ? 'Código ' . $sup->pivot->supplier_sku . ' · ' : '' }}
+                                        {{ $sup->pivot->lead_time_days !== null ? 'Entrega en ' . $sup->pivot->lead_time_days . ' ' . ($sup->pivot->lead_time_days == 1 ? 'día' : 'días') : 'Entrega sin definir' }}
+                                    </i>
+                                </span>
+                                <em>{{ $sup->pivot->supplier_price !== null ? '$' . number_format((float) $sup->pivot->supplier_price, 0, ',', '.') : '—' }}</em>
+                            </li>
+                        @endforeach
+                    </ul>
+                </x-mus.panel>
+            @endif
+
             <x-mus.panel title="Registro" sub="Trazabilidad">
                 <dl class="mdl">
                     <div><dt>Identificador</dt><dd>#{{ $product->id }}</dd></div>
@@ -184,6 +212,17 @@
         .prel i{ display:block; font-style:normal; font-size:11.4px; color:var(--muted); margin-top:1px; }
         .prel em{ font-style:normal; font-size:13px; font-weight:700; color:var(--ink);
                   font-variant-numeric:tabular-nums; white-space:nowrap; }
+    </style>
+    @endpush
+    @push('styles')
+    <style>
+        .pprov{ list-style:none; margin:0; padding:0; }
+        .pprov li{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+                   padding:10px 0; border-bottom:1px solid var(--line-2); }
+        .pprov li:last-child{ border-bottom:0; }
+        .pprov b{ font-size:12.9px; color:var(--ink); }
+        .pprov i{ display:block; font-style:normal; font-size:11.3px; color:var(--muted); margin-top:2px; }
+        .pprov em{ font-style:normal; font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink); }
     </style>
     @endpush
 </x-mus.page>

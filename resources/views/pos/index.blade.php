@@ -8,6 +8,21 @@
             <x-mus.btn href="{{ route('cash.create') }}" variant="primary" icon="money">{{ __('mus.caja.abrir') }}</x-mus.btn>
         @endif
         <x-mus.btn href="{{ route('sales.index') }}" icon="back">{{ __('mus.pos.ventas_dia') }}</x-mus.btn>
+
+        {{-- Abrir la caja sin vender: para dar cambio, guardar un billete o
+             cuadrar. Solo aparece si hay hardware configurado; en un servidor
+             sin cajón el botón sería una promesa que el sistema no cumple.
+             Va FUERA del <form> de la venta a propósito: aunque sea
+             type="button", tenerlo dentro invita a que un Enter perdido en el
+             buscador lo convierta en el submit por defecto. --}}
+        @if ($cajon['activo'])
+            <x-mus.btn id="posCajon" icon="wallet"
+                       aria-label="{{ __('mus.pos.cajon_aria') }}"
+                       title="{{ __('mus.pos.cajon_probando') }}">
+                <span id="posCajonTxt">{{ __('mus.pos.cajon') }}</span>
+                <span class="cajon-luz" id="posCajonLuz" aria-hidden="true"></span>
+            </x-mus.btn>
+        @endif
     </x-slot>
 
     @unless ($turno)
@@ -58,6 +73,21 @@
                 <div class="pos-tic__empty" id="posTicVacio">
                     <x-mus.icon name="box" :w="26" stroke-width="1.5" />
                     <p>{{ __('mus.pos.toca_para_agregar') }}</p>
+                </div>
+
+                {{-- VD-CUP-001 · el servidor recalcula el descuento al cobrar (RN-35). --}}
+                <div class="pos-cup" id="posCupon">
+                    <label class="pos-cup__in">
+                        <x-mus.icon name="tag" :w="14" />
+                        <input type="text" id="posCuponCodigo" maxlength="40" autocomplete="off"
+                               placeholder="{{ __('mus.pos.cupon_placeholder') }}" aria-label="{{ __('mus.pos.cupon') }}">
+                    </label>
+                    <button type="button" class="mb mb--ghost mb--sm" id="posCuponAplicar">{{ __('mus.pos.cupon_aplicar') }}</button>
+                    <div class="pos-cup__ok" id="posCuponActivo" hidden>
+                        <span><x-mus.icon name="check" :w="13" stroke-width="2.4" /> <b id="posCuponTexto"></b></span>
+                        <button type="button" id="posCuponQuitar" aria-label="{{ __('mus.pos.cupon_quitar') }}">&times;</button>
+                    </div>
+                    <p class="pos-cup__msg" id="posCuponMsg" role="status" aria-live="polite"></p>
                 </div>
 
                 <div class="pos-tot">
