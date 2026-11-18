@@ -154,6 +154,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/sales/{sale}', [SaleController::class, 'show'])->name('sales.show');
     Route::get('/sales/{sale}/recibo', [SaleController::class, 'recibo'])->name('sales.recibo');
     Route::get('/sales/{sale}/recibo/escpos', [SaleController::class, 'reciboEscPos'])->name('sales.recibo.escpos');
+    Route::post('/sales/{sale}/recibo/relevo', [SaleController::class, 'reciboPorServidor'])->name('sales.recibo.relevo');
     Route::post('/sales/{sale}/anular', [SaleController::class, 'anular'])->name('sales.anular');
     // VD-VTA-002 · anular con aprobación (RN-43)
     Route::post('/sales/{sale}/solicitar-anulacion', [SaleVoidRequestController::class, 'store'])->name('void_requests.store');

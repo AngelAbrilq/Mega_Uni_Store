@@ -27,7 +27,7 @@ final class CajonDelLocal
                 'modo'   => $modo,
                 'activo' => true,
                 'agente' => [
-                    'url'   => 'http://127.0.0.1:' . (int) ($tienda->agent_port ?: 9123),
+                    'url'   => AgenteDeCaja::url($tienda),
                     'token' => $tienda->asegurarTokenDeAgente(),
                 ],
             ],

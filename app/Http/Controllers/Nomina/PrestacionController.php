@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Nomina;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Nomina\CalcularPrestacionRequest;
+use App\Http\Requests\Nomina\LiquidacionFinalRequest;
+use App\Http\Requests\Nomina\PagarPrestacionesRequest;
 use App\Models\Employee;
 use App\Models\SocialBenefit;
 use App\Services\Nomina\PrestacionesService;
@@ -44,13 +47,9 @@ class PrestacionController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function store(Request $request)
+    public function store(CalcularPrestacionRequest $request)
     {
-        $d = $request->validate([
-            'tipo'         => ['required', Rule::in(['cesantias', 'prima'])],
-            'period_start' => ['required', 'date'],
-            'period_end'   => ['required', 'date', 'after_or_equal:period_start'],
-        ]);
+        $d = $request->validated();
 
         $desde = Carbon::parse($d['period_start']);
         $hasta = Carbon::parse($d['period_end']);
@@ -62,12 +61,9 @@ class PrestacionController extends Controller implements HasMiddleware
     }
 
     /** E4 · Liquidación final de un empleado que se retira. */
-    public function final(Request $request)
+    public function final(LiquidacionFinalRequest $request)
     {
-        $d = $request->validate([
-            'employee_id' => ['required', Rule::exists('employees', 'id')->whereIn('tienda_id', \App\Support\Contexto::tiendaIds() ?? [])],
-            'fecha'       => ['required', 'date'],
-        ]);
+        $d = $request->validated();
 
         $empleado = Employee::withTrashed()->findOrFail($d['employee_id']);
         $creadas  = $this->prestaciones->liquidacionFinal($empleado, Carbon::parse($d['fecha']));
@@ -77,9 +73,9 @@ class PrestacionController extends Controller implements HasMiddleware
     }
 
     /** E5 */
-    public function pagar(Request $request)
+    public function pagar(PagarPrestacionesRequest $request)
     {
-        $d = $request->validate(['ids' => ['required', 'array', 'min:1'], 'ids.*' => ['integer']], ['ids.required' => 'Selecciona al menos una prestación.']);
+        $d = $request->validated();
 
         $n = $this->prestaciones->pagar(SocialBenefit::deTienda(null)->whereKey($d['ids'])->get(), $request->user());
 

@@ -397,19 +397,93 @@
        ══════════════════════════════════════════════════════════════ */
     var TERMICA = @json($termica);
 
+    @php
+    $termicaTxt = [
+        'ok'        => __('mus.ventas.termica_ok'),
+        'servidor'  => __('mus.ventas.termica_servidor'),
+        'agente'    => __('mus.ventas.termica_sin_agente'),
+        'token'     => __('mus.ventas.termica_token'),
+        'origen'    => __('mus.ventas.termica_origen'),
+        'impresora' => __('mus.ventas.termica_impresora'),
+        'abrir'     => __('mus.ventas.termica_abrir_recibo'),
+    ];
+    @endphp
+    var TERMICA_TXT = @json($termicaTxt);
+
+    /* Un fallo con nombre: «no respondió» no le dice al cajero qué revisar. */
+    function falloTermica(etapa, detalle) {
+        var e = new Error(detalle || etapa);
+        e.etapa = etapa;
+        return e;
+    }
+
+    /* Navegador → agente. Si la RED falla (agente apagado, o el navegador
+       bloquea la red local) y el servidor es esta misma máquina, el servidor
+       hace de relevo. Un 401/403/502 del agente NO se releva: el agente sí
+       contestó y repetir por otro camino daría el mismo resultado. */
     function imprimirEnTermica() {
         return fetch(TERMICA.recibo, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
-            .then(function (r) { if (!r.ok) throw new Error('recibo'); return r.json(); })
+            .then(function (r) { if (!r.ok) throw falloTermica('servidor'); return r.json(); })
             .then(function (d) {
                 return fetch(TERMICA.url + '/imprimir', {
                     method:  'POST',
                     mode:    'cors',
                     headers: { 'Content-Type': 'text/plain' },
                     body:    JSON.stringify({ token: TERMICA.token, datos: d.datos })
+                }).then(function (r) {
+                    return r.json().catch(function () { return {}; }).then(function (j) {
+                        if (r.ok && j.impreso) return;
+                        if (r.status === 401) throw falloTermica('token');
+                        if (r.status === 403) throw falloTermica('origen', window.location.origin);
+                        throw falloTermica('impresora', j.detalle);
+                    });
+                }, function () {
+                    if (!TERMICA.relevo) throw falloTermica('agente');
+                    return porElServidor();
                 });
-            })
-            .then(function (r) { return r.json(); })
-            .then(function (d) { if (!d.impreso) throw new Error(d.detalle || 'agente'); });
+            });
+    }
+
+    function porElServidor() {
+        return fetch(TERMICA.relevo, {
+            method:      'POST',
+            credentials: 'same-origin',
+            headers:     { 'Accept': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()), 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (j) {
+                if (!r.ok || !j.impreso) throw falloTermica('agente', j.detalle);
+            });
+        });
+    }
+
+    /* El motivo queda a la vista, con la salida a la mano: el recibo del navegador. */
+    function avisarFalloTermica(e) {
+        var recibo = document.getElementById('btnRecibo');
+        var viejo  = document.getElementById('avisoTermica');
+        if (viejo) viejo.remove();
+
+        var aviso = document.createElement('div');
+        aviso.className = 'rec-aviso';
+        aviso.id = 'avisoTermica';
+        aviso.setAttribute('role', 'alert');
+
+        var texto = document.createElement('span');
+        texto.textContent = (TERMICA_TXT[e.etapa] || TERMICA_TXT.agente) + (e.etapa !== e.message && e.message ? ' (' + e.message + ')' : '');
+        aviso.appendChild(texto);
+
+        if (recibo) {
+            var enlace = document.createElement('a');
+            enlace.className = 'mb mb--primary mb--sm';
+            enlace.target = '_blank';
+            enlace.rel = 'noopener';
+            enlace.href = recibo.href;
+            enlace.textContent = TERMICA_TXT.abrir;
+            aviso.appendChild(enlace);
+        }
+
+        var destino = document.querySelector('.mp') || document.body;
+        destino.parentNode.insertBefore(aviso, destino);
+        if (window.console) console.warn('[térmica]', e.etapa || 'error', e.message);
     }
 
     (function () {
@@ -420,8 +494,8 @@
             var texto = boton.textContent;
             boton.disabled = true;
             imprimirEnTermica()
-                .then(function () { boton.textContent = @json(__('mus.ventas.termica_ok')); })
-                .catch(function () { boton.textContent = @json(__('mus.ventas.termica_fallo')); })
+                .then(function () { boton.textContent = TERMICA_TXT.ok; })
+                .catch(function (e) { boton.textContent = @json(__('mus.ventas.termica_fallo')); avisarFalloTermica(e); })
                 .then(function () { setTimeout(function () { boton.textContent = texto; boton.disabled = false; }, 1600); });
         });
     })();

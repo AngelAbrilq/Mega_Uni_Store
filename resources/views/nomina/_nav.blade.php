@@ -100,6 +100,8 @@
     .nlist li:first-child{ border-top:0; }
     .nlist li > div{ min-width:0; }
     .nhint{ margin:0; padding:12px 16px; font-size:12.2px; color:var(--muted); line-height:1.55; border-top:1px solid var(--line-2); background:var(--paper); }
+    /* La nota dentro de un panel con relleno: como tarjeta, no como franja. */
+    .mp__body > .nhint{ margin-top:12px; border:1px solid var(--line-2); border-radius:10px; }
     .nbar{ height:8px; border-radius:999px; background:var(--line-2); overflow:hidden; }
     .nbar i{ display:block; height:100%; border-radius:inherit; background:var(--a-500); }
 </style>

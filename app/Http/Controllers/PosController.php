@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Support\CajonDelLocal;
 use App\Models\Tienda;
 use App\Http\Requests\Ventas\RegistrarVentaRequest;
+use App\Http\Requests\Ventas\VistaPreviaCuponRequest;
 use App\Models\AuditLog;
 use App\Models\CashSession;
 use App\Models\Customer;
@@ -85,12 +86,9 @@ class PosController extends Controller implements HasMiddleware
      * Solo informa: no gasta usos. El descuento definitivo lo vuelve a
      * calcular SaleService al cobrar, con el cupón bloqueado.
      */
-    public function cupon(Request $request): JsonResponse
+    public function cupon(VistaPreviaCuponRequest $request): JsonResponse
     {
-        $datos = $request->validate([
-            'codigo' => ['required', 'string', 'max:40'],
-            'base'   => ['required', 'numeric', 'min:0', 'max:999999999'],
-        ]);
+        $datos = $request->validated();
 
         try {
             ['cupon' => $cupon, 'descuento' => $descuento] = $this->cupones->evaluar($datos['codigo'], (float) $datos['base']);

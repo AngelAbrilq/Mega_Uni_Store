@@ -1,0 +1,23 @@
+# Unidad de usuario de systemd: el agente arranca con la sesión del cajero.
+#
+#   mkdir -p ~/.config/systemd/user
+#   cp tools/agente-caja/agente-caja.service ~/.config/systemd/user/
+#   # edita WorkingDirectory con la ruta real del proyecto
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now agente-caja
+#   journalctl --user -u agente-caja -f        # bitácora
+[Unit]
+Description=Agente de caja Mega Uni Store (cajon y recibo ESC/POS)
+After=network.target
+
+[Service]
+WorkingDirectory=%h/proyectos/Mega_Uni_Store/tools/agente-caja
+ExecStart=/usr/bin/node agente.js
+Restart=on-failure
+RestartSec=3
+# El agente solo necesita escribir en la impresora.
+NoNewPrivileges=true
+PrivateTmp=false
+
+[Install]
+WantedBy=default.target

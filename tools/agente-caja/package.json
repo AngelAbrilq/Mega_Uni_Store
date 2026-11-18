@@ -1,0 +1,13 @@
+{
+  "name": "mus-agente-caja",
+  "version": "2.0.0",
+  "description": "Agente de caja de Mega Uni Store: abre el cajón e imprime recibos ESC/POS en el PC del mostrador (RN-28).",
+  "private": true,
+  "main": "agente.js",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node agente.js",
+    "test": "node --test"
+  },
+  "license": "UNLICENSED"
+}

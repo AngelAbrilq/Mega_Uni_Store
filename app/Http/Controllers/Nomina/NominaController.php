@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Nomina;
 
 use App\Exceptions\NominaInmutable;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Nomina\AgregarConceptoNominaRequest;
+use App\Http\Requests\Nomina\GuardarParametrosNominaRequest;
 use App\Http\Requests\Nomina\LiquidarNominaRequest;
+use App\Http\Requests\Nomina\NotaAjusteRequest;
 use App\Models\Employee;
 use App\Models\EmploymentContract;
 use App\Models\LeaveRequest;
@@ -21,7 +24,6 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Carbon;
-use Illuminate\Validation\Rule;
 
 /**
  * NR-NOM-003/004/008/010 · Nóminas del local activo.
@@ -140,22 +142,17 @@ class NominaController extends Controller implements HasMiddleware
         });
     }
 
-    public function ajuste(Request $request, Payroll $payroll)
+    public function ajuste(NotaAjusteRequest $request, Payroll $payroll)
     {
-        $ajuste = $this->nomina->crearAjuste($payroll, $request->user(), $request->input('notes'));
+        $ajuste = $this->nomina->crearAjuste($payroll, $request->user(), $request->validated('notes'));
 
         return redirect()->route('payrolls.show', $ajuste)->with('success', "Nómina de ajuste {$ajuste->number} creada: agrega los conceptos a corregir.");
     }
 
     /** NR-NOM-002 E4 · concepto no obligatorio con monto variable por empleado. */
-    public function agregarConcepto(Request $request, Payroll $payroll)
+    public function agregarConcepto(AgregarConceptoNominaRequest $request, Payroll $payroll)
     {
-        $datos = $request->validate([
-            'employee_id'        => ['required', Rule::exists('payroll_employees', 'employee_id')->where('payroll_id', $payroll->id)],
-            'payroll_concept_id' => ['required', 'integer'],
-            'amount'             => ['required', 'numeric', 'min:1', 'max:999999999'],
-            'quantity'           => ['nullable', 'numeric', 'min:0', 'max:9999'],
-        ], ['employee_id.exists' => 'El empleado no está en esta nómina.'], ['amount' => 'valor', 'payroll_concept_id' => 'concepto']);
+        $datos = $request->validated();
 
         return $this->intentar(function () use ($payroll, $datos) {
             $this->nomina->agregarConcepto($payroll, Employee::withTrashed()->findOrFail($datos['employee_id']),
@@ -228,24 +225,9 @@ class NominaController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function guardarParametros(Request $request)
+    public function guardarParametros(GuardarParametrosNominaRequest $request)
     {
-        $d = $request->validate([
-            'smlmv'              => ['required', 'numeric', 'min:1'],
-            'auxilio_transporte' => ['required', 'numeric', 'min:0'],
-            'horas_mes'          => ['nullable', 'integer', 'between:150,240'],
-            'recargo_dominical'  => ['nullable', 'numeric', 'between:0,200'],
-            'ratio_alerta'       => ['required', 'numeric', 'between:1,100'],
-        ], [], ['smlmv' => 'SMLMV', 'horas_mes' => 'horas al mes']);
-
-        Setting::guardar([
-            'nomina.smlmv'              => $d['smlmv'],
-            'nomina.auxilio_transporte' => $d['auxilio_transporte'],
-            'nomina.horas_mes'          => $d['horas_mes'] ?? 'auto',
-            'nomina.recargo_dominical'  => $d['recargo_dominical'] ?? 'auto',
-            'nomina.exoneracion_114'    => $request->boolean('exoneracion_114') ? '1' : '0',
-            'nomina.ratio_alerta'       => $d['ratio_alerta'],
-        ]);
+        Setting::guardar($request->ajustes());
 
         return back()->with('success', 'Parámetros de nómina guardados. Aplican a las próximas liquidaciones.');
     }

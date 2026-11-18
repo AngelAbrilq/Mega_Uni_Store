@@ -24,7 +24,10 @@ return [
         // windows  → cola de impresión de Windows (USB o recurso compartido)
         // network  → impresora térmica con IP propia, cajón en su RJ11
         // serial   → adaptador USB trigger que se presenta como puerto COM
-        // none     → sin hardware (desarrollo, demos, servidores Linux)
+        // linux    → dispositivo de Linux: /dev/usb/lp0 (térmica USB) o
+        //            /dev/ttyUSB0 (adaptador serie / USB trigger)
+        // cups     → cola de CUPS en crudo (PRINTER_NAME = nombre de la cola)
+        // none     → sin hardware (desarrollo, demos, servidor en la nube)
         'driver' => env('CASH_DRAWER_DRIVER', 'none'),
 
         // Driver "windows": nombre EXACTO del recurso compartido.
@@ -47,6 +50,13 @@ return [
         // se mira en Administrador de dispositivos › Puertos (COM y LPT).
         'com'  => env('CASH_DRAWER_COM', 'COM3'),
         'baud' => (int) env('CASH_DRAWER_BAUD', 9600),
+
+        // Driver "linux". Es el equivalente de «windows» y «serial» cuando el
+        // servidor corre en Linux. El usuario que ejecuta PHP debe poder
+        // escribir en el dispositivo: grupo «lp» para /dev/usb/lp0 y «uucp»
+        // (Arch/CachyOS) o «dialout» (Debian/Ubuntu) para /dev/ttyUSB0.
+        // CASH_DRAWER_BAUD solo se aplica a los /dev/tty* (0 = no tocar).
+        'device' => env('CASH_DRAWER_DEVICE', '/dev/usb/lp0'),
 
         // Pin del conector RJ11. Casi todos los cajones responden al 0;
         // algunos modelos de dos cajones usan el 1 para el segundo.

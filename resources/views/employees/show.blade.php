@@ -165,6 +165,11 @@
         </div>
     </div>
 
+
+    @can('nomina.ver')
+        @include('employees._nomina')
+    @endcan
+
     @push('styles')
     <style>
         .emp-grid{ display:grid; gap:16px; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr); align-items:start; }

@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Support\Contexto;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Mike42\Escpos\PrintConnectors\CupsPrintConnector;
 use Mike42\Escpos\PrintConnectors\FilePrintConnector;
 use Mike42\Escpos\PrintConnectors\NetworkPrintConnector;
 use Mike42\Escpos\PrintConnectors\PrintConnector;
@@ -100,9 +101,10 @@ class PrinterService
         }
 
         $sondear = match ($driver) {
-            'network' => fn () => $this->sondearRed($cfg),
-            'serial'  => fn () => $this->sondearSerial($cfg),
-            default   => fn () => $this->sondearWindows($cfg),
+            'network'       => fn () => $this->sondearRed($cfg),
+            'serial'        => fn () => $this->sondearSerial($cfg),
+            'linux', 'cups' => fn () => $this->sondearLinux($cfg),
+            default         => fn () => $this->sondearWindows($cfg),
         };
 
         if ($forzar) {
@@ -273,6 +275,79 @@ class PrinterService
     }
 
     /**
+     * Drivers `linux` y `cups`: el equivalente en Linux de `windows`/`serial`.
+     *
+     * Igual que con la cola de Windows, es un canal de una sola vía: se puede
+     * saber si el destino existe y acepta datos, no si el cajón está abierto.
+     * Para `linux` basta mirar el archivo de dispositivo (sin escribirle nada:
+     * hay adaptadores trigger que abren el cajón con CUALQUIER byte, y un
+     * sondeo que abre el cajón cada 10 s sería peor que no sondear).
+     */
+    private function sondearLinux(array $cfg): array
+    {
+        $destino = $this->destino($cfg);
+        $driver  = $cfg['driver'];
+
+        if ($driver === 'linux') {
+            $ruta = (string) ($cfg['device'] ?? '');
+            $ok   = $ruta !== '' && file_exists($ruta) && is_writable($ruta);
+
+            $detalle = match (true) {
+                $ok                  => 'El dispositivo existe y se puede escribir. Linux no permite leer por aquí '
+                                      . 'si el cable del cajón está puesto: eso solo se confirma abriéndolo.',
+                ! file_exists($ruta) => 'Ese dispositivo no existe: conecta la impresora y mira `ls /dev/usb/ /dev/ttyUSB*`.',
+                default              => 'El usuario que corre PHP no puede escribir ahí: agrégalo al grupo dueño del '
+                                      . 'dispositivo (lp para /dev/usb/lp0; uucp o dialout para /dev/ttyUSB0) y vuelve a iniciar sesión.',
+            };
+        } else {
+            $ok = $this->conversar(
+                $cfg,
+                fn (Printer $printer) => $printer->initialize(),
+                'sondear el cajón monedero',
+            );
+
+            $detalle = $ok
+                ? 'La cola de CUPS acepta trabajos en crudo.'
+                : 'Revisa el nombre con `lpstat -p` y que la cola esté creada como «Raw».';
+        }
+
+        return [
+            'driver'        => $driver,
+            'destino'       => $destino,
+            'conectado'     => $ok,
+            'cajon_abierto' => null,
+            'nivel'         => $ok ? 'ok' : 'caido',
+            'mensaje'       => $ok ? "«{$destino}» responde." : "«{$destino}» no responde.",
+            'detalle'       => $detalle,
+        ];
+    }
+
+    /**
+     * Abre un dispositivo de Linux (/dev/usb/lp0, /dev/ttyUSB0).
+     *
+     * `stty` hace aquí lo que `mode` en Windows: fija velocidad y 8N1. Solo
+     * se llama si se pidió una velocidad (CASH_DRAWER_BAUD > 0) y el destino
+     * es un puerto serie; una impresora USB (usblp) no tiene velocidad.
+     */
+    private function conectarLinux(array $cfg): FilePrintConnector
+    {
+        $ruta = (string) ($cfg['device'] ?? '');
+
+        // Solo dispositivos: sin esto, un .env mal puesto convertiría el
+        // cajón en una forma de sobrescribir cualquier archivo del servidor.
+        if (! str_starts_with($ruta, '/dev/') || str_contains($ruta, '..')) {
+            throw new \RuntimeException("CASH_DRAWER_DEVICE debe ser un dispositivo bajo /dev/: {$ruta}");
+        }
+
+        if (str_starts_with($ruta, '/dev/tty') && ($cfg['baud'] ?? 0) > 0
+            && function_exists('exec') && ! in_array('exec', explode(',', (string) ini_get('disable_functions')), true)) {
+            @exec(sprintf('stty -F %s %d cs8 -cstopb -parenb raw -echo 2>&1', escapeshellarg($ruta), (int) $cfg['baud']));
+        }
+
+        return new FilePrintConnector($ruta);
+    }
+
+    /**
      * Abre el puerto COM dejándolo configurado.
      *
      * `mode` es lo que fija velocidad, paridad y bits de parada. Sin eso el
@@ -389,6 +464,10 @@ class PrinterService
             // interpreta "COM10" como un nombre de archivo normal y falla.
             'serial' => $this->conectarSerial($cfg),
 
+            // Linux: archivo de dispositivo, o una cola de CUPS en crudo.
+            'linux' => $this->conectarLinux($cfg),
+            'cups'  => new CupsPrintConnector((string) $cfg['printer_name']),
+
             default => throw new \RuntimeException(
                 "Driver de cajón desconocido: {$cfg['driver']}"
             ),
@@ -425,6 +504,7 @@ class PrinterService
         return match ($cfg['driver'] ?? null) {
             'network' => "{$cfg['host']}:{$cfg['port']}",
             'serial'  => strtoupper((string) ($cfg['com'] ?? '')),
+            'linux'   => (string) ($cfg['device'] ?? ''),
             default   => (string) ($cfg['printer_name'] ?? ''),
         };
     }

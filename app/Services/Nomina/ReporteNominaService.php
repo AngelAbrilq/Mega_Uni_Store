@@ -155,7 +155,7 @@ class ReporteNominaService
             ->selectRaw('p.tienda_id, payroll_items.name, SUM(payroll_items.amount) as total, SUM(payroll_items.quantity) as cantidad')
             ->groupBy('p.tienda_id', 'payroll_items.name')->get();
 
-        $tiendas = $this->tiendas()->pluck('name', 'id');
+        $tiendas = $this->tiendas()->pluck('nombre', 'id');
 
         $ranking = $items->groupBy('tienda_id')
             ->map(fn ($g, $id) => ['tienda' => $tiendas[$id] ?? "#{$id}", 'total' => (float) $g->sum('total'),

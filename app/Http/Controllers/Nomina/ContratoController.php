@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Nomina;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\MotivoRequest;
+use App\Http\Requests\Nomina\TerminarContratoRequest;
 use App\Http\Requests\Nomina\GuardarContratoRequest;
 use App\Models\Employee;
 use App\Models\EmploymentContract;
@@ -67,9 +67,8 @@ class ContratoController extends Controller implements HasMiddleware
             ->with('success', 'Contrato renovado: el anterior quedó finalizado.');
     }
 
-    public function terminar(MotivoRequest $request, EmploymentContract $contrato)
+    public function terminar(TerminarContratoRequest $request, EmploymentContract $contrato)
     {
-        $request->validate(['ended_at' => ['required', 'date']]);
         $this->contratos->terminar($contrato, Carbon::parse($request->input('ended_at')), $request->input('motivo'));
 
         return redirect()->to(route('employees.show', $contrato->employee_id) . '#nomina')->with('success', 'Contrato terminado.');

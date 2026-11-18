@@ -1,0 +1,15 @@
+{
+  "puerto": 9123,
+  "token": "PEGA_AQUI_EL_TOKEN_DEL_LOCAL",
+  "origenes": ["http://localhost:8000", "http://127.0.0.1:8000"],
+  "driver": "archivo",
+
+  "archivo":     { "ruta": "/tmp/cajon.bin" },
+  "dispositivo": { "ruta": "/dev/usb/lp0", "baudios": 0 },
+  "cups":        { "impresora": "TERMICA" },
+  "red":         { "host": "192.168.1.100", "puerto": 9100, "espera_ms": 3000 },
+  "windows":     { "recurso": "\\\\localhost\\CAJON_USB" },
+  "serial":      { "com": "COM3", "baudios": 9600 },
+
+  "cajon": { "pin": 0, "on_ms": 120, "off_ms": 240 }
+}

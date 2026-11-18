@@ -1,0 +1,2 @@
+# El token del local es un secreto: config.json no viaja al repositorio.
+config.json

@@ -78,6 +78,11 @@ class EmployeeController extends Controller implements HasMiddleware
     {
         $employee->load(['positions', 'departments', 'scheduleAssignments.schedule.shifts', 'user:id,name,last_name,email']);
 
+        // RN-45: los contratos traen el salario; solo se cargan para quien puede verlos.
+        if (request()->user()->can('nomina.ver')) {
+            $employee->load('contracts.position:id,name');
+        }
+
         return view('employees.show', $this->listas() + ['empleado' => $employee]);
     }
 

@@ -5,9 +5,9 @@ namespace App\Console\Commands;
 use App\Models\Sale;
 use App\Models\Tienda;
 use App\Services\ReciboEscPos;
+use App\Support\AgenteDeCaja;
 use App\Support\Contexto;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
 
 /**
  * Diagnóstico RN-28: arma el recibo ESC/POS de una venta y se lo manda al
@@ -62,28 +62,26 @@ class CajonProbarRecibo extends Command
             return self::FAILURE;
         }
 
-        $url = 'http://127.0.0.1:' . ($tienda->agent_port ?: 9123);
+        $url = AgenteDeCaja::url($tienda);
         $this->line("Venta {$venta->number} · " . strlen($bytes) . " bytes → {$url}/imprimir");
 
-        try {
-            $respuesta = Http::timeout(5)
-                ->withBody(json_encode(['token' => $tienda->asegurarTokenDeAgente(), 'datos' => base64_encode($bytes)]), 'text/plain')
-                ->post("{$url}/imprimir");
-        } catch (\Throwable $e) {
-            $this->error("El agente no contesta en {$url}: ¿está corriendo? ({$e->getMessage()})");
+        $resultado = AgenteDeCaja::imprimir($tienda, $bytes);
+
+        if ($resultado['estado'] === 0) {
+            $this->error("{$resultado['detalle']}. ¿Está corriendo? (node tools/agente-caja/agente.js)");
 
             return self::FAILURE;
         }
 
-        $this->line('Agente: HTTP ' . $respuesta->status() . ' ' . $respuesta->body());
+        $this->line("Agente: HTTP {$resultado['estado']}" . ($resultado['detalle'] ? " · {$resultado['detalle']}" : ''));
 
-        if ($respuesta->json('impreso') === true) {
-            $this->info('✔ Recibo entregado al agente. Revisa C:\temp\cajon.bin (o la impresora).');
+        if ($resultado['impreso']) {
+            $this->info('✔ Recibo entregado al agente. Revisa la impresora (o el archivo de salida si el driver es «archivo»).');
 
             return self::SUCCESS;
         }
 
-        $this->error('✘ El agente no imprimió. 401 = token distinto al del local (vuelve a correr probar-agente.ps1).');
+        $this->error('✘ El agente no imprimió. 401 = token distinto al del local (vuelve a correr tools/agente-caja/probar-agente.sh); 502 = la impresora no aceptó los datos.');
 
         return self::FAILURE;
     }

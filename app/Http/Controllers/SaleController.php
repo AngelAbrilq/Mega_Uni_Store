@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use App\Support\AgenteDeCaja;
 use App\Support\CajonDelLocal;
+use App\Support\Contexto;
+use App\Models\Tienda;
 use App\Services\ReciboEscPos;
 use App\Http\Requests\AnularDocumentoRequest;
 use App\Models\Sale;
@@ -21,7 +24,7 @@ class SaleController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:ventas.ver',    only: ['index', 'show', 'recibo', 'reciboEscPos']),
+            new Middleware('permission:ventas.ver',    only: ['index', 'show', 'recibo', 'reciboEscPos', 'reciboPorServidor']),
             new Middleware('permission:ventas.anular', only: ['anular']),
         ];
     }
@@ -78,8 +81,13 @@ class SaleController extends Controller implements HasMiddleware
                      'voidRequests.requester:id,name,last_name', 'voidRequests.reviewer:id,name,last_name']);
 
         // RN-28 · Con agente de caja y papel térmico, el recibo sale por el agente.
-        $termica = CajonDelLocal::configuracion()['agente'] && ReciboEscPos::aplica()
-            ? CajonDelLocal::configuracion()['agente'] + ['recibo' => route('sales.recibo.escpos', $sale)]
+        // «relevo» solo existe cuando navegador y servidor son la misma máquina.
+        $agente  = CajonDelLocal::configuracion()['agente'];
+        $termica = $agente && ReciboEscPos::aplica()
+            ? $agente + [
+                'recibo' => route('sales.recibo.escpos', $sale),
+                'relevo' => AgenteDeCaja::esLaMismaMaquina(request()) ? route('sales.recibo.relevo', $sale) : null,
+            ]
             : null;
 
         return view('sales.show', compact('sale', 'termica'));
@@ -96,6 +104,33 @@ class SaleController extends Controller implements HasMiddleware
         }
 
         return response()->json(['datos' => base64_encode($recibo->generar($sale))]);
+    }
+
+    /**
+     * RN-28 · Relevo: el SERVIDOR le pasa el recibo al agente de caja.
+     *
+     * Para cuando el navegador no logra hablar con 127.0.0.1 (permiso de red
+     * local denegado, extensión que bloquea). Solo sirve —y solo se permite—
+     * si la petición viene de esta misma máquina: ver AgenteDeCaja.
+     */
+    public function reciboPorServidor(Request $request, Sale $sale, ReciboEscPos $recibo): JsonResponse
+    {
+        $tienda = Contexto::tienda();
+
+        if ($tienda?->drawer_mode !== Tienda::CAJON_AGENTE || ! AgenteDeCaja::esLaMismaMaquina($request)) {
+            return response()->json(['impreso' => false, 'detalle' => 'El relevo por el servidor solo aplica cuando el servidor corre en el PC de caja.'], 409);
+        }
+
+        if (! ReciboEscPos::aplica()) {
+            return response()->json(['impreso' => false, 'detalle' => 'Este negocio imprime en A4: usa el recibo del navegador.'], 422);
+        }
+
+        $resultado = AgenteDeCaja::imprimir($tienda, $recibo->generar($sale));
+
+        return response()->json(
+            ['impreso' => $resultado['impreso'], 'detalle' => $resultado['detalle']],
+            $resultado['impreso'] ? 200 : 502,
+        );
     }
 
     /** Recibo listo para imprimir, en formato de tirilla. */
